@@ -1,0 +1,150 @@
+// Prisma schema: https://pris.ly/d/prisma-schema
+//
+// Models are added by the implementation phase that defines them
+// (docs/12_PRODUCT_IMPLEMENTATION_PLAN.md).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// One immutable version of Product configuration (docs/06_DOMAIN_MODEL.md).
+/// Rows are never updated: changing a value means creating a new version.
+model ProductConfigVersion {
+  version   Int      @id @default(autoincrement())
+  /// Key → value object, validated against the registry in src/product-config.
+  values    Json
+  note      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  active ActiveProductConfig?
+
+  @@map("product_config_versions")
+}
+
+/// Singleton pointer to the active version. The migration adds CHECK (id),
+/// so at most one row can exist.
+model ActiveProductConfig {
+  id          Boolean  @id @default(true)
+  version     Int      @unique
+  activatedAt DateTime @default(now()) @updatedAt @map("activated_at")
+
+  configVersion ProductConfigVersion @relation(fields: [version], references: [version], onDelete: Restrict)
+
+  @@map("active_product_config")
+}
+
+enum UserStatus {
+  active
+  suspended
+
+  @@map("user_status")
+}
+
+/// A person using Focus Forest (docs/06_DOMAIN_MODEL.md → User).
+model User {
+  id           String     @id @default(uuid(7)) @db.Uuid
+  /// Stored trimmed and lowercased, so uniqueness ignores case.
+  email        String     @unique
+  /// scrypt hash with its parameters. Never the password itself.
+  passwordHash String     @map("password_hash")
+  status       UserStatus @default(active)
+  /// Set in onboarding. Null until then.
+  displayName  String?    @map("display_name")
+  bio          String?
+  /// Not writable yet: uploads arrive with object storage (docs/08 §5). Until
+  /// then clients show an initials-based avatar when this is null.
+  avatarUrl    String?    @map("avatar_url")
+  /// IANA time zone reported by the client. Null until first reported.
+  timezone     String?
+  /// Also the user's join date.
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  refreshTokens           RefreshToken[]
+  preferences             UserPreferences?
+  notificationPreferences NotificationPreference[]
+
+  @@map("users")
+}
+
+/// A long-lived refresh token, stored only as a SHA-256 hash. Tokens rotate on
+/// every use; all tokens descended from one sign-in share a family.
+model RefreshToken {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  familyId  String    @map("family_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  /// Set when the token is exchanged. Presenting it again revokes the family.
+  usedAt    DateTime? @map("used_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
+  @@map("refresh_tokens")
+}
+
+enum Theme {
+  system
+  light
+  dark
+
+  @@map("theme")
+}
+
+/// Display and feedback preferences (docs/06_DOMAIN_MODEL.md → User). The row
+/// exists only once the user changes something; defaults live in code
+/// (src/identity/preferences.defaults.ts).
+model UserPreferences {
+  userId        String   @id @map("user_id") @db.Uuid
+  theme         Theme
+  sound         Boolean
+  haptics       Boolean
+  /// In-app toggle. Clients also respect the system reduce-motion setting.
+  reducedMotion Boolean  @map("reduced_motion")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
+}
+
+/// The notification categories of spec §18.
+enum NotificationCategory {
+  dailyGoalReminder      @map("daily_goal_reminder")
+  scheduledFocusReminder @map("scheduled_focus_reminder")
+  streakReminder         @map("streak_reminder")
+  eventStart             @map("event_start")
+  eventEndingSoon        @map("event_ending_soon")
+  friendInvite           @map("friend_invite")
+  focusRoomInvite        @map("focus_room_invite")
+  challengeUpdate        @map("challenge_update")
+  badgeUnlocked          @map("badge_unlocked")
+  monthlyRecapReady      @map("monthly_recap_ready")
+
+  @@map("notification_category")
+}
+
+/// One category's setting for one user. Missing rows mean the default (off).
+/// Only stores preferences: nothing is delivered until Phase 18.
+model NotificationPreference {
+  userId    String               @map("user_id") @db.Uuid
+  category  NotificationCategory
+  enabled   Boolean
+  /// Local "HH:MM" in the user's time zone. Reminder categories only.
+  time      String?
+  updatedAt DateTime             @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, category])
+  @@map("notification_preferences")
+}
