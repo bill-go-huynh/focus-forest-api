@@ -6,7 +6,7 @@ Product and domain docs live in the workspace (`../docs/`). Agent and implementa
 
 ## Setup
 
-Requires Node.js 24, npm 11, and Docker (for the local PostgreSQL).
+Requires Node.js 24, npm 11, and Docker (for the local PostgreSQL). Any deployed database must be PostgreSQL 17 or later with UTF8 encoding.
 
 ```sh
 cp .env.example .env
