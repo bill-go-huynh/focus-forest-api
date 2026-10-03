@@ -9,6 +9,7 @@ import { configureApp } from '../../src/app.setup.js';
 import { Clock, FixedClock } from '../../src/common/clock.js';
 import { PasswordHasher } from '../../src/identity/password-hasher.js';
 import { PrismaService } from '../../src/prisma/prisma.service.js';
+import { listenOnLoopback } from '../support/loopback-http.js';
 
 interface TopicBody {
   id: string;
@@ -35,6 +36,7 @@ const messageOf = (res: request.Response): string =>
 
 describe('topics (HTTP + PostgreSQL)', () => {
   let app: INestApplication<App>;
+  let url: string;
   let prisma: PrismaService;
   let clock: FixedClock;
 
@@ -48,7 +50,7 @@ describe('topics (HTTP + PostgreSQL)', () => {
       .compile();
     app = moduleRef.createNestApplication();
     configureApp(app);
-    await app.init();
+    url = await listenOnLoopback(app);
     prisma = app.get(PrismaService);
   });
 
@@ -60,7 +62,7 @@ describe('topics (HTTP + PostgreSQL)', () => {
     await app.close();
   });
 
-  const http = () => request(app.getHttpServer());
+  const http = () => request(url);
 
   async function signUp(email = 'ada@example.com'): Promise<string> {
     const res = await http()

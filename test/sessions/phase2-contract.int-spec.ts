@@ -9,6 +9,7 @@ import { configureApp } from '../../src/app.setup.js';
 import { Clock, FixedClock } from '../../src/common/clock.js';
 import { PasswordHasher } from '../../src/identity/password-hasher.js';
 import { ProductConfigService } from '../../src/product-config/product-config.service.js';
+import { listenOnLoopback } from '../support/loopback-http.js';
 
 // Invariants that span modules (topics, submission, attribution, history, recent topics) and
 // that the per-module suites do not already pin.
@@ -20,6 +21,7 @@ const LOWERCASE_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f
 
 describe('Phase 2 API contract across modules (HTTP + PostgreSQL)', () => {
   let app: INestApplication<App>;
+  let url: string;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
@@ -30,7 +32,7 @@ describe('Phase 2 API contract across modules (HTTP + PostgreSQL)', () => {
       .compile();
     app = moduleRef.createNestApplication();
     configureApp(app);
-    await app.init();
+    url = await listenOnLoopback(app);
   });
 
   beforeEach(async () => {
@@ -46,7 +48,7 @@ describe('Phase 2 API contract across modules (HTTP + PostgreSQL)', () => {
     await app.close();
   });
 
-  const http = () => request(app.getHttpServer());
+  const http = () => request(url);
   const auth = (token: string) => ({ Authorization: `Bearer ${token}` });
 
   async function signUp(timezone = 'Asia/Ho_Chi_Minh'): Promise<string> {

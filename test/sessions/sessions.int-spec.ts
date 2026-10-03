@@ -11,6 +11,7 @@ import { PasswordHasher } from '../../src/identity/password-hasher.js';
 import { PrismaService } from '../../src/prisma/prisma.service.js';
 import { ProductConfigService } from '../../src/product-config/product-config.service.js';
 import { evaluateSession } from '../../src/sessions/evaluation/evaluate-session.js';
+import { listenOnLoopback } from '../support/loopback-http.js';
 
 interface SessionBody {
   id: string;
@@ -43,6 +44,7 @@ const messageOf = (res: request.Response): string =>
 
 describe('focus sessions (HTTP + PostgreSQL)', () => {
   let app: INestApplication<App>;
+  let url: string;
   let prisma: PrismaService;
   let config: ProductConfigService;
   let configVersion: number;
@@ -56,7 +58,7 @@ describe('focus sessions (HTTP + PostgreSQL)', () => {
       .compile();
     app = moduleRef.createNestApplication();
     configureApp(app);
-    await app.init();
+    url = await listenOnLoopback(app);
     prisma = app.get(PrismaService);
     config = app.get(ProductConfigService);
   });
@@ -79,7 +81,7 @@ describe('focus sessions (HTTP + PostgreSQL)', () => {
     return created.version;
   }
 
-  const http = () => request(app.getHttpServer());
+  const http = () => request(url);
   const auth = (token: string) => ({ Authorization: `Bearer ${token}` });
 
   interface Account {

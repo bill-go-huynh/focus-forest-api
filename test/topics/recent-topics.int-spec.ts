@@ -10,6 +10,7 @@ import { Clock, FixedClock } from '../../src/common/clock.js';
 import { PasswordHasher } from '../../src/identity/password-hasher.js';
 import { PrismaService } from '../../src/prisma/prisma.service.js';
 import { ProductConfigService } from '../../src/product-config/product-config.service.js';
+import { listenOnLoopback } from '../support/loopback-http.js';
 
 interface ListedTopic {
   id: string;
@@ -27,6 +28,7 @@ const recentOf = (topic: ListedTopic | undefined) => [topic?.lastUsedAt, topic?.
 
 describe('recent topics (HTTP + PostgreSQL)', () => {
   let app: INestApplication<App>;
+  let url: string;
   let prisma: PrismaService;
 
   beforeAll(async () => {
@@ -38,7 +40,7 @@ describe('recent topics (HTTP + PostgreSQL)', () => {
       .compile();
     app = moduleRef.createNestApplication();
     configureApp(app);
-    await app.init();
+    url = await listenOnLoopback(app);
     prisma = app.get(PrismaService);
   });
 
@@ -55,7 +57,7 @@ describe('recent topics (HTTP + PostgreSQL)', () => {
     await app.close();
   });
 
-  const http = () => request(app.getHttpServer());
+  const http = () => request(url);
   const auth = (token: string) => ({ Authorization: `Bearer ${token}` });
 
   async function signUp(email = 'ada@example.com'): Promise<string> {

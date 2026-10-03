@@ -88,15 +88,12 @@ The server **owns product truth**:
 - **Database requirement: PostgreSQL 17 or later, UTF8 encoding** (the topics index uses the built-in `pg_c_utf8` collation). The topics migration checks this first and fails with a clear message before creating anything, because Prisma does not run a migration in a transaction.
 - Local PostgreSQL runs in Docker (`compose.yaml`, `npm run db:up`), with `focus_forest` for development and `focus_forest_test` for integration tests.
 - Integration tests (`npm run test:int`) start from an empty test database with all migrations applied, and every test starts with empty tables. The helpers in `test/database/` refuse any database whose name doesn't end with `_test`.
+- HTTP in e2e and integration tests: start the app with `listenOnLoopback(app)` (`test/support/loopback-http.ts`) and call `request(url)`. Never `request(app.getHttpServer())`: supertest then listens on `[::]` and sends to 127.0.0.1, where another local program (an editor helper, a dev server) may hold the same port and answer instead. That was the old intermittent failure (`Parse Error: Expected HTTP/`, or a 400 on a valid request). A unit test enforces the rule.
 - `npm run check` runs typecheck, lint, format check, unit, e2e, and integration tests. It needs `npm run db:up` first.
 
 ## Known issues
 
-- **Intermittent HTTP failures in integration tests. Must investigate before X2** (not a blocker for mobile work).
-  - Seen in `topics.int-spec.ts` (“returns an empty list before any topic exists”), `profile.int-spec.ts` (“never changes the join date”, “clears the bio…”), `history.int-spec.ts` (during a RED run), and once on sign-up. A different test each time, always one or two per full run, and a rerun passes.
-  - Two shapes: `Parse Error: Expected HTTP/` from the client, or a random 400 on a valid request (as if the body arrived malformed).
-  - Suspected layer: the test HTTP transport, not the app. Each `request(app.getHttpServer())` listens on a new ephemeral port, and Node ≥ 19 (here 24) keeps sockets alive by default, so a reused socket may carry bytes that belong to another request.
-  - First reproduction step: repeat one small HTTP test a few hundred times (for example `vitest --repeat`), log the raw 400 body. Then retry with `Connection: close`, or with one `app.listen(0)` server per file, and compare failure rates.
+None open.
 
 ## Current state
 

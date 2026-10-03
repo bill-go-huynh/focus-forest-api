@@ -10,6 +10,7 @@ import { Clock, FixedClock } from '../../src/common/clock.js';
 import { PasswordHasher } from '../../src/identity/password-hasher.js';
 import { PrismaService } from '../../src/prisma/prisma.service.js';
 import { ProductConfigService } from '../../src/product-config/product-config.service.js';
+import { listenOnLoopback } from '../support/loopback-http.js';
 
 type SessionBody = Record<string, unknown> & { id: string; note: string | null; status: string };
 
@@ -19,6 +20,7 @@ const asSession = (res: request.Response): SessionBody => res.body as SessionBod
 
 describe('session note (HTTP + PostgreSQL)', () => {
   let app: INestApplication<App>;
+  let url: string;
   let prisma: PrismaService;
 
   beforeAll(async () => {
@@ -30,7 +32,7 @@ describe('session note (HTTP + PostgreSQL)', () => {
       .compile();
     app = moduleRef.createNestApplication();
     configureApp(app);
-    await app.init();
+    url = await listenOnLoopback(app);
     prisma = app.get(PrismaService);
   });
 
@@ -47,7 +49,7 @@ describe('session note (HTTP + PostgreSQL)', () => {
     await app.close();
   });
 
-  const http = () => request(app.getHttpServer());
+  const http = () => request(url);
   const auth = (token: string) => ({ Authorization: `Bearer ${token}` });
 
   interface Account {

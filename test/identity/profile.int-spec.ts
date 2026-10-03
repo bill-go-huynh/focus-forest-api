@@ -7,6 +7,7 @@ import { AppModule } from '../../src/app.module.js';
 import { configureApp } from '../../src/app.setup.js';
 import { PasswordHasher } from '../../src/identity/password-hasher.js';
 import { PrismaService } from '../../src/prisma/prisma.service.js';
+import { listenOnLoopback } from '../support/loopback-http.js';
 
 interface ProfileBody {
   id: string;
@@ -25,6 +26,7 @@ const messageOf = (res: request.Response): string =>
 
 describe('profile (HTTP + PostgreSQL)', () => {
   let app: INestApplication<App>;
+  let url: string;
   let prisma: PrismaService;
 
   beforeAll(async () => {
@@ -34,7 +36,7 @@ describe('profile (HTTP + PostgreSQL)', () => {
       .compile();
     app = moduleRef.createNestApplication();
     configureApp(app);
-    await app.init();
+    url = await listenOnLoopback(app);
     prisma = app.get(PrismaService);
   });
 
@@ -42,7 +44,7 @@ describe('profile (HTTP + PostgreSQL)', () => {
     await app.close();
   });
 
-  const http = () => request(app.getHttpServer());
+  const http = () => request(url);
 
   async function signUp(email: string): Promise<{ token: string; userId: string }> {
     const res = await http()

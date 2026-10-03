@@ -5,9 +5,11 @@ import type { App } from 'supertest/types.js';
 
 import { AppModule } from '../src/app.module.js';
 import { configureApp } from '../src/app.setup.js';
+import { listenOnLoopback } from './support/loopback-http.js';
 
 describe('Health (e2e)', () => {
   let app: INestApplication<App>;
+  let url: string;
 
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -16,7 +18,7 @@ describe('Health (e2e)', () => {
 
     app = moduleRef.createNestApplication();
     configureApp(app);
-    await app.init();
+    url = await listenOnLoopback(app);
   });
 
   afterEach(async () => {
@@ -24,6 +26,6 @@ describe('Health (e2e)', () => {
   });
 
   it('GET /health', () => {
-    return request(app.getHttpServer()).get('/health').expect(200).expect({ status: 'ok' });
+    return request(url).get('/health').expect(200).expect({ status: 'ok' });
   });
 });

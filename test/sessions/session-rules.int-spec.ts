@@ -7,9 +7,11 @@ import { AppModule } from '../../src/app.module.js';
 import { configureApp } from '../../src/app.setup.js';
 import { PasswordHasher } from '../../src/identity/password-hasher.js';
 import { ProductConfigService } from '../../src/product-config/product-config.service.js';
+import { listenOnLoopback } from '../support/loopback-http.js';
 
 describe('session rules (HTTP + PostgreSQL)', () => {
   let app: INestApplication<App>;
+  let url: string;
   let config: ProductConfigService;
 
   beforeAll(async () => {
@@ -19,7 +21,7 @@ describe('session rules (HTTP + PostgreSQL)', () => {
       .compile();
     app = moduleRef.createNestApplication();
     configureApp(app);
-    await app.init();
+    url = await listenOnLoopback(app);
     config = app.get(ProductConfigService);
   });
 
@@ -27,7 +29,7 @@ describe('session rules (HTTP + PostgreSQL)', () => {
     await app.close();
   });
 
-  const http = () => request(app.getHttpServer());
+  const http = () => request(url);
 
   async function signUp(): Promise<string> {
     const res = await http()

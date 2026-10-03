@@ -9,6 +9,7 @@ import { configureApp } from '../../src/app.setup.js';
 import { Clock, FixedClock } from '../../src/common/clock.js';
 import { PasswordHasher } from '../../src/identity/password-hasher.js';
 import { ProductConfigService } from '../../src/product-config/product-config.service.js';
+import { listenOnLoopback } from '../support/loopback-http.js';
 
 interface TopicSummary {
   id: string;
@@ -42,6 +43,7 @@ const asPage = (res: request.Response): HistoryPage => res.body as HistoryPage;
 
 describe('focus history (HTTP + PostgreSQL)', () => {
   let app: INestApplication<App>;
+  let url: string;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
@@ -52,7 +54,7 @@ describe('focus history (HTTP + PostgreSQL)', () => {
       .compile();
     app = moduleRef.createNestApplication();
     configureApp(app);
-    await app.init();
+    url = await listenOnLoopback(app);
   });
 
   beforeEach(async () => {
@@ -68,7 +70,7 @@ describe('focus history (HTTP + PostgreSQL)', () => {
     await app.close();
   });
 
-  const http = () => request(app.getHttpServer());
+  const http = () => request(url);
   const auth = (token: string) => ({ Authorization: `Bearer ${token}` });
 
   interface Account {

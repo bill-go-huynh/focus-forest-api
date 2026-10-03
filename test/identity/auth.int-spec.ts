@@ -9,6 +9,7 @@ import { Clock, FixedClock } from '../../src/common/clock.js';
 import { CurrentUser, type AuthenticatedUser } from '../../src/identity/current-user.decorator.js';
 import { PasswordHasher } from '../../src/identity/password-hasher.js';
 import { PrismaService } from '../../src/prisma/prisma.service.js';
+import { listenOnLoopback } from '../support/loopback-http.js';
 
 // A protected route that exists only in this test, to exercise the global guard.
 @Controller('test-protected')
@@ -45,6 +46,7 @@ const DAY = 24 * 60 * MINUTE;
 
 describe('auth (HTTP + PostgreSQL)', () => {
   let app: INestApplication<App>;
+  let url: string;
   let prisma: PrismaService;
   let clock: FixedClock;
   let output: string[];
@@ -76,7 +78,7 @@ describe('auth (HTTP + PostgreSQL)', () => {
 
     app = moduleRef.createNestApplication();
     configureApp(app);
-    await app.init();
+    url = await listenOnLoopback(app);
     prisma = app.get(PrismaService);
   });
 
@@ -89,7 +91,7 @@ describe('auth (HTTP + PostgreSQL)', () => {
     clock.set(new Date());
   });
 
-  const http = () => request(app.getHttpServer());
+  const http = () => request(url);
   const signUp = (email = 'ada@example.com', password = PASSWORD) =>
     http().post('/auth/sign-up').send({ email, password });
 

@@ -7,6 +7,7 @@ import { AppModule } from '../../src/app.module.js';
 import { configureApp } from '../../src/app.setup.js';
 import { PasswordHasher } from '../../src/identity/password-hasher.js';
 import { PrismaService } from '../../src/prisma/prisma.service.js';
+import { listenOnLoopback } from '../support/loopback-http.js';
 
 interface NotificationSetting {
   enabled: boolean;
@@ -49,6 +50,7 @@ const messageOf = (res: request.Response): string =>
 
 describe('preferences (HTTP + PostgreSQL)', () => {
   let app: INestApplication<App>;
+  let url: string;
   let prisma: PrismaService;
 
   beforeAll(async () => {
@@ -58,7 +60,7 @@ describe('preferences (HTTP + PostgreSQL)', () => {
       .compile();
     app = moduleRef.createNestApplication();
     configureApp(app);
-    await app.init();
+    url = await listenOnLoopback(app);
     prisma = app.get(PrismaService);
   });
 
@@ -66,7 +68,7 @@ describe('preferences (HTTP + PostgreSQL)', () => {
     await app.close();
   });
 
-  const http = () => request(app.getHttpServer());
+  const http = () => request(url);
 
   async function signUp(email = 'ada@example.com'): Promise<string> {
     const res = await http()
