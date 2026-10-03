@@ -23,6 +23,11 @@ export class FocusStatsService {
     return this.days({ userId, localDate: { gte: asDbDate(from), lte: asDbDate(to) } });
   }
 
+  /** Counted focus per stored local date, over the user's whole history. */
+  async allDays(userId: string): Promise<DayFocus[]> {
+    return this.days({ userId });
+  }
+
   /** Counted focus per topic for the sessions attributed to one month, largest first. */
   async monthTopics(userId: string, month: MonthRef): Promise<TopicFocus[]> {
     const rows = await this.prisma.focusSession.groupBy({

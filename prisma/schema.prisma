@@ -71,6 +71,10 @@ model User {
   topics                  Topic[]
   monthContexts           MonthAttributionContext[]
   focusSessions           FocusSession[]
+  dailyGoalSettings       DailyGoalSetting[]
+  weeklyGoalSettings      WeeklyGoalSetting[]
+  restDays                RestDay[]
+  streakRecoveries        StreakRecovery[]
 
   @@map("users")
 }
@@ -273,4 +277,81 @@ model FocusSession {
   @@index([userId, topicId, startedAt, id])
   @@index([userId, year, month])
   @@map("focus_sessions")
+}
+
+/// One version of the daily goal (docs/06_DOMAIN_MODEL.md → DailyGoal), in effect from its local
+/// date until the next version. Before the first version the configured default applies.
+/// Versions in effect are never changed; only a pending (future) version is replaced.
+model DailyGoalSetting {
+  userId        String   @map("user_id") @db.Uuid
+  effectiveFrom DateTime @map("effective_from") @db.Date
+  minutes       Int
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, effectiveFrom])
+  @@map("daily_goal_settings")
+}
+
+enum WeeklyGoalType {
+  focused_minutes
+  session_count
+
+  @@map("weekly_goal_type")
+}
+
+/// One version of the weekly goal (docs/06_DOMAIN_MODEL.md → WeeklyGoal), in effect from its
+/// Monday until the next version. Weeks run Monday to Sunday. A version without type and target
+/// records that the user cleared the weekly goal from that week on.
+model WeeklyGoalSetting {
+  userId        String          @map("user_id") @db.Uuid
+  /// Always a Monday (checked by the database).
+  effectiveFrom DateTime        @map("effective_from") @db.Date
+  type          WeeklyGoalType?
+  target        Int?
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, effectiveFrom])
+  @@map("weekly_goal_settings")
+}
+
+/// A planned rest day (docs/06_DOMAIN_MODEL.md → RestDay), on the user's local date. Cancelling
+/// (possible until the day ends) deletes the row, so every row is a rest day that happened or
+/// is still planned.
+model RestDay {
+  userId    String   @map("user_id") @db.Uuid
+  date      DateTime @db.Date
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, date])
+  @@map("rest_days")
+}
+
+enum StreakRecoveryMechanic {
+  next_day_session
+
+  @@map("streak_recovery_mechanic")
+}
+
+/// A missed day repaired by a streak recovery (docs/06_DOMAIN_MODEL.md → StreakRecovery). It
+/// bridges the streak only: never an active day, a goal day, growth, or vitality.
+model StreakRecovery {
+  userId     String                 @map("user_id") @db.Uuid
+  missedDate DateTime               @map("missed_date") @db.Date
+  /// The day of the counted session that earned it: the day after the missed day.
+  returnDate DateTime               @map("return_date") @db.Date
+  mechanic   StreakRecoveryMechanic
+  createdAt  DateTime               @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, missedDate])
+  @@map("streak_recoveries")
 }

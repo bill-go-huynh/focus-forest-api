@@ -5,7 +5,10 @@ const rules = vitalityRulesWith(); // thriving after a 2-day run; healthy ≤ 1 
 const TODAY = '2026-10-10';
 
 const vitality = (input: Partial<VitalityInput>, withRules = rules) =>
-  vitalityOn({ today: TODAY, activeDates: [], restDates: [], ...input }, withRules);
+  vitalityOn(
+    { today: TODAY, activeDates: [], restDates: [], goalMetDates: [], ...input },
+    withRules,
+  );
 
 describe('vitality', () => {
   describe('active today', () => {
@@ -82,5 +85,51 @@ describe('vitality', () => {
     expect(vitality({ activeDates: ['2026-10-08'] }, relaxed)).toBe('healthy');
     expect(vitality({ activeDates: ['2026-10-07'] }, relaxed)).toBe('stable');
     expect(vitality({ activeDates: ['2026-10-05'] }, relaxed)).toBe('quiet');
+  });
+
+  describe('Thriving through recent daily goals', () => {
+    // No run of active days long enough: 9 October was missed.
+    const noRun = vitalityRulesWith({
+      'vitality.rules': { thrivingActiveRunDays: 5, healthyWithinDays: 1, stableWithinDays: 2 },
+    });
+    const activeDates = ['2026-10-07', '2026-10-08', '2026-10-10'];
+
+    it('is Thriving when active today and the daily goal was met on 3 of the last 4 days', () => {
+      expect(
+        vitality({ activeDates, goalMetDates: ['2026-10-07', '2026-10-08', '2026-10-10'] }, noRun),
+      ).toBe('thriving');
+    });
+
+    it('is only Healthy with fewer goal days in the window', () => {
+      expect(vitality({ activeDates, goalMetDates: ['2026-10-08', '2026-10-10'] }, noRun)).toBe(
+        'healthy',
+      );
+      // 6 October is outside the 4-day window ending today.
+      expect(
+        vitality({ activeDates, goalMetDates: ['2026-10-06', '2026-10-08', '2026-10-10'] }, noRun),
+      ).toBe('healthy');
+    });
+
+    it('needs focus today', () => {
+      expect(
+        vitality(
+          {
+            activeDates: ['2026-10-07', '2026-10-08', '2026-10-09'],
+            goalMetDates: ['2026-10-07', '2026-10-08', '2026-10-09'],
+          },
+          noRun,
+        ),
+      ).toBe('healthy');
+    });
+
+    it('follows the configured window and count', () => {
+      const strict = vitalityRulesWith({
+        'vitality.rules': { thrivingActiveRunDays: 5, healthyWithinDays: 1, stableWithinDays: 2 },
+        'vitality.goalConsistency': { windowDays: 4, metDaysRequired: 4 },
+      });
+      expect(
+        vitality({ activeDates, goalMetDates: ['2026-10-07', '2026-10-08', '2026-10-10'] }, strict),
+      ).toBe('healthy');
+    });
   });
 });

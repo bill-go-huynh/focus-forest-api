@@ -39,6 +39,8 @@ describe('growth rules read from Product configuration', () => {
       thrivingActiveRunDays: 2,
       healthyWithinDays: 1,
       stableWithinDays: 2,
+      goalWindowDays: 4,
+      goalMetDaysRequired: 3,
     });
   });
 });

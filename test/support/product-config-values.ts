@@ -25,7 +25,22 @@ export const TREE_CONFIG_VALUES = {
   'vitality.rules': { thrivingActiveRunDays: 2, healthyWithinDays: 1, stableWithinDays: 2 },
 } as const;
 
-export const CURRENT_CONFIG_VALUES = { ...SESSION_CONFIG_VALUES, ...TREE_CONFIG_VALUES };
+/** Phase 3 goals, rest days, streaks, recovery, and goal-based vitality (configuration version 4). */
+export const CONSISTENCY_CONFIG_VALUES = {
+  'goal.dailyDefaultMinutes': 30,
+  'restDay.maxPerWeek': 2,
+  'restDay.allowSameDay': true,
+  'streak.milestones': [3, 7, 14, 30, 60, 100],
+  'recovery.mechanics': { nextDaySession: { minPreviousStreak: 3 } },
+  'recovery.limit': { perMonth: 1 },
+  'vitality.goalConsistency': { windowDays: 4, metDaysRequired: 3 },
+} as const;
+
+export const CURRENT_CONFIG_VALUES = {
+  ...SESSION_CONFIG_VALUES,
+  ...TREE_CONFIG_VALUES,
+  ...CONSISTENCY_CONFIG_VALUES,
+};
 
 /** A complete set of values: the current ones with some replaced. */
 export function configValues(overrides: Record<string, unknown> = {}): Record<string, unknown> {

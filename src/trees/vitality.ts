@@ -13,13 +13,15 @@ export interface VitalityInput {
   activeDates: readonly LocalDate[];
   /** Planned rest days: neither a day without focus nor a day of a run. */
   restDates: readonly LocalDate[];
+  /** Dates whose daily goal was met. Only real focus meets a goal; a recovered day never does. */
+  goalMetDates: readonly LocalDate[];
 }
 
 /**
  * Vitality from recent activity. Days without focus are counted from the last active date up to
  * and including today, skipping planned rest days. Active today: Recovering if the user was
- * Quiet before today's focus, Thriving on a run of active days (rest days bridge it), otherwise
- * Healthy. Not active today: Healthy, Stable, or Quiet by the number of days without focus.
+ * Quiet before today's focus, Thriving on a run of active days (rest days bridge it) or with the
+ * daily goal met on enough of the last few days, otherwise Healthy. Not active today: Healthy, Stable, or Quiet by the number of days without focus.
  * It reads only activity, so it can never change anything the tree has earned.
  */
 export function vitalityOn(input: VitalityInput, rules: VitalityRules): VitalityState {
@@ -38,8 +40,10 @@ export function vitalityOn(input: VitalityInput, rules: VitalityRules): Vitality
     ) {
       return 'recovering';
     }
-    return activeRun(input.today, active, rest, rules.thrivingActiveRunDays) >=
-      rules.thrivingActiveRunDays
+    const onARun =
+      activeRun(input.today, active, rest, rules.thrivingActiveRunDays) >=
+      rules.thrivingActiveRunDays;
+    return onARun || recentGoalDays(input, rules.goalWindowDays) >= rules.goalMetDaysRequired
       ? 'thriving'
       : 'healthy';
   }
@@ -80,4 +84,14 @@ function activeRun(
     else if (!rest.has(date)) break;
   }
   return run;
+}
+
+/** Dates in the last `windowDays` local days, today included, whose daily goal was met. */
+function recentGoalDays(input: VitalityInput, windowDays: number): number {
+  const from = addDays(input.today, -(windowDays - 1));
+  return new Set(
+    input.goalMetDates.filter(
+      (date) => compareLocalDates(date, from) >= 0 && compareLocalDates(date, input.today) <= 0,
+    ),
+  ).size;
 }

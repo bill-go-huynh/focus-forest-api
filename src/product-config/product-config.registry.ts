@@ -1,4 +1,4 @@
-import { increasingList, integer, shape, type ConfigRegistry } from './config-types.js';
+import { boolean, increasingList, integer, shape, type ConfigRegistry } from './config-types.js';
 
 export const PRODUCT_CONFIG_REGISTRY = Symbol('PRODUCT_CONFIG_REGISTRY');
 
@@ -91,6 +91,44 @@ export const productConfigRegistry = {
       {
         expected: 'healthyWithinDays below stableWithinDays',
         holds: (value) => value.healthyWithinDays < value.stableWithinDays,
+      },
+    ),
+  },
+
+  // Phase 3: goals, rest days, streaks, and recovery (docs/06_DOMAIN_MODEL.md).
+  'goal.dailyDefaultMinutes': {
+    description: 'The daily goal, in minutes, until the user sets one',
+    type: integer({ min: 1 }),
+  },
+  'restDay.maxPerWeek': {
+    description: 'Rest days a user can plan in one week (Monday to Sunday)',
+    type: integer({ min: 0, max: 7 }),
+  },
+  'restDay.allowSameDay': {
+    description: 'Whether today can still be made a rest day',
+    type: boolean(),
+  },
+  'streak.milestones': {
+    description: 'Streak lengths, in active days, that are milestones',
+    type: increasingList(integer({ min: 1 }), { minLength: 0, maxLength: 20 }),
+  },
+  'recovery.mechanics': {
+    description:
+      'The enabled recovery mechanic: a counted session on the day right after one missed day, after a streak of at least minPreviousStreak active days',
+    type: shape({ nextDaySession: shape({ minPreviousStreak: integer({ min: 1 }) }) }),
+  },
+  'recovery.limit': {
+    description: 'Recoveries a user can use per calendar month (of the missed day)',
+    type: shape({ perMonth: integer({ min: 0 }) }),
+  },
+  'vitality.goalConsistency': {
+    description:
+      'Active today and the daily goal met on at least metDaysRequired of the last windowDays local days (today included) is also Thriving',
+    type: shape(
+      { windowDays: integer({ min: 1 }), metDaysRequired: integer({ min: 1 }) },
+      {
+        expected: 'metDaysRequired at most windowDays',
+        holds: (value) => value.metDaysRequired <= value.windowDays,
       },
     ),
   },

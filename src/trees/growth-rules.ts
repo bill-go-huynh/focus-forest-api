@@ -35,6 +35,9 @@ export interface VitalityRules {
   thrivingActiveRunDays: number;
   healthyWithinDays: number;
   stableWithinDays: number;
+  /** Thriving also when the daily goal was met on goalMetDaysRequired of the last goalWindowDays. */
+  goalWindowDays: number;
+  goalMetDaysRequired: number;
 }
 
 type Config = ProductConfig<ProductConfigRegistry>;
@@ -68,9 +71,12 @@ export function growthRulesFrom(config: Config): GrowthRules {
 
 export function vitalityRulesFrom(config: Config): VitalityRules {
   const rules = config.get('vitality.rules');
+  const goals = config.get('vitality.goalConsistency');
   return {
     thrivingActiveRunDays: rules.thrivingActiveRunDays,
     healthyWithinDays: rules.healthyWithinDays,
     stableWithinDays: rules.stableWithinDays,
+    goalWindowDays: goals.windowDays,
+    goalMetDaysRequired: goals.metDaysRequired,
   };
 }

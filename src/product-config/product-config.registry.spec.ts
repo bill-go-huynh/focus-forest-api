@@ -157,4 +157,31 @@ describe('production registry', () => {
       expect(problemsWith({ 'vitality.rules': value }).length === 0).toBe(valid);
     });
   });
+
+  describe('goals, rest days, streaks, and recovery', () => {
+    it.each([
+      ['goal.dailyDefaultMinutes', 30, true],
+      ['goal.dailyDefaultMinutes', 0, false],
+      ['restDay.maxPerWeek', 0, true],
+      ['restDay.maxPerWeek', 7, true],
+      ['restDay.maxPerWeek', 8, false],
+      ['restDay.allowSameDay', false, true],
+      ['restDay.allowSameDay', 'yes', false],
+      ['streak.milestones', [3, 7, 14, 30, 60, 100], true],
+      ['streak.milestones', [7, 3], false],
+      ['streak.milestones', [0, 3], false],
+      ['recovery.mechanics', { nextDaySession: { minPreviousStreak: 3 } }, true],
+      ['recovery.mechanics', { nextDaySession: { minPreviousStreak: 0 } }, false],
+      ['recovery.mechanics', { token: {} }, false],
+      ['recovery.limit', { perMonth: 1 }, true],
+      ['recovery.limit', { perMonth: 0 }, true],
+      ['recovery.limit', { perMonth: -1 }, false],
+      ['vitality.goalConsistency', { windowDays: 4, metDaysRequired: 3 }, true],
+      ['vitality.goalConsistency', { windowDays: 4, metDaysRequired: 4 }, true],
+      ['vitality.goalConsistency', { windowDays: 4, metDaysRequired: 5 }, false],
+      ['vitality.goalConsistency', { windowDays: 0, metDaysRequired: 0 }, false],
+    ])('%s: %j', (key, value, valid) => {
+      expect(problemsWith({ [key]: value }).length === 0).toBe(valid);
+    });
+  });
 });
