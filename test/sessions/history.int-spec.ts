@@ -10,6 +10,7 @@ import { Clock, FixedClock } from '../../src/common/clock.js';
 import { PasswordHasher } from '../../src/identity/password-hasher.js';
 import { ProductConfigService } from '../../src/product-config/product-config.service.js';
 import { listenOnLoopback } from '../support/loopback-http.js';
+import { configValues } from '../support/product-config-values.js';
 
 interface TopicSummary {
   id: string;
@@ -59,10 +60,7 @@ describe('focus history (HTTP + PostgreSQL)', () => {
 
   beforeEach(async () => {
     const config = app.get(ProductConfigService);
-    const version = await config.createVersion(
-      { 'session.minValidMinutes': 5, 'session.maxPauseMinutes': 30 },
-      'test',
-    );
+    const version = await config.createVersion(configValues(), 'test');
     await config.activate(version.version);
   });
 

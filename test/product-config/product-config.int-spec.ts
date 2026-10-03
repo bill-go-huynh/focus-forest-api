@@ -7,6 +7,7 @@ import { ProductConfigRepository } from '../../src/product-config/product-config
 import { ProductConfigService } from '../../src/product-config/product-config.service.js';
 import { PrismaService } from '../../src/prisma/prisma.service.js';
 import { createTestPrismaClient, migrateFreshTestDatabase } from '../database/test-database.js';
+import { CURRENT_CONFIG_VALUES, SESSION_CONFIG_VALUES } from '../support/product-config-values.js';
 
 const testRegistry = {
   'test.minutes': { description: 'A number of minutes', type: integer({ min: 1 }) },
@@ -30,7 +31,7 @@ describe('product configuration (PostgreSQL)', () => {
     await close();
   });
 
-  it('keeps the initial empty version 1 and activates the Phase 2 session rules', async () => {
+  it('keeps every earlier version and activates the Phase 3 tree rules as version 3', async () => {
     await migrateFreshTestDatabase();
     const seeded = createTestPrismaClient();
     try {
@@ -45,10 +46,23 @@ describe('product configuration (PostgreSQL)', () => {
       expect(initial.values).toEqual({});
       expect(initial.note).toMatch(/initial/i);
 
+      const phase2 = await seeded.productConfigVersion.findUniqueOrThrow({
+        where: { version: 2 },
+      });
+      expect(phase2.values).toEqual(SESSION_CONFIG_VALUES);
+
       const config = await productionService.active();
-      expect(config.version).toBe(2);
-      expect(config.get('session.minValidMinutes')).toBe(5);
-      expect(config.get('session.maxPauseMinutes')).toBe(30);
+      expect(config.version).toBe(3);
+      const stored = await seeded.productConfigVersion.findUniqueOrThrow({
+        where: { version: 3 },
+      });
+      expect(stored.values).toEqual(CURRENT_CONFIG_VALUES);
+      expect(stored.note).toMatch(/phase 3/i);
+      for (const key of Object.keys(
+        CURRENT_CONFIG_VALUES,
+      ) as (keyof typeof CURRENT_CONFIG_VALUES)[]) {
+        expect(config.get(key)).toEqual(CURRENT_CONFIG_VALUES[key]);
+      }
       // The active version is complete for the registry, so activating it again is accepted.
       await expect(productionService.activate(config.version)).resolves.toBeUndefined();
     } finally {

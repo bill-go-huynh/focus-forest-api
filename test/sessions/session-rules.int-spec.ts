@@ -8,6 +8,7 @@ import { configureApp } from '../../src/app.setup.js';
 import { PasswordHasher } from '../../src/identity/password-hasher.js';
 import { ProductConfigService } from '../../src/product-config/product-config.service.js';
 import { listenOnLoopback } from '../support/loopback-http.js';
+import { configValues } from '../support/product-config-values.js';
 
 describe('session rules (HTTP + PostgreSQL)', () => {
   let app: INestApplication<App>;
@@ -42,7 +43,10 @@ describe('session rules (HTTP + PostgreSQL)', () => {
   // Every test starts with empty tables, so each one activates the version it needs.
   async function activate(minValidMinutes: number, maxPauseMinutes: number): Promise<number> {
     const created = await config.createVersion(
-      { 'session.minValidMinutes': minValidMinutes, 'session.maxPauseMinutes': maxPauseMinutes },
+      configValues({
+        'session.minValidMinutes': minValidMinutes,
+        'session.maxPauseMinutes': maxPauseMinutes,
+      }),
       'test',
     );
     await config.activate(created.version);

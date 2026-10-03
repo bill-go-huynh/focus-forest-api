@@ -11,6 +11,7 @@ import { PasswordHasher } from '../../src/identity/password-hasher.js';
 import { PrismaService } from '../../src/prisma/prisma.service.js';
 import { ProductConfigService } from '../../src/product-config/product-config.service.js';
 import { listenOnLoopback } from '../support/loopback-http.js';
+import { configValues } from '../support/product-config-values.js';
 
 interface ListedTopic {
   id: string;
@@ -46,10 +47,7 @@ describe('recent topics (HTTP + PostgreSQL)', () => {
 
   beforeEach(async () => {
     const config = app.get(ProductConfigService);
-    const version = await config.createVersion(
-      { 'session.minValidMinutes': 5, 'session.maxPauseMinutes': 30 },
-      'test',
-    );
+    const version = await config.createVersion(configValues(), 'test');
     await config.activate(version.version);
   });
 

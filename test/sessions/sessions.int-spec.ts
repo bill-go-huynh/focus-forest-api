@@ -12,6 +12,7 @@ import { PrismaService } from '../../src/prisma/prisma.service.js';
 import { ProductConfigService } from '../../src/product-config/product-config.service.js';
 import { evaluateSession } from '../../src/sessions/evaluation/evaluate-session.js';
 import { listenOnLoopback } from '../support/loopback-http.js';
+import { configValues } from '../support/product-config-values.js';
 
 interface SessionBody {
   id: string;
@@ -74,7 +75,10 @@ describe('focus sessions (HTTP + PostgreSQL)', () => {
 
   async function activateRules(minValidMinutes: number, maxPauseMinutes: number) {
     const created = await config.createVersion(
-      { 'session.minValidMinutes': minValidMinutes, 'session.maxPauseMinutes': maxPauseMinutes },
+      configValues({
+        'session.minValidMinutes': minValidMinutes,
+        'session.maxPauseMinutes': maxPauseMinutes,
+      }),
       'test',
     );
     await config.activate(created.version);

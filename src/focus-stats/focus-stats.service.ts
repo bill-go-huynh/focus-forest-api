@@ -1,0 +1,67 @@
+import { Injectable } from '@nestjs/common';
+
+import type { LocalDate } from '../common/local-date.js';
+import { PrismaService } from '../prisma/prisma.service.js';
+import type { MonthRef } from '../sessions/attribution/calendar.js';
+import { sortTopics, type DayFocus, type TopicFocus } from './focus-stats.js';
+
+/**
+ * Per-day and per-topic totals of counted sessions, aggregated by PostgreSQL from
+ * focus_sessions. There are no aggregate tables: the sessions are the source.
+ */
+@Injectable()
+export class FocusStatsService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  /** Counted focus per stored local date, for the sessions attributed to one month. */
+  async monthDays(userId: string, month: MonthRef): Promise<DayFocus[]> {
+    return this.days({ userId, year: month.year, month: month.month });
+  }
+
+  /** Counted focus per stored local date in [from, to], whatever month the sessions belong to. */
+  async daysBetween(userId: string, from: LocalDate, to: LocalDate): Promise<DayFocus[]> {
+    return this.days({ userId, localDate: { gte: asDbDate(from), lte: asDbDate(to) } });
+  }
+
+  /** Counted focus per topic for the sessions attributed to one month, largest first. */
+  async monthTopics(userId: string, month: MonthRef): Promise<TopicFocus[]> {
+    const rows = await this.prisma.focusSession.groupBy({
+      by: ['topicId'],
+      where: { userId, year: month.year, month: month.month, status: { not: 'discarded' } },
+      _sum: { focusedMilliseconds: true },
+      _count: { _all: true },
+    });
+    return sortTopics(
+      rows.map((row) => ({
+        topicId: row.topicId,
+        focusedMilliseconds: row._sum.focusedMilliseconds ?? 0,
+        sessionCount: row._count._all,
+      })),
+    );
+  }
+
+  private async days(where: {
+    userId: string;
+    year?: number;
+    month?: number;
+    localDate?: { gte: Date; lte: Date };
+  }): Promise<DayFocus[]> {
+    const rows = await this.prisma.focusSession.groupBy({
+      by: ['localDate'],
+      where: { ...where, status: { not: 'discarded' } },
+      _sum: { focusedMilliseconds: true },
+      _count: { _all: true },
+      orderBy: { localDate: 'asc' },
+    });
+    return rows.map((row) => ({
+      date: row.localDate.toISOString().slice(0, 10),
+      focusedMilliseconds: row._sum.focusedMilliseconds ?? 0,
+      sessionCount: row._count._all,
+    }));
+  }
+}
+
+/** A DATE column value: midnight UTC of the calendar date. */
+function asDbDate(date: LocalDate): Date {
+  return new Date(`${date}T00:00:00.000Z`);
+}
