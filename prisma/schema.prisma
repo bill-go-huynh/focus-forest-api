@@ -21,7 +21,8 @@ model ProductConfigVersion {
   note      String
   createdAt DateTime @default(now()) @map("created_at")
 
-  active ActiveProductConfig?
+  active       ActiveProductConfig?
+  monthlyTrees MonthlyTree[]
 
   @@map("product_config_versions")
 }
@@ -218,6 +219,7 @@ model MonthAttributionContext {
 
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   focusSessions FocusSession[]
+  tree          MonthlyTree?
 
   @@id([userId, year, month])
   @@index([userId, startsAt])
@@ -263,6 +265,10 @@ model FocusSession {
   configVersion       Int                @map("config_version")
   /// Personal data: keep out of logs. Written by the note endpoint only.
   note                String?
+  /// What this session did to its month's tree (GrowthResultDto), written once in the same
+  /// transaction as the session and returned unchanged on every replay. Null for sessions
+  /// stored before Phase 3.
+  growthResult        Json?              @map("growth_result")
   createdAt           DateTime           @default(now()) @map("created_at")
   updatedAt           DateTime           @updatedAt @map("updated_at")
 
@@ -354,4 +360,72 @@ model StreakRecovery {
 
   @@id([userId, missedDate])
   @@map("streak_recoveries")
+}
+
+enum MonthlyTreeStatus {
+  growing
+  archived
+
+  @@map("monthly_tree_status")
+}
+
+enum TreeStage {
+  seed
+  sprout
+  young_tree
+  growing_tree
+  mature_tree
+  blooming_tree
+  final_form
+
+  @@map("tree_stage")
+}
+
+/// The one tree of one user's month (docs/06_DOMAIN_MODEL.md → MonthlyTree, TreeProgress).
+/// Its identity is its month attribution context, so the two can never disagree. It stores only
+/// what was earned (the permanent maxima) and what keeps it reproducible; growth amounts and
+/// vitality are derived from sessions. Earned state changes only when a session is submitted.
+model MonthlyTree {
+  userId               String            @map("user_id") @db.Uuid
+  year                 Int
+  month                Int
+  status               MonthlyTreeStatus @default(growing)
+  species              String
+  /// Unsigned 32-bit (src/trees/variation-seed.ts).
+  variationSeed        BigInt            @map("variation_seed")
+  /// The configuration version this month's structural progression uses, fixed at creation.
+  configVersion        Int               @map("config_version")
+  /// The user's join date in the month's time zone, and the first-month factor it gave.
+  joinedOn             DateTime          @map("joined_on") @db.Date
+  prorationNumerator   Int               @map("proration_numerator")
+  prorationDenominator Int               @map("proration_denominator")
+  stage                TreeStage         @default(seed)
+  fullnessLevel        Int               @default(0) @map("fullness_level")
+  blossomLevel         Int               @default(0) @map("blossom_level")
+  richnessTier         Int               @default(0) @map("richness_tier")
+  createdAt            DateTime          @default(now()) @map("created_at")
+  updatedAt            DateTime          @updatedAt @map("updated_at")
+
+  monthContext MonthAttributionContext @relation(fields: [userId, year, month], references: [userId, year, month], onDelete: Cascade)
+  config       ProductConfigVersion    @relation(fields: [configVersion], references: [version], onDelete: Restrict)
+  traits       MonthlyTreeTrait[]
+
+  @@id([userId, year, month])
+  @@map("monthly_trees")
+}
+
+/// A milestone trait earned on one month's tree, by stable identifier. Never removed.
+model MonthlyTreeTrait {
+  userId    String   @map("user_id") @db.Uuid
+  year      Int
+  month     Int
+  traitId   String   @map("trait_id")
+  earnedAt  DateTime @map("earned_at")
+  /// The session whose submission earned it.
+  sessionId String?  @map("session_id") @db.Uuid
+
+  tree MonthlyTree @relation(fields: [userId, year, month], references: [userId, year, month], onDelete: Cascade)
+
+  @@id([userId, year, month, traitId])
+  @@map("monthly_tree_traits")
 }

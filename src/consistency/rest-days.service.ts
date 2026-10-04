@@ -80,8 +80,11 @@ export class RestDaysService {
   }
 
   /** Every planned rest day of the user (for the streak and vitality). */
-  async allDates(userId: string): Promise<LocalDate[]> {
-    const rows = await this.prisma.restDay.findMany({
+  async allDates(
+    userId: string,
+    client: Prisma.TransactionClient = this.prisma,
+  ): Promise<LocalDate[]> {
+    const rows = await client.restDay.findMany({
       where: { userId },
       orderBy: { date: 'asc' },
     });

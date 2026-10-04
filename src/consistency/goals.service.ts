@@ -147,23 +147,28 @@ export class GoalsService {
    * Goals met in a calendar month, each judged by the goal in effect then (the tree's blossom
    * input, used by A3.3). Weeks count in the month of the day their target was reached.
    */
-  async monthCompletions(userId: string, month: MonthRef): Promise<MonthGoalCompletions> {
+  async monthCompletions(
+    userId: string,
+    month: MonthRef,
+    client: Client = this.prisma,
+  ): Promise<MonthGoalCompletions> {
     const from = weekStartOf(firstDateOfMonth(month));
     const to = addDays(weekStartOf(lastDateOfMonth(month)), 6);
-    const [days, daily, weekly] = await Promise.all([
-      this.stats.daysBetween(userId, from, to),
-      dailyVersions(this.prisma, userId),
-      weeklyVersions(this.prisma, userId),
-    ]);
+    const days = await this.stats.daysBetween(userId, from, to, client);
+    const daily = await dailyVersions(client, userId);
+    const weekly = await weeklyVersions(client, userId);
     return monthGoalCompletions({ month, days, dailyVersions: daily, weeklyVersions: weekly });
   }
 
   /** Dates in [from, to] whose daily goal was met (vitality's goal input). */
-  async metDates(userId: string, from: LocalDate, to: LocalDate): Promise<LocalDate[]> {
-    const [days, daily] = await Promise.all([
-      this.stats.daysBetween(userId, from, to),
-      dailyVersions(this.prisma, userId),
-    ]);
+  async metDates(
+    userId: string,
+    from: LocalDate,
+    to: LocalDate,
+    client: Client = this.prisma,
+  ): Promise<LocalDate[]> {
+    const days = await this.stats.daysBetween(userId, from, to, client);
+    const daily = await dailyVersions(client, userId);
     return goalMetDates(days, daily);
   }
 

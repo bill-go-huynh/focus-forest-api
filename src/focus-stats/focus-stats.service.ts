@@ -1,36 +1,53 @@
 import { Injectable } from '@nestjs/common';
 
 import type { LocalDate } from '../common/local-date.js';
+import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { MonthRef } from '../sessions/attribution/calendar.js';
 import { sortTopics, type DayFocus, type TopicFocus } from './focus-stats.js';
 
+type Client = Prisma.TransactionClient;
+
 /**
  * Per-day and per-topic totals of counted sessions, aggregated by PostgreSQL from
- * focus_sessions. There are no aggregate tables: the sessions are the source.
+ * focus_sessions. There are no aggregate tables: the sessions are the source. Pass a
+ * transaction client to include rows written earlier in that transaction.
  */
 @Injectable()
 export class FocusStatsService {
   constructor(private readonly prisma: PrismaService) {}
 
   /** Counted focus per stored local date, for the sessions attributed to one month. */
-  async monthDays(userId: string, month: MonthRef): Promise<DayFocus[]> {
-    return this.days({ userId, year: month.year, month: month.month });
+  async monthDays(
+    userId: string,
+    month: MonthRef,
+    client: Client = this.prisma,
+  ): Promise<DayFocus[]> {
+    return this.days(client, { userId, year: month.year, month: month.month });
   }
 
   /** Counted focus per stored local date in [from, to], whatever month the sessions belong to. */
-  async daysBetween(userId: string, from: LocalDate, to: LocalDate): Promise<DayFocus[]> {
-    return this.days({ userId, localDate: { gte: asDbDate(from), lte: asDbDate(to) } });
+  async daysBetween(
+    userId: string,
+    from: LocalDate,
+    to: LocalDate,
+    client: Client = this.prisma,
+  ): Promise<DayFocus[]> {
+    return this.days(client, { userId, localDate: { gte: asDbDate(from), lte: asDbDate(to) } });
   }
 
   /** Counted focus per stored local date, over the user's whole history. */
-  async allDays(userId: string): Promise<DayFocus[]> {
-    return this.days({ userId });
+  async allDays(userId: string, client: Client = this.prisma): Promise<DayFocus[]> {
+    return this.days(client, { userId });
   }
 
   /** Counted focus per topic for the sessions attributed to one month, largest first. */
-  async monthTopics(userId: string, month: MonthRef): Promise<TopicFocus[]> {
-    const rows = await this.prisma.focusSession.groupBy({
+  async monthTopics(
+    userId: string,
+    month: MonthRef,
+    client: Client = this.prisma,
+  ): Promise<TopicFocus[]> {
+    const rows = await client.focusSession.groupBy({
       by: ['topicId'],
       where: { userId, year: month.year, month: month.month, status: { not: 'discarded' } },
       _sum: { focusedMilliseconds: true },
@@ -45,13 +62,16 @@ export class FocusStatsService {
     );
   }
 
-  private async days(where: {
-    userId: string;
-    year?: number;
-    month?: number;
-    localDate?: { gte: Date; lte: Date };
-  }): Promise<DayFocus[]> {
-    const rows = await this.prisma.focusSession.groupBy({
+  private async days(
+    client: Client,
+    where: {
+      userId: string;
+      year?: number;
+      month?: number;
+      localDate?: { gte: Date; lte: Date };
+    },
+  ): Promise<DayFocus[]> {
+    const rows = await client.focusSession.groupBy({
       by: ['localDate'],
       where: { ...where, status: { not: 'discarded' } },
       _sum: { focusedMilliseconds: true },

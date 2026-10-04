@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { addDays, type LocalDate } from '../common/local-date.js';
 import { FocusStatsService } from '../focus-stats/focus-stats.service.js';
+import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ProductConfigService } from '../product-config/product-config.service.js';
 import { vitalityRulesFrom } from '../trees/growth-rules.js';
@@ -27,6 +28,8 @@ const INELIGIBLE: Record<RecoveryIneligibility, string> = {
   monthly_limit_reached: 'This month’s streak recovery is already used.',
 };
 
+type Client = Prisma.TransactionClient;
+
 /** The streak, its milestones, and the streak recovery the user can accept. */
 @Injectable()
 export class StreakService {
@@ -40,12 +43,10 @@ export class StreakService {
   ) {}
 
   /** Counted focus, planned rest, and recoveries: everything the streak is derived from. */
-  async history(userId: string): Promise<ActivityHistory> {
-    const [days, restDates, recoveries] = await Promise.all([
-      this.stats.allDays(userId),
-      this.restDays.allDates(userId),
-      this.prisma.streakRecovery.findMany({ where: { userId } }),
-    ]);
+  async history(userId: string, client: Client = this.prisma): Promise<ActivityHistory> {
+    const days = await this.stats.allDays(userId, client);
+    const restDates = await this.restDays.allDates(userId, client);
+    const recoveries = await client.streakRecovery.findMany({ where: { userId } });
     return {
       activeDates: days.map((day) => day.date),
       restDates,
@@ -106,12 +107,19 @@ export class StreakService {
    * Vitality's input for `today`: real focus, planned rest, and the daily goals met in the goal
    * window. Recovered days are left out (used by the tree, A3.3).
    */
-  async vitalityInput(userId: string, today: LocalDate): Promise<VitalityInput> {
+  async vitalityInput(
+    userId: string,
+    today: LocalDate,
+    client: Client = this.prisma,
+  ): Promise<VitalityInput> {
     const { goalWindowDays } = vitalityRulesFrom(await this.config.active());
-    const [history, goalMet] = await Promise.all([
-      this.history(userId),
-      this.goals.metDates(userId, addDays(today, -(goalWindowDays - 1)), today),
-    ]);
+    const history = await this.history(userId, client);
+    const goalMet = await this.goals.metDates(
+      userId,
+      addDays(today, -(goalWindowDays - 1)),
+      today,
+      client,
+    );
     return vitalityInputFor(today, history, goalMet);
   }
 

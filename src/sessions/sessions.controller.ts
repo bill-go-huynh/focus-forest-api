@@ -19,7 +19,7 @@ import {
   type HistoryPage,
   type SessionResponse,
 } from './dto/session.dto.js';
-import { SessionsService } from './sessions.service.js';
+import { SessionsService, type SubmittedSessionResponse } from './sessions.service.js';
 
 // Always the signed-in user's own sessions.
 @Controller('me/sessions')
@@ -42,7 +42,7 @@ export class SessionsController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: SubmitSessionDto,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<SessionResponse> {
+  ): Promise<SubmittedSessionResponse> {
     const { session, created } = await this.sessions.submit(user.userId, id, body);
     res.status(created ? 201 : 200);
     return session;

@@ -10,6 +10,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
 import { ProductConfigModule } from './product-config/product-config.module.js';
 import { SessionsModule } from './sessions/sessions.module.js';
 import { TopicsModule } from './topics/topics.module.js';
+import { TreesModule } from './trees/trees.module.js';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { TopicsModule } from './topics/topics.module.js';
     TopicsModule,
     SessionsModule,
     ConsistencyModule,
+    TreesModule,
   ],
   controllers: [HealthController],
 })

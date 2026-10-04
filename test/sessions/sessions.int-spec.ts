@@ -155,6 +155,8 @@ describe('focus sessions (HTTP + PostgreSQL)', () => {
         month: 9,
         note: null,
         createdAt: expect.any(String) as string,
+        // Phase 3 adds the tree's growth result; every Phase 2 field above is unchanged.
+        growth: expect.objectContaining({ counted: true, monthClosed: false }) as unknown,
       });
       const row = await prisma.focusSession.findFirstOrThrow();
       expect(row.configVersion).toBe(configVersion);

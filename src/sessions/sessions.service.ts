@@ -9,6 +9,9 @@ import { Clock } from '../common/clock.js';
 import { Prisma, type FocusSession } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ProductConfigService } from '../product-config/product-config.service.js';
+import { parseGrowthResult } from '../trees/growth-result.js';
+import { MonthlyTreesService } from '../trees/monthly-trees.service.js';
+import type { GrowthResultDto } from '../trees/tree.contracts.js';
 import { MonthAttributionService } from './attribution/month-attribution.service.js';
 import { TimezoneRequiredError } from './attribution/month-context.js';
 import {
@@ -34,8 +37,14 @@ const REJECTION_MESSAGES: Record<SessionRejectionReason, string> = {
   pauses_overlap: 'Pauses overlap.',
 };
 
+/** The answer to a submission: the session and what it did to its month's tree. */
+export interface SubmittedSessionResponse extends SessionResponse {
+  /** Stored with the session and returned unchanged on replays; null before Phase 3. */
+  growth: GrowthResultDto | null;
+}
+
 export interface SubmitResult {
-  session: SessionResponse;
+  session: SubmittedSessionResponse;
   created: boolean;
 }
 
@@ -45,6 +54,7 @@ export class SessionsService {
     private readonly prisma: PrismaService,
     private readonly config: ProductConfigService,
     private readonly attribution: MonthAttributionService,
+    private readonly trees: MonthlyTreesService,
     private readonly clock: Clock,
   ) {}
 
@@ -117,7 +127,13 @@ export class SessionsService {
             configVersion: config.version,
           },
         });
-        return { session: toResponse(row), created: true };
+        // The tree grows from the stored sessions, this one included, in the same transaction.
+        const growth = await this.trees.applySession(tx, userId, row);
+        const stored = await tx.focusSession.update({
+          where: { userId_id: { userId, id } },
+          data: { growthResult: growth as unknown as Prisma.InputJsonValue },
+        });
+        return { session: toSubmittedResponse(stored), created: true };
       });
     } catch (error) {
       if (error instanceof TimezoneRequiredError) throw unprocessable(error.code, error.message);
@@ -189,11 +205,19 @@ function findSession(client: Client, userId: string, id: string): Promise<FocusS
   return client.focusSession.findUnique({ where: { userId_id: { userId, id } } });
 }
 
-function replay(row: FocusSession, submission: CanonicalSubmission): SessionResponse {
+/** A replay answers with what was stored, the growth result included: nothing is recomputed. */
+function replay(row: FocusSession, submission: CanonicalSubmission): SubmittedSessionResponse {
   if (submissionKey(storedSubmission(row)) !== submissionKey(submission)) {
     throw conflict('session_id_conflict', 'A different session was already saved with this id.');
   }
-  return toResponse(row);
+  return toSubmittedResponse(row);
+}
+
+function toSubmittedResponse(row: FocusSession): SubmittedSessionResponse {
+  return {
+    ...toResponse(row),
+    growth: row.growthResult === null ? null : parseGrowthResult(row.growthResult),
+  };
 }
 
 function storedSubmission(row: FocusSession): CanonicalSubmission {

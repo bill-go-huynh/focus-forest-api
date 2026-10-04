@@ -7,5 +7,6 @@ import { TopicsService } from './topics.service.js';
 @Module({
   controllers: [TopicsController],
   providers: [TopicsService],
+  exports: [TopicsService],
 })
 export class TopicsModule {}

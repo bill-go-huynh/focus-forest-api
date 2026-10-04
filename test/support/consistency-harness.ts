@@ -62,7 +62,15 @@ export class ConsistencyHarness {
     return request(this.url);
   }
 
-  async signUp(email: string, timezone: string | null = 'UTC') {
+  /**
+   * `joinedAt` replaces the join date (users.created_at, set by the database clock, not the
+   * test clock), so first-month proration is deterministic.
+   */
+  async signUp(
+    email: string,
+    timezone: string | null = 'UTC',
+    joinedAt = '2026-01-01T00:00:00.000Z',
+  ) {
     const res = await this.http()
       .post('/auth/sign-up')
       .send({ email, password: 'correct horse battery staple' })
@@ -71,6 +79,10 @@ export class ConsistencyHarness {
     const auth: Record<string, string> = { Authorization: `Bearer ${body.accessToken}` };
     this.users.push({ email, auth });
     if (timezone) await this.http().patch('/me/profile').set(auth).send({ timezone }).expect(200);
+    await this.prisma.user.update({
+      where: { id: body.user.id },
+      data: { createdAt: new Date(joinedAt) },
+    });
     const topic = await this.prisma.topic.create({
       data: {
         id: randomUUID(),
@@ -125,6 +137,29 @@ export class ConsistencyHarness {
         },
       });
     }
+  }
+
+  /**
+   * Submits a session through PUT /me/sessions/:id, as the app does: `minutes` of focus from
+   * `startedAt`, without pauses. Returns the response; the clock must be past the end.
+   */
+  submit(
+    user: { auth: Record<string, string>; topicId: string },
+    startedAt: string,
+    minutes: number,
+    id: string = randomUUID(),
+  ) {
+    const start = new Date(startedAt);
+    return this.http()
+      .put(`/me/sessions/${id}`)
+      .set(user.auth)
+      .send({
+        topicId: user.topicId,
+        startedAt: start.toISOString(),
+        endedAt: new Date(start.getTime() + minutes * MIN).toISOString(),
+        plannedMinutes: Math.max(1, Math.ceil(minutes)),
+        pauseIntervals: [],
+      });
   }
 
   /** Moves the clock to 12:00 UTC on a date. */

@@ -96,9 +96,12 @@ describe('Phase 2 API contract across modules (HTTP + PostgreSQL)', () => {
     const [archived] = await topics(token, '?status=archived&sort=recent');
 
     expect(replay).toStrictEqual(created);
+    // History items carry the session fields; the growth result is only in the submit answer.
+    const { growth, ...sessionFields } = created as Body & { growth?: unknown };
+    expect(growth).toMatchObject({ counted: true });
     expect(page.items).toStrictEqual([
       {
-        ...created,
+        ...sessionFields,
         topic: { id: topicId, name: 'Reading', icon: 'book', color: 'topic.1', status: 'archived' },
       },
     ]);
