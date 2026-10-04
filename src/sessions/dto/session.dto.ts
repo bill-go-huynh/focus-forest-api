@@ -152,5 +152,7 @@ export interface SessionResponse {
   year: number;
   month: number;
   note: string | null;
+  /** Shown in the month's Tree Details and recap (A3.4). Only with a note. */
+  noteHighlighted: boolean;
   createdAt: string;
 }

@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
@@ -56,5 +57,23 @@ export class SessionsController {
     @Body() body: UpdateNoteDto,
   ): Promise<SessionResponse> {
     return this.sessions.updateNote(user.userId, id, body.note);
+  }
+
+  /** Highlights the note for the month's Tree Details and recap. Idempotent. */
+  @Put(':id/note/highlight')
+  highlightNote(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<SessionResponse> {
+    return this.sessions.setNoteHighlight(user.userId, id, true);
+  }
+
+  /** Removes the highlight. Idempotent. */
+  @Delete(':id/note/highlight')
+  unhighlightNote(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<SessionResponse> {
+    return this.sessions.setNoteHighlight(user.userId, id, false);
   }
 }

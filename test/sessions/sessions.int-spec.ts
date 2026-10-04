@@ -154,6 +154,7 @@ describe('focus sessions (HTTP + PostgreSQL)', () => {
         year: 2026,
         month: 9,
         note: null,
+        noteHighlighted: false, // A3.4
         createdAt: expect.any(String) as string,
         // Phase 3 adds the tree's growth result; every Phase 2 field above is unchanged.
         growth: expect.objectContaining({ counted: true, monthClosed: false }) as unknown,

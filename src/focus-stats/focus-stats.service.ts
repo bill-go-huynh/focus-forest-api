@@ -41,6 +41,32 @@ export class FocusStatsService {
     return this.days(client, { userId });
   }
 
+  /** The longest counted session of each stored local date (personal records). */
+  async longestSessionsByDay(
+    userId: string,
+    client: Client = this.prisma,
+  ): Promise<{ date: LocalDate; focusedMilliseconds: number }[]> {
+    const rows = await client.focusSession.groupBy({
+      by: ['localDate'],
+      where: { userId, status: { not: 'discarded' } },
+      _max: { focusedMilliseconds: true },
+      orderBy: { localDate: 'asc' },
+    });
+    return rows.map((row) => ({
+      date: row.localDate.toISOString().slice(0, 10),
+      focusedMilliseconds: row._max.focusedMilliseconds ?? 0,
+    }));
+  }
+
+  /** Counted focus over the user's whole history, late sessions included (the forest header). */
+  async lifetimeMilliseconds(userId: string, client: Client = this.prisma): Promise<number> {
+    const total = await client.focusSession.aggregate({
+      where: { userId, status: { not: 'discarded' } },
+      _sum: { focusedMilliseconds: true },
+    });
+    return total._sum.focusedMilliseconds ?? 0;
+  }
+
   /** Counted focus per topic for the sessions attributed to one month, largest first. */
   async monthTopics(
     userId: string,

@@ -8,6 +8,7 @@ import { ProductConfigService } from '../../src/product-config/product-config.se
 import { PrismaService } from '../../src/prisma/prisma.service.js';
 import { createTestPrismaClient, migrateFreshTestDatabase } from '../database/test-database.js';
 import {
+  CONSISTENCY_CONFIG_VALUES,
   CURRENT_CONFIG_VALUES,
   SESSION_CONFIG_VALUES,
   TREE_CONFIG_VALUES,
@@ -35,7 +36,7 @@ describe('product configuration (PostgreSQL)', () => {
     await close();
   });
 
-  it('keeps every earlier version and activates the Phase 3 consistency rules as version 4', async () => {
+  it('keeps every earlier version and activates the Phase 3 month-closure rules as version 5', async () => {
     await migrateFreshTestDatabase();
     const seeded = createTestPrismaClient();
     try {
@@ -60,10 +61,19 @@ describe('product configuration (PostgreSQL)', () => {
       });
       expect(tree.values).toEqual({ ...SESSION_CONFIG_VALUES, ...TREE_CONFIG_VALUES });
 
-      const config = await productionService.active();
-      expect(config.version).toBe(4);
-      const stored = await seeded.productConfigVersion.findUniqueOrThrow({
+      const consistency = await seeded.productConfigVersion.findUniqueOrThrow({
         where: { version: 4 },
+      });
+      expect(consistency.values).toEqual({
+        ...SESSION_CONFIG_VALUES,
+        ...TREE_CONFIG_VALUES,
+        ...CONSISTENCY_CONFIG_VALUES,
+      });
+
+      const config = await productionService.active();
+      expect(config.version).toBe(5);
+      const stored = await seeded.productConfigVersion.findUniqueOrThrow({
+        where: { version: 5 },
       });
       expect(stored.values).toEqual(CURRENT_CONFIG_VALUES);
       expect(stored.note).toMatch(/phase 3/i);

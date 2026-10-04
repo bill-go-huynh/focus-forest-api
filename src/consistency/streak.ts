@@ -90,6 +90,19 @@ function longestRun(days: Days, today: LocalDate): number {
   return longest;
 }
 
+/**
+ * Every day from the first known day to `until`, with the active-day count of the run on that
+ * day (records and month highlights). A missed `until` does not reset the count, like today.
+ */
+export function streakRunDays(
+  history: ActivityHistory,
+  until: LocalDate,
+): { date: LocalDate; count: number }[] {
+  const days: { date: LocalDate; count: number }[] = [];
+  forEachRunDay(new Days(history), until, (count, date) => days.push({ date, count }));
+  return days;
+}
+
 /** Calls `visit` for every day from the first to today with the run's active count so far. */
 function forEachRunDay(
   days: Days,

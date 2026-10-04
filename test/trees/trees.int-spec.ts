@@ -39,6 +39,7 @@ const PHASE2_FIELDS = [
   'localDate',
   'month',
   'note',
+  'noteHighlighted', // A3.4
   'pausedMilliseconds',
   'plannedMinutes',
   'startedAt',
@@ -524,6 +525,7 @@ describe('monthly tree and session growth (HTTP + PostgreSQL)', () => {
     });
     expect(Object.keys(res.body as object).sort()).toEqual([
       'goals',
+      'pendingCeremony',
       'recentTopics',
       'rest',
       'streak',
@@ -628,12 +630,12 @@ describe('monthly tree and session growth (HTTP + PostgreSQL)', () => {
     it('never reconciles an archived tree', async () => {
       const ada = await t.signUp('ada@example.com');
       await submitted(ada, '2026-10-07T10:00:00.000Z', 40);
-      await t.prisma.monthlyTree.update({
-        where: { userId_year_month: { userId: ada.userId, year: 2026, month: 10 } },
-        data: { status: 'archived' },
-      });
+      await t.setNow('2026-11-02T10:00:00.000Z');
+      await t.http().get('/me/home').set(ada.auth).expect(200); // archives October
       const before = await treeRow(ada);
-      await t.http().put('/me/goals/daily').set(ada.auth).send({ minutes: 30 }).expect(200);
+      expect(before.status).toBe('archived');
+      // October's stored truth changes after its archive: a late session.
+      await t.submit(ada, '2026-10-20T10:00:00.000Z', 600).expect(201);
       await t.http().get('/me/trees/current').set(ada.auth).expect(200);
       await t.http().get('/me/home').set(ada.auth).expect(200);
       expect(await treeRow(ada)).toEqual(before);

@@ -9,7 +9,9 @@ import { Clock } from '../common/clock.js';
 import { Prisma, type FocusSession } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ProductConfigService } from '../product-config/product-config.service.js';
-import { parseGrowthResult } from '../trees/growth-result.js';
+import { isCounted } from '../focus-stats/focus-stats.js';
+import { closedMonthGrowth, parseGrowthResult } from '../trees/growth-result.js';
+import { MonthClosureService } from '../trees/month-closure.service.js';
 import { MonthlyTreesService } from '../trees/monthly-trees.service.js';
 import type { GrowthResultDto } from '../trees/tree.contracts.js';
 import { MonthAttributionService } from './attribution/month-attribution.service.js';
@@ -37,6 +39,9 @@ const REJECTION_MESSAGES: Record<SessionRejectionReason, string> = {
   pauses_overlap: 'Pauses overlap.',
 };
 
+/** Submission recomputes the month's tree in its transaction (A3.3): allow more than 5 s. */
+const HEAVY_TRANSACTION = { timeout: 15_000 };
+
 /** The answer to a submission: the session and what it did to its month's tree. */
 export interface SubmittedSessionResponse extends SessionResponse {
   /** Stored with the session and returned unchanged on replays; null before Phase 3. */
@@ -55,6 +60,7 @@ export class SessionsService {
     private readonly config: ProductConfigService,
     private readonly attribution: MonthAttributionService,
     private readonly trees: MonthlyTreesService,
+    private readonly closure: MonthClosureService,
     private readonly clock: Clock,
   ) {}
 
@@ -81,6 +87,8 @@ export class SessionsService {
     if (evaluation.kind === 'rejected') {
       throw unprocessable(evaluation.reason, REJECTION_MESSAGES[evaluation.reason]);
     }
+    // Ended months close first, each in its own transaction, so a late session never grows one.
+    await this.closure.closeEndedMonths(userId);
 
     try {
       return await this.prisma.$transaction(async (tx) => {
@@ -98,6 +106,8 @@ export class SessionsService {
         if (!topic) throw new NotFoundException('Topic not found.');
 
         const attribution = await this.attribution.attribute(userId, submission.startedAt, tx);
+        // A context just created for an old month (an offline session) may already be due.
+        await this.closure.closeEndedMonthsIn(tx, userId);
 
         if (
           await overlapsStoredSession(tx, userId, submission.startedAt, evaluation.effectiveEnd)
@@ -128,13 +138,17 @@ export class SessionsService {
           },
         });
         // The tree grows from the stored sessions, this one included, in the same transaction.
-        const growth = await this.trees.applySession(tx, userId, row);
+        // A late session of a closed month is kept for history and statistics, but its archived
+        // tree and recap never change.
+        const growth = (await this.closure.isClosed(tx, userId, attribution))
+          ? closedMonthGrowth(isCounted(row.status))
+          : await this.trees.applySession(tx, userId, row);
         const stored = await tx.focusSession.update({
           where: { userId_id: { userId, id } },
           data: { growthResult: growth as unknown as Prisma.InputJsonValue },
         });
         return { session: toSubmittedResponse(stored), created: true };
-      });
+      }, HEAVY_TRANSACTION);
     } catch (error) {
       if (error instanceof TimezoneRequiredError) throw unprocessable(error.code, error.message);
       throw error;
@@ -187,7 +201,8 @@ export class SessionsService {
     try {
       const row = await this.prisma.focusSession.update({
         where: { userId_id: { userId, id } },
-        data: { note },
+        // Clearing the note clears its highlight: a highlight always has a note.
+        data: { note, ...(note === null && { noteHighlighted: false }) },
       });
       return toResponse(row);
     } catch (error) {
@@ -196,6 +211,26 @@ export class SessionsService {
       }
       throw error;
     }
+  }
+
+  /**
+   * Highlights the note for its month's Tree Details and recap, or removes the highlight.
+   * Idempotent. Only a session with a note can be highlighted.
+   */
+  async setNoteHighlight(
+    userId: string,
+    id: string,
+    highlighted: boolean,
+  ): Promise<SessionResponse> {
+    // Conditional, so a note cleared at the same moment cannot leave a highlight without one.
+    const { count } = await this.prisma.focusSession.updateMany({
+      where: { userId, id, ...(highlighted && { note: { not: null } }) },
+      data: { noteHighlighted: highlighted },
+    });
+    const row = await findSession(this.prisma, userId, id);
+    if (!row) throw new NotFoundException('Session not found.');
+    if (count === 0) throw unprocessable('note_required', 'Add a note before highlighting it.');
+    return toResponse(row);
   }
 }
 
@@ -280,6 +315,7 @@ function toResponse(row: FocusSession): SessionResponse {
     year: row.year,
     month: row.month,
     note: row.note,
+    noteHighlighted: row.noteHighlighted,
     createdAt: row.createdAt.toISOString(),
   };
 }

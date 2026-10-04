@@ -34,6 +34,7 @@ import {
   type TreeTraitDto,
 } from './tree.contracts.js';
 import { computeTreeGrowth, type TreeGrowth } from './tree-growth.js';
+import { archivedTreeState, parseTreeArchive } from './tree-archive.js';
 import { variationSeed } from './variation-seed.js';
 import { vitalityOn } from './vitality.js';
 
@@ -80,7 +81,11 @@ export class MonthlyTreesService {
 
   /** The tree of the month the user is in now, created as a Seed on first view. */
   async current(userId: string): Promise<CurrentTreeResponse> {
-    const tree = await this.currentTree(userId);
+    return this.growingView(userId, await this.currentTree(userId));
+  }
+
+  /** A growing tree with its month's stats so far (Tree Details of a month not yet closed). */
+  async growingView(userId: string, tree: MonthlyTree): Promise<CurrentTreeResponse> {
     const month = { year: tree.year, month: tree.month };
     const [days, topics, goals] = await Promise.all([
       this.stats.monthDays(userId, month),
@@ -184,13 +189,18 @@ export class MonthlyTreesService {
     return { updated, computed, changes };
   }
 
-  private async currentTree(userId: string): Promise<MonthlyTree> {
+  /** The current month's tree, created and reconciled. Close ended months first (A3.4). */
+  async currentTree(userId: string): Promise<MonthlyTree> {
     try {
-      return await this.prisma.$transaction(async (tx) => {
-        const now = await this.attribution.attribute(userId, this.clock.now(), tx);
-        const { tree } = await this.ensureTree(tx, userId, now);
-        return this.reconcile(tx, userId, tree);
-      });
+      return await this.prisma.$transaction(
+        async (tx) => {
+          const now = await this.attribution.attribute(userId, this.clock.now(), tx);
+          const { tree } = await this.ensureTree(tx, userId, now);
+          return this.reconcile(tx, userId, tree);
+          // Reconciling recomputes the month: allow more than the 5-second default.
+        },
+        { timeout: 15_000 },
+      );
     } catch (error) {
       if (error instanceof TimezoneRequiredError) throw unprocessable(error.code, error.message);
       throw error;
@@ -204,7 +214,7 @@ export class MonthlyTreesService {
    * stored, under the user's row lock; nothing is written when nothing was earned, and no
    * session or growth result is created or changed. Archived trees are never touched.
    */
-  private async reconcile(tx: Client, userId: string, tree: MonthlyTree): Promise<MonthlyTree> {
+  async reconcile(tx: Client, userId: string, tree: MonthlyTree): Promise<MonthlyTree> {
     if (tree.status !== 'growing') return tree;
     if (!hasChanges((await this.evaluate(tx, userId, tree)).changes)) return tree;
 
@@ -230,7 +240,7 @@ export class MonthlyTreesService {
   }
 
   /** The month's tree; created as a Seed under the user's row lock when it does not exist. */
-  private async ensureTree(
+  async ensureTree(
     tx: Client,
     userId: string,
     month: MonthRef,
@@ -328,14 +338,42 @@ export class MonthlyTreesService {
 
   /**
    * The tree as the API shows it: its earned state, progress measured with its own rules, and
-   * today's vitality (null once archived, A3.4).
+   * today's vitality. An archived tree is its snapshot, at rest: nothing is recomputed.
    */
-  private async state(
+  async state(
     client: Client,
     userId: string,
     tree: MonthlyTree,
     computed?: TreeGrowth,
   ): Promise<TreeStateDto> {
+    if (tree.status === 'archived') return archivedTreeState(tree, parseTreeArchive(tree.archive));
+    const { progress, traits } = await this.earnedView(client, userId, tree, computed);
+    const today = await this.userToday.today(userId, client);
+    const vitality = vitalityOn(
+      await this.streak.vitalityInput(userId, today, client),
+      vitalityRulesFrom(await this.config.active()),
+    );
+    return {
+      year: tree.year,
+      month: tree.month,
+      status: tree.status,
+      species: tree.species,
+      variationSeed: Number(tree.variationSeed),
+      partialFirstMonth: tree.prorationNumerator < tree.prorationDenominator,
+      configVersion: tree.configVersion,
+      progress,
+      traits,
+      vitality,
+    };
+  }
+
+  /** What a growing tree has earned, its progress measured with its own rules: what an archive freezes. */
+  async earnedView(
+    client: Client,
+    userId: string,
+    tree: MonthlyTree,
+    computed?: TreeGrowth,
+  ): Promise<Pick<TreeStateDto, 'progress' | 'traits'>> {
     const rules = growthRulesFrom(await this.config.version(tree.configVersion));
     const growth =
       computed ??
@@ -349,27 +387,15 @@ export class MonthlyTreesService {
         },
         rules,
       );
-    const earned = await this.earnedOf(client, tree);
-    let vitality: TreeStateDto['vitality'] = null;
-    if (tree.status === 'growing') {
-      const today = await this.userToday.today(userId, client);
-      vitality = vitalityOn(
-        await this.streak.vitalityInput(userId, today, client),
-        vitalityRulesFrom(await this.config.active()),
-      );
-    }
-    return {
-      year: tree.year,
-      month: tree.month,
-      status: tree.status,
-      species: tree.species,
-      variationSeed: Number(tree.variationSeed),
-      partialFirstMonth: tree.prorationNumerator < tree.prorationDenominator,
-      configVersion: tree.configVersion,
-      progress: toTreeProgress(earned, growth, rules),
-      traits: await this.traits(client, tree),
-      vitality,
+    const traits = await this.traits(client, tree);
+    const earned: EarnedTreeState = {
+      stage: tree.stage,
+      fullnessLevel: tree.fullnessLevel,
+      blossomLevel: tree.blossomLevel,
+      richnessTier: tree.richnessTier,
+      traitIds: traits.map((trait) => trait.id),
     };
+    return { progress: toTreeProgress(earned, growth, rules), traits };
   }
 }
 

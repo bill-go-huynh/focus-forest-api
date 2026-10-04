@@ -15,6 +15,7 @@ import { PrismaService } from '../../src/prisma/prisma.service.js';
 import { ProductConfigService } from '../../src/product-config/product-config.service.js';
 import { listenOnLoopback } from './loopback-http.js';
 import { configValues } from './product-config-values.js';
+import { countingPrismaClient, QueryCounter } from './query-counter.js';
 
 const MIN = 60_000;
 
@@ -27,20 +28,31 @@ export class ConsistencyHarness {
   url!: string;
   prisma!: PrismaService;
   readonly clock: FixedClock;
+  /** With `countQueries`: the statements the app sent. */
+  readonly queries = new QueryCounter();
   /** Signed-up users, so their access tokens can be renewed when the clock moves. */
   private readonly users: { email: string; auth: Record<string, string> }[] = [];
 
-  constructor(now: string) {
+  constructor(
+    now: string,
+    private readonly options: { countQueries?: boolean } = {},
+  ) {
     this.clock = new FixedClock(new Date(now));
   }
 
   async start(): Promise<void> {
-    const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
+    let builder = Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(PasswordHasher)
       .useValue(new PasswordHasher({ cost: 2 ** 10 }))
       .overrideProvider(Clock)
-      .useValue(this.clock)
-      .compile();
+      .useValue(this.clock);
+    if (this.options.countQueries) {
+      const url = process.env['DATABASE_URL'] ?? '';
+      builder = builder
+        .overrideProvider(PrismaService)
+        .useValue(countingPrismaClient(url, this.queries));
+    }
+    const moduleRef = await builder.compile();
     this.app = moduleRef.createNestApplication();
     configureApp(this.app);
     this.url = await listenOnLoopback(this.app);

@@ -132,6 +132,27 @@ export const productConfigRegistry = {
       },
     ),
   },
+
+  // Phase 3: month closure and the Personal Forest (docs/06_DOMAIN_MODEL.md → MonthlyTree, Forest).
+  'session.monthGraceMinutes': {
+    description:
+      'Minutes after a month ends (in its own time zone) before it is archived, so sessions started before the end can still grow its tree',
+    type: integer({ min: 0 }),
+  },
+  'forest.levelThresholds': {
+    description: 'Planted (archived) trees at which each forest level after level 1 begins',
+    type: increasingList(integer({ min: 1 }), { minLength: 1, maxLength: 20 }),
+  },
+  'forest.areaLevels': {
+    description: 'The forest level that unlocks each cosmetic forest area',
+    type: shape({
+      lake: integer({ min: 1 }),
+      mountains: integer({ min: 1 }),
+      night: integer({ min: 1 }),
+      seasonal: integer({ min: 1 }),
+      decorations: integer({ min: 1 }),
+    }),
+  },
 } as const satisfies ConfigRegistry;
 
 export type ProductConfigRegistry = typeof productConfigRegistry;

@@ -76,6 +76,7 @@ model User {
   weeklyGoalSettings      WeeklyGoalSetting[]
   restDays                RestDay[]
   streakRecoveries        StreakRecovery[]
+  forestAreaUnlocks       ForestAreaUnlock[]
 
   @@map("users")
 }
@@ -208,14 +209,17 @@ model Topic {
 ///
 /// Raw SQL in the migration adds CHECKs: month is 1–12 and starts_at < ends_at.
 model MonthAttributionContext {
-  userId    String   @map("user_id") @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
   year      Int
   month     Int
   /// IANA name, from the profile when the context was created.
   timezone  String
-  startsAt  DateTime @map("starts_at")
-  endsAt    DateTime @map("ends_at")
-  createdAt DateTime @default(now()) @map("created_at")
+  startsAt  DateTime  @map("starts_at")
+  endsAt    DateTime  @map("ends_at")
+  /// When the month was closed (archived or left resting), after endsAt plus the grace period.
+  /// Sessions attributed to a closed month never grow a tree.
+  closedAt  DateTime? @map("closed_at")
+  createdAt DateTime  @default(now()) @map("created_at")
 
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   focusSessions FocusSession[]
@@ -265,6 +269,8 @@ model FocusSession {
   configVersion       Int                @map("config_version")
   /// Personal data: keep out of logs. Written by the note endpoint only.
   note                String?
+  /// Chosen by the user for the month's Tree Details and recap. Only with a note.
+  noteHighlighted     Boolean            @default(false) @map("note_highlighted")
   /// What this session did to its month's tree (GrowthResultDto), written once in the same
   /// transaction as the session and returned unchanged on every replay. Null for sessions
   /// stored before Phase 3.
@@ -403,12 +409,17 @@ model MonthlyTree {
   fullnessLevel        Int               @default(0) @map("fullness_level")
   blossomLevel         Int               @default(0) @map("blossom_level")
   richnessTier         Int               @default(0) @map("richness_tier")
+  archivedAt           DateTime?         @map("archived_at")
+  /// The immutable snapshot taken at archive (TreeArchive): progress, traits, time zone, and the
+  /// month's stats. Null while growing. An archived row is never updated.
+  archive              Json?
   createdAt            DateTime          @default(now()) @map("created_at")
   updatedAt            DateTime          @updatedAt @map("updated_at")
 
   monthContext MonthAttributionContext @relation(fields: [userId, year, month], references: [userId, year, month], onDelete: Cascade)
   config       ProductConfigVersion    @relation(fields: [configVersion], references: [version], onDelete: Restrict)
   traits       MonthlyTreeTrait[]
+  recap        MonthlyRecap?
 
   @@id([userId, year, month])
   @@map("monthly_trees")
@@ -428,4 +439,38 @@ model MonthlyTreeTrait {
 
   @@id([userId, year, month, traitId])
   @@map("monthly_tree_traits")
+}
+
+/// The story of one archived month (docs/06_DOMAIN_MODEL.md → MonthlyRecap), generated once in
+/// the archive transaction. Its content never changes; only the seen times are set, once each.
+model MonthlyRecap {
+  userId         String    @map("user_id") @db.Uuid
+  year           Int
+  month          Int
+  /// RecapContent. Holds no note text: highlighted notes are referenced by session id.
+  content        Json
+  createdAt      DateTime  @map("created_at")
+  /// When the month-end ceremony was first shown.
+  ceremonySeenAt DateTime? @map("ceremony_seen_at")
+  /// When the recap was first viewed.
+  recapSeenAt    DateTime? @map("recap_seen_at")
+
+  tree MonthlyTree @relation(fields: [userId, year, month], references: [userId, year, month], onDelete: Cascade)
+
+  @@id([userId, year, month])
+  @@map("monthly_recaps")
+}
+
+/// A cosmetic forest area the user has unlocked (docs/06_DOMAIN_MODEL.md → ForestProgression).
+/// Unlocks only accumulate: a later configuration with higher thresholds never removes one.
+model ForestAreaUnlock {
+  userId     String   @map("user_id") @db.Uuid
+  /// A stable area identifier such as "lake".
+  areaId     String   @map("area_id")
+  unlockedAt DateTime @map("unlocked_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, areaId])
+  @@map("forest_area_unlocks")
 }

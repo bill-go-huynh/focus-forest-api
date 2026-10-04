@@ -40,6 +40,9 @@ describe('stored growth results', () => {
       monthClosed: true,
       tree: null,
     });
+    // A late session of a closed month: it counts, but grows nothing.
+    const late = { counted: true, monthClosed: true, newTraits: [], tree: null };
+    expect(parseGrowthResult(late)).toEqual(late);
   });
 
   it.each([
@@ -52,6 +55,8 @@ describe('stored growth results', () => {
     ['a tree without progress', { ...counted, tree: { ...tree, progress: undefined } }],
     ['an unknown vitality', { ...counted, tree: { ...tree, vitality: 'wilting' } }],
     ['a changed growth without a counted session', { ...counted, counted: false }],
+    ['a closed month that grew', { ...counted, monthClosed: true, tree: null }],
+    ['a closed month with a tree', { counted: true, monthClosed: true, newTraits: [], tree }],
   ])('refuses %s', (_, value) => {
     expect(() => parseGrowthResult(value)).toThrow(/growth result/i);
   });

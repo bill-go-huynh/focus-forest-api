@@ -85,12 +85,68 @@ describe('monthly trees schema (PostgreSQL)', () => {
     await expect(prisma.monthlyTreeTrait.create({ data: trait })).rejects.toThrow();
   });
 
-  it('removes trees and traits with the user', async () => {
+  const key = () => ({ userId_year_month: { userId, year: 2026, month: 10 } });
+  const archive = () =>
+    prisma.monthlyTree.update({
+      where: key(),
+      data: { status: 'archived', archivedAt: new Date(), archive: { snapshot: true } },
+    });
+
+  it('archives a tree only with its snapshot, and never changes it afterwards', async () => {
+    await prisma.monthlyTree.create({ data: tree() });
+    await expect(
+      prisma.monthlyTree.update({ where: key(), data: { status: 'archived' } }),
+    ).rejects.toThrow();
+    await archive();
+    await expect(
+      prisma.monthlyTree.update({ where: key(), data: { blossomLevel: 3 } }),
+    ).rejects.toThrow();
+    await expect(
+      prisma.monthlyTreeTrait.create({
+        data: { userId, year: 2026, month: 10, traitId: 'streak-days:3', earnedAt: new Date() },
+      }),
+    ).rejects.toThrow();
+  });
+
+  it('holds a recap only for an archived tree; its content never changes, seen times once', async () => {
+    await prisma.monthlyTree.create({ data: tree() });
+    const recap = { userId, year: 2026, month: 10, content: { a: 1 }, createdAt: new Date() };
+    await expect(prisma.monthlyRecap.create({ data: recap })).rejects.toThrow();
+    await archive();
+    await prisma.monthlyRecap.create({ data: recap });
+    await expect(
+      prisma.monthlyRecap.update({ where: key(), data: { content: { a: 2 } } }),
+    ).rejects.toThrow();
+    await prisma.monthlyRecap.update({ where: key(), data: { ceremonySeenAt: new Date() } });
+    await expect(
+      prisma.monthlyRecap.update({ where: key(), data: { ceremonySeenAt: new Date(0) } }),
+    ).rejects.toThrow();
+  });
+
+  it('closes a month only after it ended', async () => {
+    await expect(
+      prisma.monthAttributionContext.update({
+        where: key(),
+        data: { closedAt: new Date('2026-10-31T00:00:00Z') },
+      }),
+    ).rejects.toThrow();
+    await prisma.monthAttributionContext.update({
+      where: key(),
+      data: { closedAt: new Date('2026-11-01T00:00:00Z') },
+    });
+  });
+
+  it('removes trees, archived ones too, their traits, and recaps with the user', async () => {
     await prisma.monthlyTree.create({ data: tree() });
     await prisma.monthlyTreeTrait.create({
       data: { userId, year: 2026, month: 10, traitId: 'streak-days:3', earnedAt: new Date() },
     });
+    await archive();
+    await prisma.monthlyRecap.create({
+      data: { userId, year: 2026, month: 10, content: {}, createdAt: new Date() },
+    });
     await prisma.user.delete({ where: { id: userId } });
+    expect(await prisma.monthlyRecap.count()).toBe(0);
     expect(await prisma.monthlyTree.count()).toBe(0);
     expect(await prisma.monthlyTreeTrait.count()).toBe(0);
   });

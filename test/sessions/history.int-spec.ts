@@ -167,6 +167,7 @@ describe('focus history (HTTP + PostgreSQL)', () => {
       year: 2026,
       month: 9,
       note: null,
+      noteHighlighted: false, // A3.4
       createdAt: expect.any(String) as string,
       topic: { id: ada.topicId, name: 'Reading', icon: 'book', color: 'topic.1', status: 'active' },
     });
