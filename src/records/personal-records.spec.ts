@@ -138,3 +138,40 @@ describe('new personal records of a period', () => {
     expect(newPersonalRecords(later, period)).toEqual(newPersonalRecords(base, period));
   });
 });
+
+describe('longest daily-goal streak', () => {
+  const goalStreak = (partial: Partial<RecordsInput>) =>
+    personalRecords(input({ days: [day('2026-10-01', 30)], ...partial }), '2026-10-31').find(
+      (record) => record.kind === 'longest_daily_goal_streak',
+    );
+
+  it('counts consecutive days the daily goal was met', () => {
+    expect(
+      goalStreak({ goalMetDates: ['2026-10-01', '2026-10-02', '2026-10-03', '2026-10-05'] }),
+    ).toMatchObject({ value: 3, achievedOn: '2026-10-03' });
+  });
+
+  it('lets planned rest days bridge it without counting them', () => {
+    expect(
+      goalStreak({
+        goalMetDates: ['2026-10-01', '2026-10-02', '2026-10-05'],
+        activity: { activeDates: [], restDates: ['2026-10-03', '2026-10-04'], recoveredDates: [] },
+      }),
+    ).toMatchObject({ value: 3, achievedOn: '2026-10-05' });
+  });
+
+  it('is not bridged by a recovered day', () => {
+    expect(
+      goalStreak({
+        goalMetDates: ['2026-10-01', '2026-10-03'],
+        activity: { activeDates: [], restDates: [], recoveredDates: ['2026-10-02'] },
+      }),
+    ).toMatchObject({ value: 1, achievedOn: '2026-10-01' });
+  });
+
+  it('keeps the earliest of equal runs', () => {
+    expect(
+      goalStreak({ goalMetDates: ['2026-10-01', '2026-10-02', '2026-10-10', '2026-10-11'] }),
+    ).toMatchObject({ value: 2, achievedOn: '2026-10-02' });
+  });
+});

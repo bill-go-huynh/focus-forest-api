@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -23,7 +24,8 @@ import {
   type SessionResponse,
   type SubmitSessionDto,
 } from './dto/session.dto.js';
-import { decodeCursor, encodeCursor } from './history-cursor.js';
+import { decodeCursor, encodeCursor, historyFilterKey } from './history-cursor.js';
+import { historyWhere, type HistoryFilters } from './history-filters.js';
 import { evaluateSession, type SessionRejectionReason } from './evaluation/evaluate-session.js';
 import { canonicalSubmission, submissionKey, type CanonicalSubmission } from './submission.js';
 
@@ -161,13 +163,24 @@ export class SessionsService {
    */
   async history(
     userId: string,
-    cursor?: string,
-    limit = HISTORY_DEFAULT_LIMIT,
+    query: HistoryFilters & { cursor?: string; limit?: number } = {},
   ): Promise<HistoryPage> {
+    const { cursor, limit = HISTORY_DEFAULT_LIMIT, ...filters } = query;
+    const resolved = historyWhere(filters);
+    if ('error' in resolved) throw badRequest('invalid_history_filters', resolved.error);
+    // A cursor continues only the list it came from: changing the filters starts over.
+    const filterKey = historyFilterKey({ ...filters });
     const after = cursor === undefined ? null : decodeCursor(cursor);
+    if (after && (after.filters ?? null) !== filterKey) {
+      throw badRequest(
+        'cursor_filters_changed',
+        'This cursor belongs to other filters. Start again without it.',
+      );
+    }
     const rows = await this.prisma.focusSession.findMany({
       where: {
         userId,
+        ...resolved.where,
         // `startedAt <= …` repeats what the OR implies so the (user_id, started_at) index can
         // seek to the cursor instead of filtering every newer row.
         ...(after && {
@@ -189,7 +202,7 @@ export class SessionsService {
     const last = rows.length > limit ? rows[limit - 1] : undefined;
     return {
       items,
-      nextCursor: last ? encodeCursor({ startedAt: last.startedAt, id: last.id }) : null,
+      nextCursor: last ? encodeCursor({ startedAt: last.startedAt, id: last.id }, filterKey) : null,
     };
   }
 
@@ -323,6 +336,10 @@ function toResponse(row: FocusSession): SessionResponse {
 // A machine-readable code lets clients react without parsing the message.
 function conflict(code: string, message: string): ConflictException {
   return new ConflictException({ statusCode: 409, error: 'Conflict', message, code });
+}
+
+function badRequest(code: string, message: string): BadRequestException {
+  return new BadRequestException({ statusCode: 400, error: 'Bad Request', message, code });
 }
 
 function unprocessable(code: string, message: string): UnprocessableEntityException {

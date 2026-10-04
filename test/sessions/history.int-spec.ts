@@ -333,10 +333,12 @@ describe('focus history (HTTP + PostgreSQL)', () => {
       await history(ada.token, `?cursor=${encodeURIComponent(cursor)}`).expect(400);
     });
 
-    it('rejects filters and other unknown parameters', async () => {
+    it('rejects unknown parameters (the A3.5 filters are known)', async () => {
       const ada = await account();
-      await history(ada.token, `?topicId=${ada.topicId}`).expect(400);
-      await history(ada.token, '?status=completed').expect(400);
+      await history(ada.token, '?sort=asc').expect(400);
+      await history(ada.token, '?userId=someone').expect(400);
+      await history(ada.token, `?topicId=${ada.topicId}`).expect(200);
+      await history(ada.token, '?status=completed').expect(200);
     });
   });
 

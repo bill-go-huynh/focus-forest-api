@@ -531,6 +531,7 @@ describe('monthly tree and session growth (HTTP + PostgreSQL)', () => {
       'streak',
       'today',
       'tree',
+      'week',
     ]);
   });
 

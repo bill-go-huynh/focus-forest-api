@@ -172,6 +172,17 @@ export class GoalsService {
     return goalMetDates(days, daily);
   }
 
+  /** Every daily and weekly goal version, oldest first (Insights judges each day by these). */
+  async versions(
+    userId: string,
+    client: Client = this.prisma,
+  ): Promise<{ daily: DailyGoalVersion[]; weekly: WeeklyGoalVersion[] }> {
+    return {
+      daily: await dailyVersions(client, userId),
+      weekly: await weeklyVersions(client, userId),
+    };
+  }
+
   private async defaultDailyMinutes(): Promise<number> {
     return consistencyRulesFrom(await this.config.active()).dailyGoalDefaultMinutes;
   }

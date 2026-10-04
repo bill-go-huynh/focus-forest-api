@@ -78,7 +78,7 @@ export class ForestService {
       summary: {
         treeCount,
         lifetimeFocusedMinutes: Math.floor(
-          (await this.stats.lifetimeMilliseconds(userId)) / 60_000,
+          (await this.stats.lifetime(userId)).focusedMilliseconds / 60_000,
         ),
       },
     };

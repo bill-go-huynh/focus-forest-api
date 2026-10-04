@@ -110,7 +110,9 @@ function bestsUntil(
     longest_session: highest(
       upTo(input.longestSessions).map((session) => [session.date, session.focusedMilliseconds]),
     ),
-    longest_daily_goal_streak: highest(consecutiveRuns(input.goalMetDates, until)),
+    longest_daily_goal_streak: highest(
+      goalRuns(input.goalMetDates, input.activity.restDates, until),
+    ),
   };
 }
 
@@ -136,8 +138,17 @@ function totals(
   return [...sums];
 }
 
-/** For each date up to `until`, the length of the run of consecutive dates ending on it. */
-function consecutiveRuns(dates: readonly LocalDate[], until: LocalDate): [LocalDate, number][] {
+/**
+ * For each met date up to `until`, the length of the daily-goal run ending on it: consecutive
+ * met dates, where planned rest days in between bridge the run without adding to it (Phase 3
+ * decision). Anything else, a recovered day included, ends the run.
+ */
+function goalRuns(
+  dates: readonly LocalDate[],
+  restDates: readonly LocalDate[],
+  until: LocalDate,
+): [LocalDate, number][] {
+  const rest = new Set(restDates);
   const sorted = [...new Set(dates)]
     .filter((date) => compareLocalDates(date, until) <= 0)
     .sort(compareLocalDates);
@@ -145,9 +156,17 @@ function consecutiveRuns(dates: readonly LocalDate[], until: LocalDate): [LocalD
   let previous: LocalDate | null = null;
   let length = 0;
   for (const date of sorted) {
-    length = previous !== null && addDays(previous, 1) === date ? length + 1 : 1;
+    length = previous !== null && bridged(previous, date, rest) ? length + 1 : 1;
     runs.push([date, length]);
     previous = date;
   }
   return runs;
+}
+
+/** Whether every day strictly between `from` and `to` is a planned rest day. */
+function bridged(from: LocalDate, to: LocalDate, rest: ReadonlySet<LocalDate>): boolean {
+  for (let date = addDays(from, 1); date !== to; date = addDays(date, 1)) {
+    if (!rest.has(date)) return false;
+  }
+  return true;
 }

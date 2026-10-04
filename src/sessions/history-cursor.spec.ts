@@ -1,4 +1,4 @@
-import { decodeCursor, encodeCursor } from './history-cursor.js';
+import { decodeCursor, encodeCursor, historyFilterKey } from './history-cursor.js';
 
 const id = '0192f1a2-3b4c-7d5e-8f60-718293a4b5c6';
 const startedAt = new Date('2026-09-27T10:00:00.123Z');
@@ -31,5 +31,33 @@ describe('history cursor', () => {
     ['an extra field', encodeRaw({ v: 1, s: startedAt.toISOString(), i: id, x: 1 })],
   ])('rejects %s', (_case, cursor) => {
     expect(decodeCursor(cursor)).toBeNull();
+  });
+});
+
+describe('history cursor under filters', () => {
+  it('carries the filters it was made for, and stays the Phase 2 cursor without filters', () => {
+    const key = historyFilterKey({ topicId: id, month: '2026-09' });
+    expect(key).toMatch(/^[A-Za-z0-9_-]{16}$/);
+    expect(decodeCursor(encodeCursor({ startedAt, id }, key))).toEqual({
+      startedAt,
+      id,
+      filters: key,
+    });
+    expect(encodeCursor({ startedAt, id }, null)).toBe(encodeCursor({ startedAt, id }));
+  });
+
+  it('gives the same filters the same key, whatever their order, and none to no filters', () => {
+    expect(historyFilterKey({ month: '2026-09', topicId: id })).toBe(
+      historyFilterKey({ topicId: id, month: '2026-09' }),
+    );
+    expect(historyFilterKey({ month: '2026-09' })).not.toBe(historyFilterKey({ month: '2026-10' }));
+    expect(historyFilterKey({})).toBeNull();
+    expect(historyFilterKey({ topicId: undefined })).toBeNull();
+  });
+
+  it('rejects a filter key that is not one', () => {
+    expect(
+      decodeCursor(encodeRaw({ v: 1, s: startedAt.toISOString(), i: id, f: 'short' })),
+    ).toBeNull();
   });
 });

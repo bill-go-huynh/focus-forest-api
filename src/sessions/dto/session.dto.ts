@@ -2,6 +2,7 @@ import { Transform, Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsArray,
+  IsIn,
   IsInt,
   IsNumber,
   IsString,
@@ -95,8 +96,40 @@ const isSent =
   (dto: object): boolean =>
     (dto as Record<string, unknown>)[key] !== undefined;
 
-/** The query of GET /me/sessions. No filters in Phase 2; unknown parameters are a 400. */
+const SESSION_STATUSES: FocusSessionStatus[] = ['completed', 'ended_early', 'discarded'];
+
+/**
+ * The query of GET /me/sessions. Filters (A3.5) are optional; how they combine is checked by
+ * historyWhere. Unknown parameters are a 400.
+ */
 export class ListSessionsQuery {
+  /** Local dates, inclusive. */
+  @ValidateIf(isSent('from'))
+  @IsString({ message: 'from must be YYYY-MM-DD.' })
+  from?: string;
+
+  @ValidateIf(isSent('to'))
+  @IsString({ message: 'to must be YYYY-MM-DD.' })
+  to?: string;
+
+  /** The Monday of a Monday-to-Sunday week. */
+  @ValidateIf(isSent('week'))
+  @IsString({ message: 'week must be YYYY-MM-DD.' })
+  week?: string;
+
+  /** YYYY-MM: the month sessions are attributed to. */
+  @ValidateIf(isSent('month'))
+  @IsString({ message: 'month must be YYYY-MM.' })
+  month?: string;
+
+  @ValidateIf(isSent('topicId'))
+  @IsUUID('all', { message: 'topicId must be a topic id.' })
+  topicId?: string;
+
+  @ValidateIf(isSent('status'))
+  @IsIn(SESSION_STATUSES, { message: `status must be one of ${SESSION_STATUSES.join(', ')}.` })
+  status?: FocusSessionStatus;
+
   /** Opaque; from the previous page's `nextCursor`. */
   @ValidateIf(isSent('cursor'))
   @ValidateBy({

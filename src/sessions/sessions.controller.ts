@@ -33,7 +33,7 @@ export class SessionsController {
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: ListSessionsQuery,
   ): Promise<HistoryPage> {
-    return this.sessions.history(user.userId, query.cursor, query.limit);
+    return this.sessions.history(user.userId, query);
   }
 
   /** Idempotent submit with a client-generated id: 201 when stored, 200 for a replay. */

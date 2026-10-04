@@ -9,6 +9,18 @@ import { sortTopics, type DayFocus, type TopicFocus } from './focus-stats.js';
 type Client = Prisma.TransactionClient;
 
 /**
+ * Which sessions a statistic covers: a local-date range (inclusive; History, weeks, the
+ * heatmap) or an attributed month (the monthly tree, its archive, monthly totals). Never mixed.
+ */
+export type SessionScope = { from: LocalDate; to: LocalDate } | { month: MonthRef };
+
+function scopeWhere(scope: SessionScope) {
+  return 'month' in scope
+    ? { year: scope.month.year, month: scope.month.month }
+    : { localDate: { gte: asDbDate(scope.from), lte: asDbDate(scope.to) } };
+}
+
+/**
  * Per-day and per-topic totals of counted sessions, aggregated by PostgreSQL from
  * focus_sessions. There are no aggregate tables: the sessions are the source. Pass a
  * transaction client to include rows written earlier in that transaction.
@@ -58,13 +70,68 @@ export class FocusStatsService {
     }));
   }
 
-  /** Counted focus over the user's whole history, late sessions included (the forest header). */
-  async lifetimeMilliseconds(userId: string, client: Client = this.prisma): Promise<number> {
+  /**
+   * Counted focus and sessions over the user's whole history, late sessions included: the one
+   * source of the forest header and the profile's lifetime stats.
+   */
+  async lifetime(
+    userId: string,
+    client: Client = this.prisma,
+  ): Promise<{ focusedMilliseconds: number; sessionCount: number }> {
     const total = await client.focusSession.aggregate({
       where: { userId, status: { not: 'discarded' } },
       _sum: { focusedMilliseconds: true },
+      _count: { _all: true },
     });
-    return total._sum.focusedMilliseconds ?? 0;
+    return {
+      focusedMilliseconds: total._sum.focusedMilliseconds ?? 0,
+      sessionCount: total._count._all,
+    };
+  }
+
+  /** Counted focus per stored local date, for sessions in a scope. */
+  async scopeDays(userId: string, scope: SessionScope): Promise<DayFocus[]> {
+    return this.days(this.prisma, { userId, ...scopeWhere(scope) });
+  }
+
+  /** Counted focus per topic in a scope, largest first, with each topic's latest start there. */
+  async scopeTopics(
+    userId: string,
+    scope: SessionScope,
+  ): Promise<(TopicFocus & { lastStartedAt: Date })[]> {
+    const rows = await this.prisma.focusSession.groupBy({
+      by: ['topicId'],
+      where: { userId, ...scopeWhere(scope), status: { not: 'discarded' } },
+      _sum: { focusedMilliseconds: true },
+      _count: { _all: true },
+      _max: { startedAt: true },
+    });
+    const lastStarted = new Map(rows.map((row) => [row.topicId, row._max.startedAt]));
+    return sortTopics(
+      rows.map((row) => ({
+        topicId: row.topicId,
+        focusedMilliseconds: row._sum.focusedMilliseconds ?? 0,
+        sessionCount: row._count._all,
+      })),
+    ).map((topic) => ({
+      ...topic,
+      lastStartedAt: lastStarted.get(topic.topicId) ?? new Date(0),
+    }));
+  }
+
+  /** The longest counted session in a scope; the earliest one on a tie. */
+  async longestSession(userId: string, scope: SessionScope) {
+    return this.prisma.focusSession.findFirst({
+      where: { userId, ...scopeWhere(scope), status: { not: 'discarded' } },
+      orderBy: [{ focusedMilliseconds: 'desc' }, { startedAt: 'asc' }, { id: 'asc' }],
+      select: {
+        id: true,
+        topicId: true,
+        localDate: true,
+        startedAt: true,
+        focusedMilliseconds: true,
+      },
+    });
   }
 
   /** Counted focus per topic for the sessions attributed to one month, largest first. */
