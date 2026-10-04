@@ -54,17 +54,30 @@ export class ForestService {
 
     const rows = await this.treesBetween(userId, months.at(-1), months[0]);
     const byMonth = new Map(rows.map((row) => [monthIndex(row), row]));
+    // Growing months' focus so far, in one query for all of them.
+    const growingFocus = await this.stats.monthTotals(
+      userId,
+      rows.filter((row) => row.status !== 'archived'),
+    );
     const items: ForestItemDto[] = [];
     for (const month of months) {
       const row = byMonth.get(monthIndex(month));
-      if (!row) items.push({ kind: 'resting', ...month });
-      else if (row.status === 'archived')
-        items.push({ kind: 'archived', ...month, tree: this.archived(row) });
-      else
+      if (!row) items.push({ kind: 'resting', ...month, focusedMilliseconds: 0 });
+      else if (row.status === 'archived') {
+        const archive = parseTreeArchive(row.archive);
+        items.push({
+          kind: 'archived',
+          ...month,
+          tree: archivedTreeState(row, archive),
+          // As frozen at archive: the snapshot's whole minutes.
+          focusedMilliseconds: archive.stats.focusedMinutes * 60_000,
+        });
+      } else
         items.push({
           kind: 'growing',
           ...month,
           tree: await this.trees.state(this.prisma, userId, row),
+          focusedMilliseconds: growingFocus.get(monthIndex(month)) ?? 0,
         });
     }
 
@@ -240,10 +253,6 @@ export class ForestService {
             { year: newest.year, month: { lte: newest.month } },
           ];
     return this.prisma.monthlyTree.findMany({ where: { userId, OR: yearRange } });
-  }
-
-  private archived(row: MonthlyTree) {
-    return archivedTreeState(row, parseTreeArchive(row.archive));
   }
 }
 

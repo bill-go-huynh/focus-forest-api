@@ -55,11 +55,27 @@ export class MonthParams {
  * One month of the forest timeline: a planted (archived) tree, a resting marker for a month
  * without counted focus, or a tree still growing (the current month, or a month in its grace
  * period). Clients ignore kinds they do not know.
+ *
+ * `focusedMilliseconds` is the month's counted focus for display (not its growth): an archived
+ * month's as frozen in its snapshot (whole minutes; a late session never changes it, and it agrees
+ * with archived Tree Details), a growing month's so far, and 0 for a resting month.
  */
 export type ForestItemDto =
-  | { kind: 'archived'; year: number; month: number; tree: TreeStateDto }
-  | { kind: 'growing'; year: number; month: number; tree: TreeStateDto }
-  | { kind: 'resting'; year: number; month: number };
+  | {
+      kind: 'archived';
+      year: number;
+      month: number;
+      tree: TreeStateDto;
+      focusedMilliseconds: number;
+    }
+  | {
+      kind: 'growing';
+      year: number;
+      month: number;
+      tree: TreeStateDto;
+      focusedMilliseconds: number;
+    }
+  | { kind: 'resting'; year: number; month: number; focusedMilliseconds: 0 };
 
 export interface ForestPageDto {
   /** Newest first: the growing edge, then older months. Every month appears once. */

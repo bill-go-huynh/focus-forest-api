@@ -8,8 +8,14 @@ const t = new ConsistencyHarness(NOW, { countQueries: true });
 type User = Awaited<ReturnType<typeof t.signUp>>;
 
 type ForestItem =
-  | { kind: 'archived' | 'growing'; year: number; month: number; tree: TreeStateDto }
-  | { kind: 'resting'; year: number; month: number };
+  | {
+      kind: 'archived' | 'growing';
+      year: number;
+      month: number;
+      tree: TreeStateDto;
+      focusedMilliseconds: number;
+    }
+  | { kind: 'resting'; year: number; month: number; focusedMilliseconds: number };
 
 interface ForestPage {
   items: ForestItem[];
@@ -98,7 +104,7 @@ describe('personal forest, tree details, and recap (HTTP + PostgreSQL)', () => {
       expect(september).toMatchObject({
         tree: { status: 'archived', vitality: null, progress: { stage: 'sprout' } },
       });
-      expect(august).toEqual({ kind: 'resting', year: 2026, month: 8 });
+      expect(august).toEqual({ kind: 'resting', year: 2026, month: 8, focusedMilliseconds: 0 });
       expect(page.summary).toEqual({ treeCount: 2, lifetimeFocusedMinutes: 90 });
     });
 
@@ -185,6 +191,7 @@ describe('personal forest, tree details, and recap (HTTP + PostgreSQL)', () => {
         kind: 'resting',
         year: 2026,
         month: 9,
+        focusedMilliseconds: 0,
       });
       expect(bobs.summary).toEqual({ treeCount: 0, lifetimeFocusedMinutes: 0 });
       expect(await get(bob, '/me/trees/2026/9')).toEqual({ kind: 'resting', year: 2026, month: 9 });
@@ -266,6 +273,58 @@ describe('personal forest, tree details, and recap (HTTP + PostgreSQL)', () => {
       await archiveMonths(ada, ['2026-08-10']);
       expect(await progression(bob)).toMatchObject({ level: 1, unlockedAreas: [] });
       expect(await t.prisma.forestAreaUnlock.count({ where: { userId: bob.userId } })).toBe(0);
+    });
+  });
+
+  describe('forest month focus totals', () => {
+    const MIN = 60_000;
+    const focusOf = (page: ForestPage, month: string) =>
+      page.items.find((item) => label(item) === month)?.focusedMilliseconds;
+
+    it('gives each month its focus: the archived snapshot, the growing month so far, zero at rest', async () => {
+      const ada = await t.signUp('ada@example.com', 'UTC', '2026-07-15T09:00:00.000Z');
+      await t.focus(ada, [
+        ['2026-07-03', 60],
+        ['2026-07-04', 25],
+        ['2026-09-10', 30],
+      ]);
+      await submitted(ada, '2026-10-06T10:00:00.000Z', 40);
+      await submitted(ada, '2026-10-07T10:00:00.000Z', 15);
+      const page = await forest(ada);
+      expect(page.items.map((item) => [label(item), item.kind, item.focusedMilliseconds])).toEqual([
+        ['2026-10', 'growing', 55 * MIN],
+        ['2026-09', 'archived', 30 * MIN],
+        ['2026-08', 'resting', 0],
+        ['2026-07', 'archived', 85 * MIN],
+      ]);
+      // The archived month agrees with its Tree Details; the growing one with the current tree.
+      const september = await get<{ stats: { focusedMinutes: number } }>(ada, '/me/trees/2026/9');
+      expect(focusOf(page, '2026-09')).toBe(september.stats.focusedMinutes * MIN);
+      const current = await get<{ stats: { focusedMinutes: number } }>(ada, '/me/trees/current');
+      expect(focusOf(page, '2026-10')).toBe(current.stats.focusedMinutes * MIN);
+    });
+
+    it('keeps an archived month’s focus as it was archived when a late session arrives', async () => {
+      const ada = await t.signUp('ada@example.com');
+      await submitted(ada, '2026-10-05T10:00:00.000Z', 30);
+      await t.setNow('2026-11-02T10:00:00.000Z');
+      expect(focusOf(await forest(ada), '2026-10')).toBe(30 * MIN);
+      // A session that started in October, synced after the month was planted.
+      await submitted(ada, '2026-10-20T10:00:00.000Z', 45);
+      expect(focusOf(await forest(ada), '2026-10')).toBe(30 * MIN);
+      expect(focusOf(await forest(ada), '2026-11')).toBe(0);
+    });
+
+    it('keeps the field on every page, and only the user’s own focus', async () => {
+      const ada = await t.signUp('ada@example.com', 'UTC', '2026-01-15T09:00:00.000Z');
+      const bob = await t.signUp('bob@example.com', 'UTC', '2026-01-15T09:00:00.000Z');
+      await t.focus(ada, [['2026-02-10', 50]]);
+      await t.focus(bob, [['2026-02-10', 20]]);
+      const pages = await allPages(ada, 4);
+      const items = pages.flatMap((page) => page.items);
+      expect(items.every((item) => Number.isInteger(item.focusedMilliseconds))).toBe(true);
+      expect(items.find((item) => label(item) === '2026-02')?.focusedMilliseconds).toBe(50 * MIN);
+      expect(focusOf(await forest(bob), '2026-02')).toBe(20 * MIN);
     });
   });
 

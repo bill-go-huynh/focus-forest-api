@@ -38,6 +38,26 @@ export class FocusStatsService {
     return this.days(client, { userId, year: month.year, month: month.month });
   }
 
+  /**
+   * Counted focus of each given month (by attribution), in one query whatever their number.
+   * Months without counted focus are absent from the map (keyed `year * 12 + month - 1`).
+   */
+  async monthTotals(userId: string, months: readonly MonthRef[]): Promise<Map<number, number>> {
+    if (months.length === 0) return new Map();
+    const rows = await this.prisma.focusSession.groupBy({
+      by: ['year', 'month'],
+      where: {
+        userId,
+        status: { not: 'discarded' },
+        OR: months.map((month) => ({ year: month.year, month: month.month })),
+      },
+      _sum: { focusedMilliseconds: true },
+    });
+    return new Map(
+      rows.map((row) => [row.year * 12 + row.month - 1, row._sum.focusedMilliseconds ?? 0]),
+    );
+  }
+
   /** Counted focus per stored local date in [from, to], whatever month the sessions belong to. */
   async daysBetween(
     userId: string,
