@@ -66,6 +66,20 @@ export function summarizeStreak(history: ActivityHistory, today: LocalDate): Str
   return { current: runEndingOn(days, end), longest: longestRun(days, today), today: todayState };
 }
 
+/**
+ * The longest streak in all of history, without a today: the same number the streak summary
+ * reports as `longest` (days after the last known one are missed and only end a run).
+ * Achievements read it (A4.2), so they never depend on the user's time zone.
+ */
+export function longestStreak(history: ActivityHistory): number {
+  const days = new Days(history);
+  if (!days.first) return 0;
+  const last = [...history.activeDates, ...history.restDates, ...history.recoveredDates].reduce(
+    (a, b) => (compareLocalDates(a, b) >= 0 ? a : b),
+  );
+  return longestRun(days, last);
+}
+
 /** Active days in the run that ends on `date` (0 when `date` was missed). */
 export function streakEndingOn(history: ActivityHistory, date: LocalDate): number {
   return runEndingOn(new Days(history), date);

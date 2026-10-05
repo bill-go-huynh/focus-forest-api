@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { addDays, type LocalDate } from '../common/local-date.js';
 import { FocusStatsService } from '../focus-stats/focus-stats.service.js';
-import type { Prisma } from '../generated/prisma/client.js';
+import type { Prisma, StreakRecovery } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ProductConfigService } from '../product-config/product-config.service.js';
 import { vitalityRulesFrom } from '../trees/growth-rules.js';
@@ -61,46 +61,46 @@ export class StreakService {
   }
 
   /**
-   * Accepts the recovery of `missedDate`. Idempotent: a day already recovered is returned as it
-   * is (`created: false`). Under the user's row lock, so concurrent acceptances store one.
+   * Accepts the recovery of `missedDate` in the caller's transaction, under the user's row lock,
+   * so concurrent acceptances store one. Idempotent: a day already recovered is returned as it
+   * is (`created: false`). The recovery-acceptance action (`src/streak-recovery/`) runs it with
+   * what the recovery causes in progression, in the same transaction (A4.2.G).
    */
-  async recover(
+  async acceptIn(
+    tx: Client,
     userId: string,
     missedDate: LocalDate,
-  ): Promise<{ streak: StreakResponse; created: boolean }> {
-    const rules = consistencyRulesFrom(await this.config.active());
-    const created = await this.prisma.$transaction(async (tx) => {
-      await lockUser(tx, userId);
-      const existing = await tx.streakRecovery.findUnique({
-        where: { userId_missedDate: { userId, missedDate: dbDate(missedDate) } },
-      });
-      if (existing) return false;
-
-      const today = await this.userToday.today(userId, tx);
-      const history = await this.history(userId);
-      const evaluation = evaluateRecovery(
-        {
-          missedDate,
-          today,
-          history,
-          recoveredDatesThisMonth: sameMonth(history.recoveredDates, missedDate),
-        },
-        rules.recovery,
-      );
-      if (!evaluation.eligible) {
-        throw unprocessable(evaluation.reason, INELIGIBLE[evaluation.reason]);
-      }
-      await tx.streakRecovery.create({
-        data: {
-          userId,
-          missedDate: dbDate(missedDate),
-          returnDate: dbDate(evaluation.returnDate),
-          mechanic: 'next_day_session',
-        },
-      });
-      return true;
+  ): Promise<{ recovery: StreakRecovery; created: boolean }> {
+    await lockUser(tx, userId);
+    const existing = await tx.streakRecovery.findUnique({
+      where: { userId_missedDate: { userId, missedDate: dbDate(missedDate) } },
     });
-    return { streak: await this.view(userId), created };
+    if (existing) return { recovery: existing, created: false };
+
+    const rules = consistencyRulesFrom(await this.config.active());
+    const today = await this.userToday.today(userId, tx);
+    const history = await this.history(userId, tx);
+    const evaluation = evaluateRecovery(
+      {
+        missedDate,
+        today,
+        history,
+        recoveredDatesThisMonth: sameMonth(history.recoveredDates, missedDate),
+      },
+      rules.recovery,
+    );
+    if (!evaluation.eligible) {
+      throw unprocessable(evaluation.reason, INELIGIBLE[evaluation.reason]);
+    }
+    const recovery = await tx.streakRecovery.create({
+      data: {
+        userId,
+        missedDate: dbDate(missedDate),
+        returnDate: dbDate(evaluation.returnDate),
+        mechanic: 'next_day_session',
+      },
+    });
+    return { recovery, created: true };
   }
 
   /**

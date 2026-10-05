@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import { IsInt, Max, Min, ValidateBy, ValidateIf } from 'class-validator';
 
+import type { EarnedBadgeDto } from '../progression/badge.dto.js';
 import type { CurrentTreeResponse } from '../trees/monthly-trees.service.js';
 import type { TreeStateDto } from '../trees/tree.contracts.js';
 import type {
@@ -101,14 +102,17 @@ export type TreeDetailsDto =
       stats: ArchivedMonthStatsDto;
       /** Notes highlighted at archive, as they read then (personal data, the owner only). */
       highlightedNotes: HighlightedNoteDto[];
-      /** Future-safe: badges (Phase 8) and joined events (Phase 11). Empty for now. */
-      badges: never[];
+      /** The badges earned this month, as the recap snapshot them at archive (A4.2). */
+      badges: EarnedBadgeDto[];
+      /** Future-safe: joined events (Phase 11). Empty for now. */
       events: never[];
     }
   | ({ kind: 'growing'; year: number; month: number } & CurrentTreeResponse)
   | { kind: 'resting'; year: number; month: number };
 
-export interface RecapDto extends RecapContent {
+export interface RecapDto extends Omit<RecapContent, 'badges'> {
+  /** The recap's badge snapshot, with each badge as the app shows it. */
+  badges: EarnedBadgeDto[];
   year: number;
   month: number;
   generatedAt: string;

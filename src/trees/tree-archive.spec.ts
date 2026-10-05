@@ -100,12 +100,22 @@ describe('archived tree snapshot', () => {
   });
 });
 
+const T = '2026-10-03T10:00:00.000Z';
+
 describe('recap snapshot', () => {
   it('accepts a complete recap, unchanged', () => {
     expect(parseRecapContent(recap)).toEqual(recap);
     expect(
       parseRecapContent({ ...recap, mostProductiveDay: null, mostProductiveWeek: null }),
     ).toMatchObject({ mostProductiveDay: null });
+  });
+
+  it('keeps the badges earned in the month by stable id and time, as stored (A4.2)', () => {
+    const badges = [
+      { badgeId: 'first-session', earnedAt: '2026-10-01T08:00:00.000Z' },
+      { badgeId: 'focus-streak:3', earnedAt: T },
+    ];
+    expect(parseRecapContent({ ...recap, badges })).toEqual({ ...recap, badges });
   });
 
   it.each([
@@ -119,6 +129,9 @@ describe('recap snapshot', () => {
       { ...recap, highlightedNotes: [{ sessionId: 'x', note: 'a', topicId: 'y' }] },
     ],
     ['the old id list', { ...recap, highlightedSessionIds: [] }],
+    ['a badge without its time', { ...recap, badges: [{ badgeId: 'first-session' }] }],
+    ['a badge by display name', { ...recap, badges: [{ badgeId: 'First Session', earnedAt: T }] }],
+    ['a badge with more fields', { ...recap, badges: [{ badgeId: 'a', earnedAt: T, name: 'A' }] }],
   ])('refuses %s', (_, value) => {
     expect(() => parseRecapContent(value)).toThrow(/recap/i);
   });

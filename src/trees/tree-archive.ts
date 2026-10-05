@@ -1,3 +1,4 @@
+import { isContentId } from '../progression/progression-rules.js';
 import { PERSONAL_RECORD_KINDS, type PersonalRecord } from '../records/personal-records.js';
 import type { ProductiveDay, ProductiveWeek } from '../records/month-highlights.js';
 import { isLevel, isLocalDate, isObject, isProgress, isString, isTrait } from './json-checks.js';
@@ -50,9 +51,19 @@ export interface RecapContent {
    * deletions, or highlight changes never reach this snapshot.
    */
   highlightedNotes: HighlightedNoteDto[];
-  /** Future-safe: badges (Phase 8) and events (Phase 11) earned this month. Empty for now. */
-  badges: never[];
+  /**
+   * The badges earned this month (A4.2): owned badges whose earned time falls in the month's
+   * attribution window, copied at archive by stable id. Never regenerated, so a badge earned or
+   * granted later never appears here. Empty in recaps archived before A4.2.
+   */
+  badges: RecapBadge[];
+  /** Future-safe: events (Phase 11). Empty for now. */
   events: never[];
+}
+
+export interface RecapBadge {
+  badgeId: string;
+  earnedAt: string;
 }
 
 /** A note highlighted for its month, copied at archive. Personal data: the owner only. */
@@ -126,7 +137,8 @@ export function parseRecapContent(value: unknown): RecapContent {
   if (!Array.isArray(records) || !records.every(isRecord)) fail('bad newRecords');
   const notes = value['highlightedNotes'];
   if (!Array.isArray(notes) || !notes.every(isHighlightedNote)) fail('bad highlightedNotes');
-  if (!Array.isArray(value['badges']) || !Array.isArray(value['events'])) {
+  const badges = value['badges'];
+  if (!Array.isArray(badges) || !badges.every(isRecapBadge) || !Array.isArray(value['events'])) {
     fail('bad badges or events');
   }
   return value as unknown as RecapContent;
@@ -146,6 +158,17 @@ function isHighlightedNote(value: unknown): boolean {
     isString(value['sessionId']) &&
     isString(value['note']) &&
     value['note'] !== ''
+  );
+}
+
+function isRecapBadge(value: unknown): boolean {
+  return (
+    isObject(value) &&
+    hasOnly(value, ['badgeId', 'earnedAt']) &&
+    isString(value['badgeId']) &&
+    isContentId(value['badgeId']) &&
+    isString(value['earnedAt']) &&
+    !Number.isNaN(Date.parse(value['earnedAt']))
   );
 }
 

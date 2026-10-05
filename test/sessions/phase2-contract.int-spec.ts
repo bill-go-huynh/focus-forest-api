@@ -96,9 +96,14 @@ describe('Phase 2 API contract across modules (HTTP + PostgreSQL)', () => {
     const [archived] = await topics(token, '?status=archived&sort=recent');
 
     expect(replay).toStrictEqual(created);
-    // History items carry the session fields; the growth result is only in the submit answer.
-    const { growth, ...sessionFields } = created as Body & { growth?: unknown };
+    // History items carry the session fields; the growth and progression results (A4.2) are
+    // only in the submit answer.
+    const { growth, progression, ...sessionFields } = created as Body & {
+      growth?: unknown;
+      progression?: unknown;
+    };
     expect(growth).toMatchObject({ counted: true });
+    expect(progression).toMatchObject({ newlyEarnedBadges: [{ id: 'first-session' }] });
     expect(page.items).toStrictEqual([
       {
         ...sessionFields,

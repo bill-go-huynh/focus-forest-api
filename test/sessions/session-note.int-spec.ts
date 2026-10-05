@@ -107,11 +107,14 @@ describe('session note (HTTP + PostgreSQL)', () => {
         200,
       );
 
-      // The note answer carries the session fields; the growth result is only in the submit answer.
-      const { growth, ...sessionFields } = created as typeof created & {
+      // The note answer carries the session fields; the growth and progression results (A4.2)
+      // are only in the submit answer.
+      const { growth, progression, ...sessionFields } = created as typeof created & {
         growth?: unknown;
+        progression?: unknown;
       };
       expect(growth).toMatchObject({ counted: true });
+      expect(progression).toMatchObject({ newlyEarnedBadges: [{ id: 'first-session' }] });
       expect(asSession(res)).toStrictEqual({ ...sessionFields, note: 'Finished chapter 3' });
       expect(await storedNote(created.id)).toBe('Finished chapter 3');
     });

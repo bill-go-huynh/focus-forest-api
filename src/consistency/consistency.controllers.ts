@@ -5,7 +5,6 @@ import {
   Delete,
   Get,
   Param,
-  Post,
   Put,
   Res,
   type PipeTransform,
@@ -16,7 +15,6 @@ import { isLocalDate, type LocalDate } from '../common/local-date.js';
 import { CurrentUser, type AuthenticatedUser } from '../identity/current-user.decorator.js';
 import {
   DailyGoalDto,
-  RecoveryDto,
   WeeklyGoalDto,
   type GoalsResponse,
   type RestDaysResponse,
@@ -106,17 +104,5 @@ export class StreakController {
   @Get()
   get(@CurrentUser() user: AuthenticatedUser): Promise<StreakResponse> {
     return this.streak.view(user.userId);
-  }
-
-  /** Accepts the offered recovery. Idempotent: 201 when stored, 200 when it already was. */
-  @Post('recoveries')
-  async recover(
-    @CurrentUser() user: AuthenticatedUser,
-    @Body() body: RecoveryDto,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<StreakResponse> {
-    const { streak, created } = await this.streak.recover(user.userId, body.missedDate);
-    res.status(created ? 201 : 200);
-    return streak;
   }
 }

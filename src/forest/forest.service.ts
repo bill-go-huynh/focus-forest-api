@@ -5,10 +5,17 @@ import { FocusStatsService } from '../focus-stats/focus-stats.service.js';
 import type { MonthlyTree } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ProductConfigService } from '../product-config/product-config.service.js';
+import type { EarnedBadgeDto } from '../progression/badge.dto.js';
+import { ProgressionOwnershipService } from '../progression/progression-ownership.service.js';
 import { localMonthOf, monthIndex, type MonthRef } from '../sessions/attribution/calendar.js';
 import { MonthClosureService } from '../trees/month-closure.service.js';
 import { MonthlyTreesService } from '../trees/monthly-trees.service.js';
-import { archivedTreeState, parseRecapContent, parseTreeArchive } from '../trees/tree-archive.js';
+import {
+  archivedTreeState,
+  parseRecapContent,
+  parseTreeArchive,
+  type RecapBadge,
+} from '../trees/tree-archive.js';
 import type {
   ForestItemDto,
   ForestPageDto,
@@ -39,6 +46,7 @@ export class ForestService {
     private readonly closure: MonthClosureService,
     private readonly trees: MonthlyTreesService,
     private readonly stats: FocusStatsService,
+    private readonly ownership: ProgressionOwnershipService,
     private readonly clock: Clock,
   ) {}
 
@@ -139,15 +147,16 @@ export class ForestService {
     }
     const archive = parseTreeArchive(row.archive);
     const recap = await this.prisma.monthlyRecap.findUniqueOrThrow({ where: keyOf(userId, month) });
+    const content = parseRecapContent(recap.content);
     return {
       kind: 'archived',
       ...month,
       archivedAt: (row.archivedAt ?? row.updatedAt).toISOString(),
       tree: archivedTreeState(row, archive),
       stats: archive.stats,
-      // The notes as they were highlighted at archive, the same as the recap's.
-      highlightedNotes: parseRecapContent(recap.content).highlightedNotes,
-      badges: [],
+      // The notes and badges as they were at archive, the same as the recap's.
+      highlightedNotes: content.highlightedNotes,
+      badges: await this.badges(content.badges),
       events: [],
     };
   }
@@ -160,15 +169,29 @@ export class ForestService {
       include: { tree: true },
     });
     if (!recap) throw recapNotFound();
+    const content = parseRecapContent(recap.content);
     return {
       year: recap.year,
       month: recap.month,
       generatedAt: recap.createdAt.toISOString(),
       tree: archivedTreeState(recap.tree, parseTreeArchive(recap.tree.archive)),
-      ...parseRecapContent(recap.content),
+      ...content,
+      badges: await this.badges(content.badges),
       ceremonySeenAt: recap.ceremonySeenAt?.toISOString() ?? null,
       recapSeenAt: recap.recapSeenAt?.toISOString() ?? null,
     };
+  }
+
+  /**
+   * A recap's badge snapshot as the app shows it: which badges, and when, come from the snapshot
+   * alone; only their display (name, artwork) is read from the definitions, by stable id.
+   */
+  private async badges(snapshot: readonly RecapBadge[]): Promise<EarnedBadgeDto[]> {
+    const definitions = await this.ownership.badgesById(snapshot.map((badge) => badge.badgeId));
+    return snapshot.flatMap(({ badgeId, earnedAt }) => {
+      const definition = definitions.get(badgeId);
+      return definition ? [{ ...definition, earnedAt }] : [];
+    });
   }
 
   /** Records the first time the ceremony or the recap was seen. Idempotent. */

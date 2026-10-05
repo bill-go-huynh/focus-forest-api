@@ -78,6 +78,7 @@ model User {
   streakRecoveries        StreakRecovery[]
   forestAreaUnlocks       ForestAreaUnlock[]
   badges                  UserBadge[]
+  badgeShowcase           BadgeShowcase[]
   species                 UserSpecies[]
   cosmetics               UserCosmetic[]
 
@@ -278,6 +279,8 @@ model FocusSession {
   /// transaction as the session and returned unchanged on every replay. Null for sessions
   /// stored before Phase 3.
   growthResult        Json?              @map("growth_result")
+  /// The badges this session caused (A4.2), stored with it and replayed unchanged; null before.
+  progressionResult   Json?              @map("progression_result")
   createdAt           DateTime           @default(now()) @map("created_at")
   updatedAt           DateTime           @updatedAt @map("updated_at")
 
@@ -358,12 +361,15 @@ enum StreakRecoveryMechanic {
 /// A missed day repaired by a streak recovery (docs/06_DOMAIN_MODEL.md → StreakRecovery). It
 /// bridges the streak only: never an active day, a goal day, growth, or vitality.
 model StreakRecovery {
-  userId     String                 @map("user_id") @db.Uuid
-  missedDate DateTime               @map("missed_date") @db.Date
+  userId            String                 @map("user_id") @db.Uuid
+  missedDate        DateTime               @map("missed_date") @db.Date
   /// The day of the counted session that earned it: the day after the missed day.
-  returnDate DateTime               @map("return_date") @db.Date
-  mechanic   StreakRecoveryMechanic
-  createdAt  DateTime               @default(now()) @map("created_at")
+  returnDate        DateTime               @map("return_date") @db.Date
+  mechanic          StreakRecoveryMechanic
+  /// The badges this recovery caused (A4.2.G), stored with it and answered unchanged on a
+  /// repeated acceptance; null before.
+  progressionResult Json?                  @map("progression_result")
+  createdAt         DateTime               @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -651,11 +657,27 @@ model UserBadge {
   badgeId  String   @map("badge_id")
   earnedAt DateTime @map("earned_at")
 
-  user  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  badge BadgeDefinition @relation(fields: [badgeId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge    BadgeDefinition @relation(fields: [badgeId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  showcase BadgeShowcase?
 
   @@id([userId, badgeId])
   @@map("user_badges")
+}
+
+/// The user's ordered badge showcase (A4.2): at most three owned badges, positions 1 to 3.
+/// Replaced as a whole. Only an owned badge can be pinned (the ownership foreign key).
+model BadgeShowcase {
+  userId   String @map("user_id") @db.Uuid
+  badgeId  String @map("badge_id")
+  position Int
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ownership UserBadge @relation(fields: [userId, badgeId], references: [userId, badgeId], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([userId, badgeId])
+  @@unique([userId, position])
+  @@map("badge_showcase")
 }
 
 /// A species the user unlocked (system species are owned by everyone without a row). Permanent.

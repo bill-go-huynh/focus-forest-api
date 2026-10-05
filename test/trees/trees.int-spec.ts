@@ -193,7 +193,8 @@ describe('monthly tree and session growth (HTTP + PostgreSQL)', () => {
       const res = await t.submit(ada, '2026-10-07T10:00:00.000Z', 5).expect(201);
       const body = res.body as SessionBody;
 
-      expect(Object.keys(body).sort()).toEqual([...PHASE2_FIELDS, 'growth'].sort());
+      // A4.2 adds `progression` (the badges this session caused) beside `growth`.
+      expect(Object.keys(body).sort()).toEqual([...PHASE2_FIELDS, 'growth', 'progression'].sort());
       expect(body).toMatchObject({
         status: 'completed',
         counted: true,

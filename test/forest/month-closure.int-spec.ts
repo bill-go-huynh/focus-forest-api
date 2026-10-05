@@ -220,7 +220,16 @@ describe('month closure (HTTP + PostgreSQL)', () => {
           topTopic: { id: ada.topicId, name: 'Reading', icon: 'book', color: 'topic.1' },
         },
         highlightedNotes: [],
-        badges: [],
+        // A4.2: the badges earned in October, snapshot at archive. First Session was reached by
+        // sessions stored directly (as before A4.2): dated at the crossing session's stored
+        // created_at (the database clock here, not the test clock), so only its id is pinned.
+        badges: [
+          expect.objectContaining({ id: 'first-session', category: 'focus' }) as unknown,
+          expect.objectContaining({
+            id: 'focus-streak:3',
+            earnedAt: '2026-10-07T20:00:00.000Z',
+          }) as unknown,
+        ],
         events: [],
       });
     });

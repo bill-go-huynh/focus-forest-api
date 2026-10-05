@@ -11,6 +11,7 @@ import { FocusStatsService } from '../focus-stats/focus-stats.service.js';
 import type { MonthAttributionContext, Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ProductConfigService } from '../product-config/product-config.service.js';
+import { ProgressionOwnershipService } from '../progression/progression-ownership.service.js';
 import {
   longestStreakWithin,
   mostProductiveDay,
@@ -49,6 +50,7 @@ export class MonthClosureService {
     private readonly stats: FocusStatsService,
     private readonly goals: GoalsService,
     private readonly streak: StreakService,
+    private readonly ownership: ProgressionOwnershipService,
     private readonly clock: Clock,
   ) {}
 
@@ -129,7 +131,7 @@ export class MonthClosureService {
           content: (await this.recap(
             tx,
             userId,
-            month,
+            context,
             days,
             stats,
             history,
@@ -175,11 +177,12 @@ export class MonthClosureService {
   private async recap(
     tx: Client,
     userId: string,
-    month: MonthRef,
+    context: MonthAttributionContext,
     days: DayFocus[],
     stats: ArchivedMonthStatsDto,
     history: ActivityHistory,
   ): Promise<RecapContent> {
+    const month = { year: context.year, month: context.month };
     const first = firstDateOfMonth(month);
     const last = lastDateOfMonth(month);
     const allDays = await this.stats.allDays(userId, tx);
@@ -206,7 +209,9 @@ export class MonthClosureService {
       highlightedNotes: highlighted.flatMap(({ id, note }) =>
         note ? [{ sessionId: id, note }] : [],
       ),
-      badges: [],
+      // Earned in the month's own attribution window (its frozen time zone), never the UTC
+      // month; badges granted later, even dated in this window, never reach the snapshot.
+      badges: await this.ownership.badgesEarnedIn(userId, context.startsAt, context.endsAt, tx),
       events: [],
     });
   }

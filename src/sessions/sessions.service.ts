@@ -10,6 +10,9 @@ import { Clock } from '../common/clock.js';
 import { Prisma, type FocusSession } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ProductConfigService } from '../product-config/product-config.service.js';
+import { parseProgressionResult } from '../progression/achievement-evaluation.js';
+import { AchievementsService } from '../progression/achievements.service.js';
+import type { SessionProgressionDto } from '../progression/badge.dto.js';
 import { isCounted } from '../focus-stats/focus-stats.js';
 import { closedMonthGrowth, parseGrowthResult } from '../trees/growth-result.js';
 import { MonthClosureService } from '../trees/month-closure.service.js';
@@ -48,6 +51,12 @@ const HEAVY_TRANSACTION = { timeout: 15_000 };
 export interface SubmittedSessionResponse extends SessionResponse {
   /** Stored with the session and returned unchanged on replays; null before Phase 3. */
   growth: GrowthResultDto | null;
+  /**
+   * What this session caused in progression (A4.2): the badges it earned. Stored with the
+   * session and returned unchanged on replays, so an unlock is reported for its own session
+   * only; null for sessions stored before A4.2.
+   */
+  progression: SessionProgressionDto | null;
 }
 
 export interface SubmitResult {
@@ -63,6 +72,7 @@ export class SessionsService {
     private readonly attribution: MonthAttributionService,
     private readonly trees: MonthlyTreesService,
     private readonly closure: MonthClosureService,
+    private readonly achievements: AchievementsService,
     private readonly clock: Clock,
   ) {}
 
@@ -74,7 +84,7 @@ export class SessionsService {
     const submission = canonicalSubmission(raw);
 
     const existing = await findSession(this.prisma, userId, id);
-    if (existing) return { session: replay(existing, submission), created: false };
+    if (existing) return { session: await this.replay(existing, submission), created: false };
 
     // One configuration version for the whole evaluation. Rejections store nothing.
     const config = await this.config.active();
@@ -99,7 +109,7 @@ export class SessionsService {
         await tx.$queryRaw`SELECT 1 FROM users WHERE id = ${userId}::uuid FOR UPDATE`;
 
         const raced = await findSession(tx, userId, id);
-        if (raced) return { session: replay(raced, submission), created: false };
+        if (raced) return { session: await this.replay(raced, submission, tx), created: false };
 
         const topic = await tx.topic.findUnique({
           where: { userId_id: { userId, id: submission.topicId } },
@@ -145,11 +155,17 @@ export class SessionsService {
         const growth = (await this.closure.isClosed(tx, userId, attribution))
           ? closedMonthGrowth(isCounted(row.status))
           : await this.trees.applySession(tx, userId, row);
+        // Then achievements, from the same stored truth: a grant commits with its session, or
+        // neither does (the app keeps the session and submits it again).
+        const progression = await this.achievements.evaluateSession(tx, userId, row);
         const stored = await tx.focusSession.update({
           where: { userId_id: { userId, id } },
-          data: { growthResult: growth as unknown as Prisma.InputJsonValue },
+          data: {
+            growthResult: growth as unknown as Prisma.InputJsonValue,
+            progressionResult: progression as unknown as Prisma.InputJsonValue,
+          },
         });
-        return { session: toSubmittedResponse(stored), created: true };
+        return { session: await this.toSubmittedResponse(stored, tx), created: true };
       }, HEAVY_TRANSACTION);
     } catch (error) {
       if (error instanceof TimezoneRequiredError) throw unprocessable(error.code, error.message);
@@ -245,27 +261,46 @@ export class SessionsService {
     if (count === 0) throw unprocessable('note_required', 'Add a note before highlighting it.');
     return toResponse(row);
   }
+
+  /**
+   * A replay answers with what was stored, the growth and progression results included:
+   * nothing is recomputed, so a badge is never reported again as new by a later replay.
+   */
+  private async replay(
+    row: FocusSession,
+    submission: CanonicalSubmission,
+    client: Client = this.prisma,
+  ): Promise<SubmittedSessionResponse> {
+    if (submissionKey(storedSubmission(row)) !== submissionKey(submission)) {
+      throw conflict('session_id_conflict', 'A different session was already saved with this id.');
+    }
+    return this.toSubmittedResponse(row, client);
+  }
+
+  private async toSubmittedResponse(
+    row: FocusSession,
+    client: Client = this.prisma,
+  ): Promise<SubmittedSessionResponse> {
+    const progression =
+      row.progressionResult === null ? null : parseProgressionResult(row.progressionResult);
+    return {
+      ...toResponse(row),
+      growth: row.growthResult === null ? null : parseGrowthResult(row.growthResult),
+      progression: progression && {
+        newlyEarnedBadges: await this.achievements.earnedBadges(
+          row.userId,
+          progression.newlyEarnedBadgeIds,
+          client,
+        ),
+      },
+    };
+  }
 }
 
 type Client = PrismaService | Prisma.TransactionClient;
 
 function findSession(client: Client, userId: string, id: string): Promise<FocusSession | null> {
   return client.focusSession.findUnique({ where: { userId_id: { userId, id } } });
-}
-
-/** A replay answers with what was stored, the growth result included: nothing is recomputed. */
-function replay(row: FocusSession, submission: CanonicalSubmission): SubmittedSessionResponse {
-  if (submissionKey(storedSubmission(row)) !== submissionKey(submission)) {
-    throw conflict('session_id_conflict', 'A different session was already saved with this id.');
-  }
-  return toSubmittedResponse(row);
-}
-
-function toSubmittedResponse(row: FocusSession): SubmittedSessionResponse {
-  return {
-    ...toResponse(row),
-    growth: row.growthResult === null ? null : parseGrowthResult(row.growthResult),
-  };
 }
 
 function storedSubmission(row: FocusSession): CanonicalSubmission {

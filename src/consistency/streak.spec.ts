@@ -1,4 +1,9 @@
-import { streakMilestoneEvents, summarizeStreak, type ActivityHistory } from './streak.js';
+import {
+  longestStreak,
+  streakMilestoneEvents,
+  summarizeStreak,
+  type ActivityHistory,
+} from './streak.js';
 
 const history = (partial: Partial<ActivityHistory>): ActivityHistory => ({
   activeDates: [],
@@ -74,6 +79,25 @@ describe('streak', () => {
   it('ignores activity after today and the order of the dates', () => {
     const h = history({ activeDates: ['2026-10-09', '2026-10-07', '2026-10-06'] });
     expect(summarizeStreak(h, '2026-10-07')).toEqual({ current: 2, longest: 2, today: 'active' });
+  });
+});
+
+describe('longest streak without a today (achievements, A4.2)', () => {
+  it('is the longest streak the streak summary reports', () => {
+    const cases = [
+      history({}),
+      history({
+        activeDates: ['2026-09-01', '2026-09-02', '2026-09-03', '2026-09-04', '2026-10-06'],
+      }),
+      history({ activeDates: ['2026-09-01', '2026-09-03'], restDates: ['2026-09-02'] }),
+      history({ activeDates: ['2026-09-01', '2026-09-03'], recoveredDates: ['2026-09-02'] }),
+      history({ activeDates: ['2026-09-01'], restDates: ['2026-09-02', '2026-10-20'] }),
+    ];
+    for (const h of cases) {
+      expect(longestStreak(h)).toBe(summarizeStreak(h, '2026-10-07').longest);
+    }
+    expect(longestStreak(cases[1]!)).toBe(4);
+    expect(longestStreak(cases[2]!)).toBe(2);
   });
 });
 

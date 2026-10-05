@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { toBadgeDto, type BadgeDto } from './badge.dto.js';
 import { acquirableAt, type Acquisition, type AcquisitionCheck } from './progression-rules.js';
 
 type Client = PrismaService | Prisma.TransactionClient;
@@ -114,6 +115,66 @@ export class ProgressionOwnershipService {
     return this.grant('cosmetic', userId, cosmeticId, at, client).then(
       ({ granted, at: unlockedAt }) => ({ granted, unlockedAt }),
     );
+  }
+
+  /**
+   * Grants several badges in one statement (the achievement evaluator, A4.2), each with its own
+   * earned time; whether each can be acquired is decided at `at`. Returns the grants this call
+   * created, in the given order: a badge already owned, or granted concurrently, is skipped.
+   */
+  async grantBadges(
+    userId: string,
+    grants: readonly { badgeId: string; earnedAt: Date }[],
+    at: Date,
+    client: Client = this.prisma,
+  ): Promise<{ badgeId: string; earnedAt: Date }[]> {
+    if (grants.length === 0) return [];
+    const definitions = new Map(
+      (
+        await client.badgeDefinition.findMany({
+          where: { id: { in: grants.map((grant) => grant.badgeId) } },
+        })
+      ).map((definition) => [definition.id, definition]),
+    );
+    for (const { badgeId } of grants) {
+      const definition = definitions.get(badgeId);
+      if (!definition) throw new ContentNotFoundError('badge', badgeId);
+      const check = acquirableAt(definition, at);
+      if (!check.acquirable) throw new ContentNotAcquirableError('badge', badgeId, check.reason);
+    }
+    const created = await client.userBadge.createManyAndReturn({
+      data: grants.map(({ badgeId, earnedAt }) => ({ userId, badgeId, earnedAt })),
+      skipDuplicates: true,
+      select: { badgeId: true, earnedAt: true },
+    });
+    const createdIds = new Set(created.map((row) => row.badgeId));
+    return grants
+      .filter((grant) => createdIds.has(grant.badgeId))
+      .map(({ badgeId, earnedAt }) => ({ badgeId, earnedAt }));
+  }
+
+  /**
+   * The badges the user earned in [from, to), by stable id, in earned order: what a month's
+   * recap snapshots at archive, with the month's own attribution window.
+   */
+  async badgesEarnedIn(
+    userId: string,
+    from: Date,
+    to: Date,
+    client: Client = this.prisma,
+  ): Promise<{ badgeId: string; earnedAt: string }[]> {
+    const rows = await client.userBadge.findMany({
+      where: { userId, earnedAt: { gte: from, lt: to } },
+      orderBy: [{ earnedAt: 'asc' }, { badgeId: 'asc' }],
+    });
+    return rows.map((row) => ({ badgeId: row.badgeId, earnedAt: row.earnedAt.toISOString() }));
+  }
+
+  /** Badge definitions as the app shows them, by id. */
+  async badgesById(ids: readonly string[], client: Client = this.prisma) {
+    if (ids.length === 0) return new Map<string, BadgeDto>();
+    const rows = await client.badgeDefinition.findMany({ where: { id: { in: [...ids] } } });
+    return new Map(rows.map((row) => [row.id, toBadgeDto(row)]));
   }
 
   /** Badge ids the user owns, in the order they were earned. */
