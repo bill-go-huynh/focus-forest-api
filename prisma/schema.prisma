@@ -77,6 +77,9 @@ model User {
   restDays                RestDay[]
   streakRecoveries        StreakRecovery[]
   forestAreaUnlocks       ForestAreaUnlock[]
+  badges                  UserBadge[]
+  species                 UserSpecies[]
+  cosmetics               UserCosmetic[]
 
   @@map("users")
 }
@@ -396,6 +399,7 @@ model MonthlyTree {
   year                 Int
   month                Int
   status               MonthlyTreeStatus @default(growing)
+  /// A TreeSpecies id ("signature" until species choice, A4.3). Fixed once archived.
   species              String
   /// Unsigned 32-bit (src/trees/variation-seed.ts).
   variationSeed        BigInt            @map("variation_seed")
@@ -416,10 +420,11 @@ model MonthlyTree {
   createdAt            DateTime          @default(now()) @map("created_at")
   updatedAt            DateTime          @updatedAt @map("updated_at")
 
-  monthContext MonthAttributionContext @relation(fields: [userId, year, month], references: [userId, year, month], onDelete: Cascade)
-  config       ProductConfigVersion    @relation(fields: [configVersion], references: [version], onDelete: Restrict)
-  traits       MonthlyTreeTrait[]
-  recap        MonthlyRecap?
+  monthContext      MonthAttributionContext @relation(fields: [userId, year, month], references: [userId, year, month], onDelete: Cascade)
+  config            ProductConfigVersion    @relation(fields: [configVersion], references: [version], onDelete: Restrict)
+  speciesDefinition TreeSpecies             @relation(fields: [species], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  traits            MonthlyTreeTrait[]
+  recap             MonthlyRecap?
 
   @@id([userId, year, month])
   @@map("monthly_trees")
@@ -473,4 +478,208 @@ model ForestAreaUnlock {
 
   @@id([userId, areaId])
   @@map("forest_area_unlocks")
+}
+
+// ── Progression (Phase 4 / legacy 8–10, A4.1) ──────────────────────────────────────────────
+// Content definitions are versioned seed data (migrations) until the admin product (Phase 19).
+// Identifiers are immutable lowercase slugs (src/progression/progression-rules.ts), unique per
+// content type. Ownership rows are permanent; availability decides acquisition, never ownership.
+// Nothing here changes focus, growth, goals, streaks, or recovery.
+
+enum ContentStatus {
+  /// Defined, not acquirable yet (for example Social badges before Phase 11).
+  planned
+  active
+  /// No longer acquirable; owners keep it.
+  retired
+
+  @@map("content_status")
+}
+
+enum ContentSource {
+  /// Owned by every user (the signature species).
+  system
+  achievement
+  /// Phase 14.
+  event
+  /// Phase 17.
+  season
+
+  @@map("content_source")
+}
+
+enum ContentAvailability {
+  permanent
+  limited
+
+  @@map("content_availability")
+}
+
+enum ContentRarity {
+  common
+  rare
+  legendary
+
+  @@map("content_rarity")
+}
+
+enum BadgeCategory {
+  focus
+  consistency
+  time_based
+  social
+  event
+  rare
+
+  @@map("badge_category")
+}
+
+enum CosmeticType {
+  background
+  decoration
+  fauna
+  weather
+  profile_frame
+  effect
+
+  @@map("cosmetic_type")
+}
+
+enum AchievementCriterion {
+  counted_sessions
+  focused_minutes
+  longest_streak_days
+
+  @@map("achievement_criterion")
+}
+
+/// A badge (docs/06 → Badge). Artwork lives in the app, by `artworkId`.
+model BadgeDefinition {
+  id             String              @id
+  category       BadgeCategory
+  rarity         ContentRarity
+  source         ContentSource
+  availability   ContentAvailability
+  status         ContentStatus
+  availableFrom  DateTime?           @map("available_from")
+  /// Exclusive. Set exactly when availability is limited.
+  availableUntil DateTime?           @map("available_until")
+  name           String
+  description    String
+  artworkId      String              @map("artwork_id")
+  sortOrder      Int                 @default(0) @map("sort_order")
+  createdAt      DateTime            @default(now()) @map("created_at")
+
+  achievement AchievementDefinition?
+  owners      UserBadge[]
+
+  @@map("badge_definitions")
+}
+
+/// A long-term achievement and the one badge it grants. Its category, name, and availability are
+/// the badge's; progress is derived from Phase 3 truth (A4.2), never stored.
+model AchievementDefinition {
+  id              String               @id
+  badgeId         String               @unique @map("badge_id")
+  criterion       AchievementCriterion
+  /// In the criterion's unit: sessions, minutes, or days.
+  target          Int
+  progressVisible Boolean              @default(true) @map("progress_visible")
+  createdAt       DateTime             @default(now()) @map("created_at")
+
+  badge     BadgeDefinition      @relation(fields: [badgeId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  species   TreeSpecies[]
+  cosmetics CosmeticDefinition[]
+
+  @@map("achievement_definitions")
+}
+
+/// A tree species or rare variant (docs/06 → TreeSpecies). Every species shares the tree's one
+/// progression framework: no growth rules here. Visuals live in the app, by `id`.
+model TreeSpecies {
+  id             String              @id
+  /// For a rare variant: the species it varies.
+  baseSpeciesId  String?             @map("base_species_id")
+  rarity         ContentRarity
+  source         ContentSource
+  /// Set exactly when the source is an achievement.
+  achievementId  String?             @map("achievement_id")
+  availability   ContentAvailability
+  status         ContentStatus
+  availableFrom  DateTime?           @map("available_from")
+  availableUntil DateTime?           @map("available_until")
+  name           String
+  description    String
+  sortOrder      Int                 @default(0) @map("sort_order")
+  createdAt      DateTime            @default(now()) @map("created_at")
+
+  baseSpecies TreeSpecies?           @relation("SpeciesVariants", fields: [baseSpeciesId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  variants    TreeSpecies[]          @relation("SpeciesVariants")
+  achievement AchievementDefinition? @relation(fields: [achievementId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  owners      UserSpecies[]
+  trees       MonthlyTree[]
+
+  @@map("tree_species")
+}
+
+/// A garden, profile, or scene cosmetic (docs/06 → Cosmetic). Never affects growth or focus.
+model CosmeticDefinition {
+  id             String              @id
+  type           CosmeticType
+  rarity         ContentRarity
+  source         ContentSource
+  achievementId  String?             @map("achievement_id")
+  availability   ContentAvailability
+  status         ContentStatus
+  availableFrom  DateTime?           @map("available_from")
+  availableUntil DateTime?           @map("available_until")
+  name           String
+  description    String
+  artworkId      String              @map("artwork_id")
+  sortOrder      Int                 @default(0) @map("sort_order")
+  createdAt      DateTime            @default(now()) @map("created_at")
+
+  achievement AchievementDefinition? @relation(fields: [achievementId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  owners      UserCosmetic[]
+
+  @@map("cosmetic_definitions")
+}
+
+/// A badge the user earned. Permanent: never changed, removed only with the user.
+model UserBadge {
+  userId   String   @map("user_id") @db.Uuid
+  badgeId  String   @map("badge_id")
+  earnedAt DateTime @map("earned_at")
+
+  user  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge BadgeDefinition @relation(fields: [badgeId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@id([userId, badgeId])
+  @@map("user_badges")
+}
+
+/// A species the user unlocked (system species are owned by everyone without a row). Permanent.
+model UserSpecies {
+  userId     String   @map("user_id") @db.Uuid
+  speciesId  String   @map("species_id")
+  unlockedAt DateTime @map("unlocked_at")
+
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  species TreeSpecies @relation(fields: [speciesId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@id([userId, speciesId])
+  @@map("user_species")
+}
+
+/// A cosmetic the user unlocked. Permanent.
+model UserCosmetic {
+  userId     String   @map("user_id") @db.Uuid
+  cosmeticId String   @map("cosmetic_id")
+  unlockedAt DateTime @map("unlocked_at")
+
+  user     User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cosmetic CosmeticDefinition @relation(fields: [cosmeticId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@id([userId, cosmeticId])
+  @@map("user_cosmetics")
 }

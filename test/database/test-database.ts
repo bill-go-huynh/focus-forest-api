@@ -1,4 +1,6 @@
 import { execFileSync } from 'node:child_process';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 import { PrismaPg } from '@prisma/adapter-pg';
 
@@ -63,4 +65,40 @@ export async function resetTestDatabase(prisma: PrismaClient): Promise<void> {
 
   const list = tables.map(({ tablename }) => `"public"."${tablename.replaceAll('"', '""')}"`);
   await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${list.join(', ')} RESTART IDENTITY CASCADE`);
+  await seedContent(prisma);
+}
+
+const MIGRATIONS = 'prisma/migrations';
+
+/**
+ * The content seed statements of every migration, in order: the SQL between `-- Content seed`
+ * and `-- End of content seed.` (progression definitions, A4.1). Content is reference data a migration ships,
+ * so an emptied test database gets it back, as a migrated database has it.
+ */
+export function contentSeedStatements(): string[] {
+  return readdirSync(MIGRATIONS)
+    .filter((name) => !name.endsWith('.toml'))
+    .sort()
+    .flatMap((name) => {
+      const sql = readFileSync(join(MIGRATIONS, name, 'migration.sql'), 'utf8');
+      const start = sql.indexOf('-- Content seed');
+      if (start < 0) return [];
+      const end = sql.indexOf('-- End of content seed.', start);
+      if (end < 0) throw new Error(`${name}: a content seed needs its end marker.`);
+      return sql
+        .slice(start, end)
+        .split(/;\s*$/m)
+        .map((statement) =>
+          statement
+            .split('\n')
+            .filter((line) => !line.trim().startsWith('--'))
+            .join('\n')
+            .trim(),
+        )
+        .filter((statement) => statement.length > 0);
+    });
+}
+
+export async function seedContent(prisma: PrismaClient): Promise<void> {
+  for (const statement of contentSeedStatements()) await prisma.$executeRawUnsafe(statement);
 }

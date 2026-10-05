@@ -1,4 +1,4 @@
-import { assertTestDatabaseUrl } from './test-database.js';
+import { assertTestDatabaseUrl, contentSeedStatements } from './test-database.js';
 
 describe('assertTestDatabaseUrl', () => {
   it('accepts a database whose name ends with _test', () => {
@@ -18,5 +18,19 @@ describe('assertTestDatabaseUrl', () => {
   it('refuses a missing or malformed URL', () => {
     expect(() => assertTestDatabaseUrl(undefined)).toThrow();
     expect(() => assertTestDatabaseUrl('not a url')).toThrow();
+  });
+});
+
+describe('contentSeedStatements', () => {
+  it('takes only marked content seeds: the progression catalog, never configuration', () => {
+    const statements = contentSeedStatements();
+    expect(statements.length).toBeGreaterThan(0);
+    for (const statement of statements) expect(statement).toMatch(/^INSERT INTO "/);
+    expect(statements.map((s) => /^INSERT INTO "([a-z_]+)"/.exec(s)?.[1])).toEqual([
+      'tree_species',
+      'badge_definitions',
+      'achievement_definitions',
+    ]);
+    expect(statements.join('\n')).not.toMatch(/product_config/);
   });
 });

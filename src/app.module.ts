@@ -11,6 +11,7 @@ import { InsightsModule } from './insights/insights.module.js';
 import { IdentityModule } from './identity/identity.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { ProductConfigModule } from './product-config/product-config.module.js';
+import { ProgressionModule } from './progression/progression.module.js';
 import { SessionsModule } from './sessions/sessions.module.js';
 import { TopicsModule } from './topics/topics.module.js';
 import { TreesModule } from './trees/trees.module.js';
@@ -29,6 +30,7 @@ import { TreesModule } from './trees/trees.module.js';
     ForestModule,
     HomeModule,
     InsightsModule,
+    ProgressionModule,
   ],
   controllers: [HealthController],
 })
