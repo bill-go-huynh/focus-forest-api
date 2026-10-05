@@ -1,0 +1,2152 @@
+{
+  "sessionFirst": {
+    "id": "00000000-0000-4000-8000-000000000001",
+    "topicId": "00000000-0000-4000-8000-00000000a001",
+    "startedAt": "2026-09-01T06:00:00.000Z",
+    "endedAt": "2026-09-01T06:30:00.000Z",
+    "plannedMinutes": 30,
+    "focusedMilliseconds": 1800000,
+    "pausedMilliseconds": 0,
+    "status": "completed",
+    "counted": true,
+    "localDate": "2026-09-01",
+    "year": 2026,
+    "month": 9,
+    "note": null,
+    "noteHighlighted": false,
+    "createdAt": "2026-01-01T00:00:00.000Z",
+    "growth": {
+      "tree": {
+        "year": 2026,
+        "month": 9,
+        "status": "growing",
+        "traits": [],
+        "species": "signature",
+        "progress": {
+          "stage": "sprout",
+          "blossoms": {
+            "level": 0,
+            "maxLevel": 7
+          },
+          "fullness": {
+            "level": 0,
+            "maxLevel": 5
+          },
+          "richness": {
+            "tier": 0,
+            "maxTier": 5
+          },
+          "stageNumber": 2,
+          "growthMinutes": 30,
+          "progressToNextStage": 0.25
+        },
+        "vitality": "healthy",
+        "configVersion": 1,
+        "variationSeed": 1000001,
+        "partialFirstMonth": false
+      },
+      "stage": {
+        "to": "sprout",
+        "from": "seed"
+      },
+      "counted": true,
+      "newTraits": [],
+      "monthClosed": false
+    }
+  },
+  "sessionDiscarded": {
+    "id": "00000000-0000-4000-8000-000000000002",
+    "topicId": "00000000-0000-4000-8000-00000000a001",
+    "startedAt": "2026-09-01T07:00:00.000Z",
+    "endedAt": "2026-09-01T07:03:00.000Z",
+    "plannedMinutes": 3,
+    "focusedMilliseconds": 180000,
+    "pausedMilliseconds": 0,
+    "status": "discarded",
+    "counted": false,
+    "localDate": "2026-09-01",
+    "year": 2026,
+    "month": 9,
+    "note": null,
+    "noteHighlighted": false,
+    "createdAt": "2026-01-01T00:00:00.000Z",
+    "growth": {
+      "tree": {
+        "year": 2026,
+        "month": 9,
+        "status": "growing",
+        "traits": [],
+        "species": "signature",
+        "progress": {
+          "stage": "sprout",
+          "blossoms": {
+            "level": 0,
+            "maxLevel": 7
+          },
+          "fullness": {
+            "level": 0,
+            "maxLevel": 5
+          },
+          "richness": {
+            "tier": 0,
+            "maxTier": 5
+          },
+          "stageNumber": 2,
+          "growthMinutes": 30,
+          "progressToNextStage": 0.25
+        },
+        "vitality": "healthy",
+        "configVersion": 1,
+        "variationSeed": 1000001,
+        "partialFirstMonth": false
+      },
+      "counted": false,
+      "newTraits": [],
+      "monthClosed": false
+    }
+  },
+  "homeGrowing": {
+    "today": "2026-09-08",
+    "tree": {
+      "year": 2026,
+      "month": 9,
+      "status": "growing",
+      "species": "signature",
+      "variationSeed": 1000001,
+      "partialFirstMonth": false,
+      "configVersion": 1,
+      "progress": {
+        "stage": "growing_tree",
+        "stageNumber": 4,
+        "progressToNextStage": 0.055,
+        "growthMinutes": 380,
+        "fullness": {
+          "level": 1,
+          "maxLevel": 5
+        },
+        "blossoms": {
+          "level": 3,
+          "maxLevel": 7
+        },
+        "richness": {
+          "tier": 0,
+          "maxTier": 5
+        }
+      },
+      "traits": [
+        {
+          "id": "streak-days:3",
+          "earnedAt": "2026-09-03T22:00:00.000Z"
+        },
+        {
+          "id": "streak-days:7",
+          "earnedAt": "2026-09-08T22:00:00.000Z"
+        }
+      ],
+      "vitality": "thriving"
+    },
+    "goals": {
+      "daily": {
+        "minutes": 45,
+        "isDefault": false,
+        "pending": null,
+        "today": {
+          "date": "2026-09-08",
+          "targetMinutes": 45,
+          "focusedMinutes": 50,
+          "remainingMinutes": 0,
+          "completed": true
+        }
+      },
+      "weekly": {
+        "goal": {
+          "type": "focused_minutes",
+          "target": 150
+        },
+        "pending": null,
+        "thisWeek": {
+          "weekStart": "2026-09-07",
+          "type": "focused_minutes",
+          "target": 150,
+          "current": 100,
+          "completed": false
+        }
+      }
+    },
+    "streak": {
+      "current": 7,
+      "longest": 7,
+      "today": "active",
+      "milestones": {
+        "reached": [
+          3,
+          7
+        ],
+        "next": 14
+      },
+      "recovery": {
+        "offer": null,
+        "usedThisMonth": 0,
+        "perMonth": 1
+      }
+    },
+    "rest": {
+      "today": false,
+      "allowance": {
+        "perWeek": 2,
+        "weekStart": "2026-09-07",
+        "used": 0,
+        "remaining": 2
+      }
+    },
+    "recentTopics": [
+      {
+        "id": "00000000-0000-4000-8000-00000000a001",
+        "name": "Reading",
+        "icon": "book",
+        "color": "topic.1",
+        "description": null,
+        "status": "active",
+        "archivedAt": null,
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "updatedAt": "2026-01-01T00:00:00.000Z",
+        "lastUsedAt": "2026-09-08T06:00:00.000Z",
+        "lastPlannedMinutes": 50
+      },
+      {
+        "id": "00000000-0000-4000-8000-000000009001",
+        "name": "Writing",
+        "icon": "pen",
+        "color": "topic.2",
+        "description": null,
+        "status": "active",
+        "archivedAt": null,
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "updatedAt": "2026-01-01T00:00:00.000Z",
+        "lastUsedAt": "2026-09-07T06:00:00.000Z",
+        "lastPlannedMinutes": 50
+      }
+    ],
+    "pendingCeremony": null,
+    "week": {
+      "weekStart": "2026-09-07",
+      "focusedMilliseconds": 6000000,
+      "sessionCount": 2,
+      "activeDays": 2
+    }
+  },
+  "currentTree": {
+    "tree": {
+      "year": 2026,
+      "month": 9,
+      "status": "growing",
+      "species": "signature",
+      "variationSeed": 1000001,
+      "partialFirstMonth": false,
+      "configVersion": 1,
+      "progress": {
+        "stage": "growing_tree",
+        "stageNumber": 4,
+        "progressToNextStage": 0.055,
+        "growthMinutes": 380,
+        "fullness": {
+          "level": 1,
+          "maxLevel": 5
+        },
+        "blossoms": {
+          "level": 3,
+          "maxLevel": 7
+        },
+        "richness": {
+          "tier": 0,
+          "maxTier": 5
+        }
+      },
+      "traits": [
+        {
+          "id": "streak-days:3",
+          "earnedAt": "2026-09-03T22:00:00.000Z"
+        },
+        {
+          "id": "streak-days:7",
+          "earnedAt": "2026-09-08T22:00:00.000Z"
+        }
+      ],
+      "vitality": "thriving"
+    },
+    "stats": {
+      "focusedMinutes": 380,
+      "sessionCount": 8,
+      "activeDays": 8,
+      "dailyGoalsMet": 7,
+      "weeklyGoalsMet": 1,
+      "topTopicId": "00000000-0000-4000-8000-00000000a001"
+    }
+  },
+  "goals": {
+    "daily": {
+      "minutes": 45,
+      "isDefault": false,
+      "pending": null,
+      "today": {
+        "date": "2026-09-08",
+        "targetMinutes": 45,
+        "focusedMinutes": 50,
+        "remainingMinutes": 0,
+        "completed": true
+      }
+    },
+    "weekly": {
+      "goal": {
+        "type": "focused_minutes",
+        "target": 150
+      },
+      "pending": null,
+      "thisWeek": {
+        "weekStart": "2026-09-07",
+        "type": "focused_minutes",
+        "target": 150,
+        "current": 100,
+        "completed": false
+      }
+    }
+  },
+  "restDays": {
+    "restDays": [],
+    "allowance": {
+      "perWeek": 2,
+      "weekStart": "2026-09-07",
+      "used": 0,
+      "remaining": 2
+    }
+  },
+  "streak": {
+    "current": 7,
+    "longest": 7,
+    "today": "active",
+    "milestones": {
+      "reached": [
+        3,
+        7
+      ],
+      "next": 14
+    },
+    "recovery": {
+      "offer": null,
+      "usedThisMonth": 0,
+      "perMonth": 1
+    }
+  },
+  "homeAfterClose": {
+    "today": "2026-10-02",
+    "tree": {
+      "year": 2026,
+      "month": 10,
+      "status": "growing",
+      "species": "signature",
+      "variationSeed": 1000002,
+      "partialFirstMonth": false,
+      "configVersion": 1,
+      "progress": {
+        "stage": "seed",
+        "stageNumber": 1,
+        "progressToNextStage": 0,
+        "growthMinutes": 0,
+        "fullness": {
+          "level": 0,
+          "maxLevel": 5
+        },
+        "blossoms": {
+          "level": 0,
+          "maxLevel": 7
+        },
+        "richness": {
+          "tier": 0,
+          "maxTier": 5
+        }
+      },
+      "traits": [],
+      "vitality": "quiet"
+    },
+    "goals": {
+      "daily": {
+        "minutes": 45,
+        "isDefault": false,
+        "pending": null,
+        "today": {
+          "date": "2026-10-02",
+          "targetMinutes": 45,
+          "focusedMinutes": 0,
+          "remainingMinutes": 45,
+          "completed": false
+        }
+      },
+      "weekly": {
+        "goal": {
+          "type": "focused_minutes",
+          "target": 150
+        },
+        "pending": null,
+        "thisWeek": {
+          "weekStart": "2026-09-28",
+          "type": "focused_minutes",
+          "target": 150,
+          "current": 0,
+          "completed": false
+        }
+      }
+    },
+    "streak": {
+      "current": 0,
+      "longest": 7,
+      "today": "pending",
+      "milestones": {
+        "reached": [],
+        "next": 3
+      },
+      "recovery": {
+        "offer": null,
+        "usedThisMonth": 0,
+        "perMonth": 1
+      }
+    },
+    "rest": {
+      "today": false,
+      "allowance": {
+        "perWeek": 2,
+        "weekStart": "2026-09-28",
+        "used": 0,
+        "remaining": 2
+      }
+    },
+    "recentTopics": [
+      {
+        "id": "00000000-0000-4000-8000-00000000a001",
+        "name": "Reading",
+        "icon": "book",
+        "color": "topic.1",
+        "description": null,
+        "status": "active",
+        "archivedAt": null,
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "updatedAt": "2026-01-01T00:00:00.000Z",
+        "lastUsedAt": "2026-09-08T06:00:00.000Z",
+        "lastPlannedMinutes": 50
+      },
+      {
+        "id": "00000000-0000-4000-8000-000000009001",
+        "name": "Writing",
+        "icon": "pen",
+        "color": "topic.2",
+        "description": null,
+        "status": "active",
+        "archivedAt": null,
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "updatedAt": "2026-01-01T00:00:00.000Z",
+        "lastUsedAt": "2026-09-07T06:00:00.000Z",
+        "lastPlannedMinutes": 50
+      }
+    ],
+    "pendingCeremony": {
+      "year": 2026,
+      "month": 9
+    },
+    "week": {
+      "weekStart": "2026-09-28",
+      "focusedMilliseconds": 0,
+      "sessionCount": 0,
+      "activeDays": 0
+    }
+  },
+  "sessionOctober": {
+    "id": "00000000-0000-4000-8000-000000000050",
+    "topicId": "00000000-0000-4000-8000-00000000a001",
+    "startedAt": "2026-10-02T06:00:00.000Z",
+    "endedAt": "2026-10-02T06:40:00.000Z",
+    "plannedMinutes": 40,
+    "focusedMilliseconds": 2400000,
+    "pausedMilliseconds": 0,
+    "status": "completed",
+    "counted": true,
+    "localDate": "2026-10-02",
+    "year": 2026,
+    "month": 10,
+    "note": null,
+    "noteHighlighted": false,
+    "createdAt": "2026-01-01T00:00:00.000Z",
+    "growth": {
+      "tree": {
+        "year": 2026,
+        "month": 10,
+        "status": "growing",
+        "traits": [],
+        "species": "signature",
+        "progress": {
+          "stage": "sprout",
+          "blossoms": {
+            "level": 0,
+            "maxLevel": 7
+          },
+          "fullness": {
+            "level": 0,
+            "maxLevel": 5
+          },
+          "richness": {
+            "tier": 0,
+            "maxTier": 5
+          },
+          "stageNumber": 2,
+          "growthMinutes": 40,
+          "progressToNextStage": 0.333
+        },
+        "vitality": "recovering",
+        "configVersion": 1,
+        "variationSeed": 1000002,
+        "partialFirstMonth": false
+      },
+      "stage": {
+        "to": "sprout",
+        "from": "seed"
+      },
+      "counted": true,
+      "newTraits": [],
+      "monthClosed": false
+    }
+  },
+  "sessionLate": {
+    "id": "00000000-0000-4000-8000-000000000051",
+    "topicId": "00000000-0000-4000-8000-00000000a001",
+    "startedAt": "2026-09-28T06:00:00.000Z",
+    "endedAt": "2026-09-28T06:35:00.000Z",
+    "plannedMinutes": 35,
+    "focusedMilliseconds": 2100000,
+    "pausedMilliseconds": 0,
+    "status": "completed",
+    "counted": true,
+    "localDate": "2026-09-28",
+    "year": 2026,
+    "month": 9,
+    "note": null,
+    "noteHighlighted": false,
+    "createdAt": "2026-01-01T00:00:00.000Z",
+    "growth": {
+      "tree": null,
+      "counted": true,
+      "newTraits": [],
+      "monthClosed": true
+    }
+  },
+  "forest": {
+    "items": [
+      {
+        "kind": "growing",
+        "year": 2026,
+        "month": 10,
+        "tree": {
+          "year": 2026,
+          "month": 10,
+          "status": "growing",
+          "species": "signature",
+          "variationSeed": 1000002,
+          "partialFirstMonth": false,
+          "configVersion": 1,
+          "progress": {
+            "stage": "sprout",
+            "stageNumber": 2,
+            "progressToNextStage": 0.333,
+            "growthMinutes": 40,
+            "fullness": {
+              "level": 0,
+              "maxLevel": 5
+            },
+            "blossoms": {
+              "level": 0,
+              "maxLevel": 7
+            },
+            "richness": {
+              "tier": 0,
+              "maxTier": 5
+            }
+          },
+          "traits": [],
+          "vitality": "recovering"
+        },
+        "focusedMilliseconds": 2400000
+      },
+      {
+        "kind": "archived",
+        "year": 2026,
+        "month": 9,
+        "tree": {
+          "year": 2026,
+          "month": 9,
+          "status": "archived",
+          "species": "signature",
+          "variationSeed": 1000001,
+          "partialFirstMonth": false,
+          "configVersion": 1,
+          "progress": {
+            "stage": "growing_tree",
+            "blossoms": {
+              "level": 3,
+              "maxLevel": 7
+            },
+            "fullness": {
+              "level": 1,
+              "maxLevel": 5
+            },
+            "richness": {
+              "tier": 0,
+              "maxTier": 5
+            },
+            "stageNumber": 4,
+            "growthMinutes": 380,
+            "progressToNextStage": 0.055
+          },
+          "traits": [
+            {
+              "id": "streak-days:3",
+              "earnedAt": "2026-09-03T22:00:00.000Z"
+            },
+            {
+              "id": "streak-days:7",
+              "earnedAt": "2026-09-08T22:00:00.000Z"
+            }
+          ],
+          "vitality": null
+        },
+        "focusedMilliseconds": 22800000
+      },
+      {
+        "kind": "resting",
+        "year": 2026,
+        "month": 8,
+        "focusedMilliseconds": 0
+      }
+    ],
+    "nextCursor": null,
+    "progression": {
+      "level": 2,
+      "maxLevel": 6,
+      "treeCount": 1,
+      "nextLevelAt": 3,
+      "unlockedAreas": [
+        "lake"
+      ]
+    },
+    "summary": {
+      "treeCount": 1,
+      "lifetimeFocusedMinutes": 455
+    }
+  },
+  "treeArchived": {
+    "kind": "archived",
+    "year": 2026,
+    "month": 9,
+    "archivedAt": "2026-10-02T09:00:00.000Z",
+    "tree": {
+      "year": 2026,
+      "month": 9,
+      "status": "archived",
+      "species": "signature",
+      "variationSeed": 1000001,
+      "partialFirstMonth": false,
+      "configVersion": 1,
+      "progress": {
+        "stage": "growing_tree",
+        "blossoms": {
+          "level": 3,
+          "maxLevel": 7
+        },
+        "fullness": {
+          "level": 1,
+          "maxLevel": 5
+        },
+        "richness": {
+          "tier": 0,
+          "maxTier": 5
+        },
+        "stageNumber": 4,
+        "growthMinutes": 380,
+        "progressToNextStage": 0.055
+      },
+      "traits": [
+        {
+          "id": "streak-days:3",
+          "earnedAt": "2026-09-03T22:00:00.000Z"
+        },
+        {
+          "id": "streak-days:7",
+          "earnedAt": "2026-09-08T22:00:00.000Z"
+        }
+      ],
+      "vitality": null
+    },
+    "stats": {
+      "topTopic": {
+        "id": "00000000-0000-4000-8000-00000000a001",
+        "icon": "book",
+        "name": "Reading",
+        "color": "topic.1"
+      },
+      "activeDays": 8,
+      "sessionCount": 8,
+      "dailyGoalsMet": 7,
+      "longestStreak": 7,
+      "focusedMinutes": 380,
+      "weeklyGoalsMet": 1
+    },
+    "highlightedNotes": [
+      {
+        "note": "A calm, clear morning.",
+        "sessionId": "00000000-0000-4000-8000-000000000005"
+      }
+    ],
+    "badges": [],
+    "events": []
+  },
+  "treeResting": {
+    "kind": "resting",
+    "year": 2026,
+    "month": 8
+  },
+  "treeGrowing": {
+    "kind": "growing",
+    "year": 2026,
+    "month": 10,
+    "tree": {
+      "year": 2026,
+      "month": 10,
+      "status": "growing",
+      "species": "signature",
+      "variationSeed": 1000002,
+      "partialFirstMonth": false,
+      "configVersion": 1,
+      "progress": {
+        "stage": "sprout",
+        "stageNumber": 2,
+        "progressToNextStage": 0.333,
+        "growthMinutes": 40,
+        "fullness": {
+          "level": 0,
+          "maxLevel": 5
+        },
+        "blossoms": {
+          "level": 0,
+          "maxLevel": 7
+        },
+        "richness": {
+          "tier": 0,
+          "maxTier": 5
+        }
+      },
+      "traits": [],
+      "vitality": "recovering"
+    },
+    "stats": {
+      "focusedMinutes": 40,
+      "sessionCount": 1,
+      "activeDays": 1,
+      "dailyGoalsMet": 0,
+      "weeklyGoalsMet": 0,
+      "topTopicId": "00000000-0000-4000-8000-00000000a001"
+    }
+  },
+  "recap": {
+    "year": 2026,
+    "month": 9,
+    "generatedAt": "2026-10-02T09:00:00.000Z",
+    "tree": {
+      "year": 2026,
+      "month": 9,
+      "status": "archived",
+      "species": "signature",
+      "variationSeed": 1000001,
+      "partialFirstMonth": false,
+      "configVersion": 1,
+      "progress": {
+        "stage": "growing_tree",
+        "blossoms": {
+          "level": 3,
+          "maxLevel": 7
+        },
+        "fullness": {
+          "level": 1,
+          "maxLevel": 5
+        },
+        "richness": {
+          "tier": 0,
+          "maxTier": 5
+        },
+        "stageNumber": 4,
+        "growthMinutes": 380,
+        "progressToNextStage": 0.055
+      },
+      "traits": [
+        {
+          "id": "streak-days:3",
+          "earnedAt": "2026-09-03T22:00:00.000Z"
+        },
+        {
+          "id": "streak-days:7",
+          "earnedAt": "2026-09-08T22:00:00.000Z"
+        }
+      ],
+      "vitality": null
+    },
+    "stats": {
+      "topTopic": {
+        "id": "00000000-0000-4000-8000-00000000a001",
+        "icon": "book",
+        "name": "Reading",
+        "color": "topic.1"
+      },
+      "activeDays": 8,
+      "sessionCount": 8,
+      "dailyGoalsMet": 7,
+      "longestStreak": 7,
+      "focusedMinutes": 380,
+      "weeklyGoalsMet": 1
+    },
+    "badges": [],
+    "events": [],
+    "newRecords": [
+      {
+        "kind": "most_focused_day",
+        "unit": "minutes",
+        "value": 50,
+        "achievedOn": "2026-09-02"
+      },
+      {
+        "kind": "most_focused_week",
+        "unit": "minutes",
+        "value": 280,
+        "achievedOn": "2026-08-31"
+      },
+      {
+        "kind": "most_focused_month",
+        "unit": "minutes",
+        "value": 380,
+        "achievedOn": "2026-09-01"
+      },
+      {
+        "kind": "longest_streak",
+        "unit": "days",
+        "value": 7,
+        "achievedOn": "2026-09-08"
+      },
+      {
+        "kind": "longest_session",
+        "unit": "minutes",
+        "value": 50,
+        "achievedOn": "2026-09-02"
+      },
+      {
+        "kind": "longest_daily_goal_streak",
+        "unit": "days",
+        "value": 7,
+        "achievedOn": "2026-09-08"
+      }
+    ],
+    "highlightedNotes": [
+      {
+        "note": "A calm, clear morning.",
+        "sessionId": "00000000-0000-4000-8000-000000000005"
+      }
+    ],
+    "mostProductiveDay": {
+      "date": "2026-09-02",
+      "focusedMinutes": 50
+    },
+    "mostProductiveWeek": {
+      "weekStart": "2026-08-31",
+      "focusedMinutes": 280
+    },
+    "ceremonySeenAt": null,
+    "recapSeenAt": null
+  },
+  "ceremonySeen": {
+    "ceremonySeenAt": "2026-10-02T22:00:00.000Z",
+    "recapSeenAt": null
+  },
+  "insightsWeek": {
+    "period": {
+      "kind": "week",
+      "from": "2026-08-31",
+      "to": "2026-09-06",
+      "current": false
+    },
+    "summary": {
+      "focusedMilliseconds": 16800000,
+      "sessionCount": 6,
+      "activeDays": 6,
+      "averageFocusedMillisecondsPerActiveDay": 2800000
+    },
+    "days": [
+      {
+        "date": "2026-08-31",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "none",
+        "dailyGoalMinutes": null
+      },
+      {
+        "date": "2026-09-01",
+        "focusedMilliseconds": 1800000,
+        "sessionCount": 1,
+        "active": true,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-02",
+        "focusedMilliseconds": 3000000,
+        "sessionCount": 1,
+        "active": true,
+        "rest": false,
+        "dailyGoal": "met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-03",
+        "focusedMilliseconds": 3000000,
+        "sessionCount": 1,
+        "active": true,
+        "rest": false,
+        "dailyGoal": "met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-04",
+        "focusedMilliseconds": 3000000,
+        "sessionCount": 1,
+        "active": true,
+        "rest": false,
+        "dailyGoal": "met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-05",
+        "focusedMilliseconds": 3000000,
+        "sessionCount": 1,
+        "active": true,
+        "rest": false,
+        "dailyGoal": "met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-06",
+        "focusedMilliseconds": 3000000,
+        "sessionCount": 1,
+        "active": true,
+        "rest": true,
+        "dailyGoal": "met",
+        "dailyGoalMinutes": 45
+      }
+    ],
+    "topics": [
+      {
+        "topicId": "00000000-0000-4000-8000-00000000a001",
+        "name": "Reading",
+        "icon": "book",
+        "color": "topic.1",
+        "status": "active",
+        "focusedMilliseconds": 10800000,
+        "sessionCount": 4,
+        "share": 0.6429,
+        "lastUsedAt": "2026-09-06T06:00:00.000Z"
+      },
+      {
+        "topicId": "00000000-0000-4000-8000-000000009001",
+        "name": "Writing",
+        "icon": "pen",
+        "color": "topic.2",
+        "status": "active",
+        "focusedMilliseconds": 6000000,
+        "sessionCount": 2,
+        "share": 0.3571,
+        "lastUsedAt": "2026-09-05T06:00:00.000Z"
+      }
+    ],
+    "longestSession": {
+      "sessionId": "00000000-0000-4000-8000-000000000003",
+      "topicId": "00000000-0000-4000-8000-00000000a001",
+      "localDate": "2026-09-02",
+      "focusedMilliseconds": 3000000
+    },
+    "goals": {
+      "daily": {
+        "completed": 5,
+        "eligible": 6
+      },
+      "weekly": {
+        "weekStart": "2026-08-31",
+        "type": "focused_minutes",
+        "target": 150,
+        "current": 280,
+        "completed": true
+      }
+    },
+    "restDays": 1,
+    "streak": {
+      "current": 1,
+      "longest": 7,
+      "longestInPeriod": 5
+    },
+    "newRecords": [
+      {
+        "kind": "most_focused_day",
+        "value": 50,
+        "unit": "minutes",
+        "achievedOn": "2026-09-02"
+      },
+      {
+        "kind": "most_focused_week",
+        "value": 280,
+        "unit": "minutes",
+        "achievedOn": "2026-08-31"
+      },
+      {
+        "kind": "most_focused_month",
+        "value": 280,
+        "unit": "minutes",
+        "achievedOn": "2026-09-01"
+      },
+      {
+        "kind": "longest_streak",
+        "value": 5,
+        "unit": "days",
+        "achievedOn": "2026-09-05"
+      },
+      {
+        "kind": "longest_session",
+        "value": 50,
+        "unit": "minutes",
+        "achievedOn": "2026-09-02"
+      },
+      {
+        "kind": "longest_daily_goal_streak",
+        "value": 5,
+        "unit": "days",
+        "achievedOn": "2026-09-06"
+      }
+    ]
+  },
+  "insightsMonth": {
+    "period": {
+      "kind": "month",
+      "year": 2026,
+      "month": 9,
+      "from": "2026-09-01",
+      "to": "2026-09-30",
+      "current": false,
+      "archived": true
+    },
+    "summary": {
+      "focusedMilliseconds": 24900000,
+      "sessionCount": 9,
+      "activeDays": 9,
+      "averageFocusedMillisecondsPerActiveDay": 2766666
+    },
+    "topics": [
+      {
+        "topicId": "00000000-0000-4000-8000-00000000a001",
+        "name": "Reading",
+        "icon": "book",
+        "color": "topic.1",
+        "status": "active",
+        "focusedMilliseconds": 15900000,
+        "sessionCount": 6,
+        "share": 0.6386,
+        "lastUsedAt": "2026-09-28T06:00:00.000Z"
+      },
+      {
+        "topicId": "00000000-0000-4000-8000-000000009001",
+        "name": "Writing",
+        "icon": "pen",
+        "color": "topic.2",
+        "status": "active",
+        "focusedMilliseconds": 9000000,
+        "sessionCount": 3,
+        "share": 0.3614,
+        "lastUsedAt": "2026-09-07T06:00:00.000Z"
+      }
+    ],
+    "topTopic": {
+      "topicId": "00000000-0000-4000-8000-00000000a001",
+      "name": "Reading",
+      "icon": "book",
+      "color": "topic.1",
+      "status": "active",
+      "focusedMilliseconds": 15900000,
+      "sessionCount": 6,
+      "share": 0.6386,
+      "lastUsedAt": "2026-09-28T06:00:00.000Z"
+    },
+    "longestSession": {
+      "sessionId": "00000000-0000-4000-8000-000000000003",
+      "topicId": "00000000-0000-4000-8000-00000000a001",
+      "localDate": "2026-09-02",
+      "focusedMilliseconds": 3000000
+    },
+    "mostProductiveDay": {
+      "date": "2026-09-02",
+      "focusedMinutes": 50
+    },
+    "mostProductiveWeek": {
+      "weekStart": "2026-08-31",
+      "focusedMinutes": 280
+    },
+    "days": [
+      {
+        "date": "2026-09-01",
+        "focusedMilliseconds": 1800000,
+        "sessionCount": 1,
+        "active": true,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-02",
+        "focusedMilliseconds": 3000000,
+        "sessionCount": 1,
+        "active": true,
+        "rest": false,
+        "dailyGoal": "met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-03",
+        "focusedMilliseconds": 3000000,
+        "sessionCount": 1,
+        "active": true,
+        "rest": false,
+        "dailyGoal": "met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-04",
+        "focusedMilliseconds": 3000000,
+        "sessionCount": 1,
+        "active": true,
+        "rest": false,
+        "dailyGoal": "met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-05",
+        "focusedMilliseconds": 3000000,
+        "sessionCount": 1,
+        "active": true,
+        "rest": false,
+        "dailyGoal": "met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-06",
+        "focusedMilliseconds": 3000000,
+        "sessionCount": 1,
+        "active": true,
+        "rest": true,
+        "dailyGoal": "met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-07",
+        "focusedMilliseconds": 3000000,
+        "sessionCount": 1,
+        "active": true,
+        "rest": false,
+        "dailyGoal": "met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-08",
+        "focusedMilliseconds": 3000000,
+        "sessionCount": 1,
+        "active": true,
+        "rest": false,
+        "dailyGoal": "met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-09",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-10",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-11",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-12",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-13",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-14",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-15",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-16",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-17",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-18",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-19",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-20",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-21",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-22",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-23",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-24",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-25",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-26",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-27",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-28",
+        "focusedMilliseconds": 2100000,
+        "sessionCount": 1,
+        "active": true,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-29",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-30",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      }
+    ],
+    "goals": {
+      "daily": {
+        "completed": 7,
+        "eligible": 30
+      },
+      "weekly": {
+        "completed": 0,
+        "eligible": 3
+      }
+    },
+    "restDays": 1,
+    "streak": {
+      "current": 1,
+      "longest": 7,
+      "longestInPeriod": 7
+    },
+    "newRecords": [
+      {
+        "kind": "most_focused_day",
+        "value": 50,
+        "unit": "minutes",
+        "achievedOn": "2026-09-02"
+      },
+      {
+        "kind": "most_focused_week",
+        "value": 280,
+        "unit": "minutes",
+        "achievedOn": "2026-08-31"
+      },
+      {
+        "kind": "most_focused_month",
+        "value": 415,
+        "unit": "minutes",
+        "achievedOn": "2026-09-01"
+      },
+      {
+        "kind": "longest_streak",
+        "value": 7,
+        "unit": "days",
+        "achievedOn": "2026-09-08"
+      },
+      {
+        "kind": "longest_session",
+        "value": 50,
+        "unit": "minutes",
+        "achievedOn": "2026-09-02"
+      },
+      {
+        "kind": "longest_daily_goal_streak",
+        "value": 7,
+        "unit": "days",
+        "achievedOn": "2026-09-08"
+      }
+    ],
+    "archivedStats": {
+      "topTopic": {
+        "id": "00000000-0000-4000-8000-00000000a001",
+        "icon": "book",
+        "name": "Reading",
+        "color": "topic.1"
+      },
+      "activeDays": 8,
+      "sessionCount": 8,
+      "dailyGoalsMet": 7,
+      "longestStreak": 7,
+      "focusedMinutes": 380,
+      "weeklyGoalsMet": 1
+    }
+  },
+  "heatmap": {
+    "from": "2026-08-31",
+    "to": "2026-10-02",
+    "days": [
+      {
+        "date": "2026-08-31",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "none",
+        "dailyGoalMinutes": null
+      },
+      {
+        "date": "2026-09-01",
+        "focusedMilliseconds": 1800000,
+        "sessionCount": 1,
+        "active": true,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-02",
+        "focusedMilliseconds": 3000000,
+        "sessionCount": 1,
+        "active": true,
+        "rest": false,
+        "dailyGoal": "met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-03",
+        "focusedMilliseconds": 3000000,
+        "sessionCount": 1,
+        "active": true,
+        "rest": false,
+        "dailyGoal": "met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-04",
+        "focusedMilliseconds": 3000000,
+        "sessionCount": 1,
+        "active": true,
+        "rest": false,
+        "dailyGoal": "met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-05",
+        "focusedMilliseconds": 3000000,
+        "sessionCount": 1,
+        "active": true,
+        "rest": false,
+        "dailyGoal": "met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-06",
+        "focusedMilliseconds": 3000000,
+        "sessionCount": 1,
+        "active": true,
+        "rest": true,
+        "dailyGoal": "met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-07",
+        "focusedMilliseconds": 3000000,
+        "sessionCount": 1,
+        "active": true,
+        "rest": false,
+        "dailyGoal": "met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-08",
+        "focusedMilliseconds": 3000000,
+        "sessionCount": 1,
+        "active": true,
+        "rest": false,
+        "dailyGoal": "met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-09",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-10",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-11",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-12",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-13",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-14",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-15",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-16",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-17",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-18",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-19",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-20",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-21",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-22",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-23",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-24",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-25",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-26",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-27",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-28",
+        "focusedMilliseconds": 2100000,
+        "sessionCount": 1,
+        "active": true,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-29",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-09-30",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-10-01",
+        "focusedMilliseconds": 0,
+        "sessionCount": 0,
+        "active": false,
+        "rest": false,
+        "dailyGoal": "not_met",
+        "dailyGoalMinutes": 45
+      },
+      {
+        "date": "2026-10-02",
+        "focusedMilliseconds": 2400000,
+        "sessionCount": 1,
+        "active": true,
+        "rest": false,
+        "dailyGoal": "pending",
+        "dailyGoalMinutes": 45
+      }
+    ]
+  },
+  "records": {
+    "records": [
+      {
+        "kind": "most_focused_day",
+        "value": 50,
+        "unit": "minutes",
+        "achievedOn": "2026-09-02"
+      },
+      {
+        "kind": "most_focused_week",
+        "value": 280,
+        "unit": "minutes",
+        "achievedOn": "2026-08-31"
+      },
+      {
+        "kind": "most_focused_month",
+        "value": 415,
+        "unit": "minutes",
+        "achievedOn": "2026-09-01"
+      },
+      {
+        "kind": "longest_streak",
+        "value": 7,
+        "unit": "days",
+        "achievedOn": "2026-09-08"
+      },
+      {
+        "kind": "longest_session",
+        "value": 50,
+        "unit": "minutes",
+        "achievedOn": "2026-09-02"
+      },
+      {
+        "kind": "longest_daily_goal_streak",
+        "value": 7,
+        "unit": "days",
+        "achievedOn": "2026-09-08"
+      }
+    ]
+  },
+  "profileStats": {
+    "focusedMilliseconds": 27300000,
+    "sessionCount": 10,
+    "currentStreak": 1,
+    "longestStreak": 7,
+    "archivedTreeCount": 1
+  },
+  "historySeptember": {
+    "items": [
+      {
+        "id": "00000000-0000-4000-8000-000000000051",
+        "topicId": "00000000-0000-4000-8000-00000000a001",
+        "startedAt": "2026-09-28T06:00:00.000Z",
+        "endedAt": "2026-09-28T06:35:00.000Z",
+        "plannedMinutes": 35,
+        "focusedMilliseconds": 2100000,
+        "pausedMilliseconds": 0,
+        "status": "completed",
+        "counted": true,
+        "localDate": "2026-09-28",
+        "year": 2026,
+        "month": 9,
+        "note": null,
+        "noteHighlighted": false,
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "topic": {
+          "id": "00000000-0000-4000-8000-00000000a001",
+          "name": "Reading",
+          "icon": "book",
+          "color": "topic.1",
+          "status": "active"
+        }
+      },
+      {
+        "id": "00000000-0000-4000-8000-000000000009",
+        "topicId": "00000000-0000-4000-8000-00000000a001",
+        "startedAt": "2026-09-08T06:00:00.000Z",
+        "endedAt": "2026-09-08T06:50:00.000Z",
+        "plannedMinutes": 50,
+        "focusedMilliseconds": 3000000,
+        "pausedMilliseconds": 0,
+        "status": "completed",
+        "counted": true,
+        "localDate": "2026-09-08",
+        "year": 2026,
+        "month": 9,
+        "note": null,
+        "noteHighlighted": false,
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "topic": {
+          "id": "00000000-0000-4000-8000-00000000a001",
+          "name": "Reading",
+          "icon": "book",
+          "color": "topic.1",
+          "status": "active"
+        }
+      },
+      {
+        "id": "00000000-0000-4000-8000-000000000008",
+        "topicId": "00000000-0000-4000-8000-000000009001",
+        "startedAt": "2026-09-07T06:00:00.000Z",
+        "endedAt": "2026-09-07T06:50:00.000Z",
+        "plannedMinutes": 50,
+        "focusedMilliseconds": 3000000,
+        "pausedMilliseconds": 0,
+        "status": "completed",
+        "counted": true,
+        "localDate": "2026-09-07",
+        "year": 2026,
+        "month": 9,
+        "note": null,
+        "noteHighlighted": false,
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "topic": {
+          "id": "00000000-0000-4000-8000-000000009001",
+          "name": "Writing",
+          "icon": "pen",
+          "color": "topic.2",
+          "status": "active"
+        }
+      },
+      {
+        "id": "00000000-0000-4000-8000-000000000007",
+        "topicId": "00000000-0000-4000-8000-00000000a001",
+        "startedAt": "2026-09-06T06:00:00.000Z",
+        "endedAt": "2026-09-06T06:50:00.000Z",
+        "plannedMinutes": 50,
+        "focusedMilliseconds": 3000000,
+        "pausedMilliseconds": 0,
+        "status": "completed",
+        "counted": true,
+        "localDate": "2026-09-06",
+        "year": 2026,
+        "month": 9,
+        "note": null,
+        "noteHighlighted": false,
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "topic": {
+          "id": "00000000-0000-4000-8000-00000000a001",
+          "name": "Reading",
+          "icon": "book",
+          "color": "topic.1",
+          "status": "active"
+        }
+      },
+      {
+        "id": "00000000-0000-4000-8000-000000000006",
+        "topicId": "00000000-0000-4000-8000-000000009001",
+        "startedAt": "2026-09-05T06:00:00.000Z",
+        "endedAt": "2026-09-05T06:50:00.000Z",
+        "plannedMinutes": 50,
+        "focusedMilliseconds": 3000000,
+        "pausedMilliseconds": 0,
+        "status": "completed",
+        "counted": true,
+        "localDate": "2026-09-05",
+        "year": 2026,
+        "month": 9,
+        "note": null,
+        "noteHighlighted": false,
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "topic": {
+          "id": "00000000-0000-4000-8000-000000009001",
+          "name": "Writing",
+          "icon": "pen",
+          "color": "topic.2",
+          "status": "active"
+        }
+      },
+      {
+        "id": "00000000-0000-4000-8000-000000000005",
+        "topicId": "00000000-0000-4000-8000-00000000a001",
+        "startedAt": "2026-09-04T06:00:00.000Z",
+        "endedAt": "2026-09-04T06:50:00.000Z",
+        "plannedMinutes": 50,
+        "focusedMilliseconds": 3000000,
+        "pausedMilliseconds": 0,
+        "status": "completed",
+        "counted": true,
+        "localDate": "2026-09-04",
+        "year": 2026,
+        "month": 9,
+        "note": "A calm, clear morning.",
+        "noteHighlighted": true,
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "topic": {
+          "id": "00000000-0000-4000-8000-00000000a001",
+          "name": "Reading",
+          "icon": "book",
+          "color": "topic.1",
+          "status": "active"
+        }
+      },
+      {
+        "id": "00000000-0000-4000-8000-000000000004",
+        "topicId": "00000000-0000-4000-8000-000000009001",
+        "startedAt": "2026-09-03T06:00:00.000Z",
+        "endedAt": "2026-09-03T06:50:00.000Z",
+        "plannedMinutes": 50,
+        "focusedMilliseconds": 3000000,
+        "pausedMilliseconds": 0,
+        "status": "completed",
+        "counted": true,
+        "localDate": "2026-09-03",
+        "year": 2026,
+        "month": 9,
+        "note": null,
+        "noteHighlighted": false,
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "topic": {
+          "id": "00000000-0000-4000-8000-000000009001",
+          "name": "Writing",
+          "icon": "pen",
+          "color": "topic.2",
+          "status": "active"
+        }
+      },
+      {
+        "id": "00000000-0000-4000-8000-000000000003",
+        "topicId": "00000000-0000-4000-8000-00000000a001",
+        "startedAt": "2026-09-02T06:00:00.000Z",
+        "endedAt": "2026-09-02T06:50:00.000Z",
+        "plannedMinutes": 50,
+        "focusedMilliseconds": 3000000,
+        "pausedMilliseconds": 0,
+        "status": "completed",
+        "counted": true,
+        "localDate": "2026-09-02",
+        "year": 2026,
+        "month": 9,
+        "note": null,
+        "noteHighlighted": false,
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "topic": {
+          "id": "00000000-0000-4000-8000-00000000a001",
+          "name": "Reading",
+          "icon": "book",
+          "color": "topic.1",
+          "status": "active"
+        }
+      },
+      {
+        "id": "00000000-0000-4000-8000-000000000002",
+        "topicId": "00000000-0000-4000-8000-00000000a001",
+        "startedAt": "2026-09-01T07:00:00.000Z",
+        "endedAt": "2026-09-01T07:03:00.000Z",
+        "plannedMinutes": 3,
+        "focusedMilliseconds": 180000,
+        "pausedMilliseconds": 0,
+        "status": "discarded",
+        "counted": false,
+        "localDate": "2026-09-01",
+        "year": 2026,
+        "month": 9,
+        "note": null,
+        "noteHighlighted": false,
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "topic": {
+          "id": "00000000-0000-4000-8000-00000000a001",
+          "name": "Reading",
+          "icon": "book",
+          "color": "topic.1",
+          "status": "active"
+        }
+      },
+      {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "topicId": "00000000-0000-4000-8000-00000000a001",
+        "startedAt": "2026-09-01T06:00:00.000Z",
+        "endedAt": "2026-09-01T06:30:00.000Z",
+        "plannedMinutes": 30,
+        "focusedMilliseconds": 1800000,
+        "pausedMilliseconds": 0,
+        "status": "completed",
+        "counted": true,
+        "localDate": "2026-09-01",
+        "year": 2026,
+        "month": 9,
+        "note": null,
+        "noteHighlighted": false,
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "topic": {
+          "id": "00000000-0000-4000-8000-00000000a001",
+          "name": "Reading",
+          "icon": "book",
+          "color": "topic.1",
+          "status": "active"
+        }
+      }
+    ],
+    "nextCursor": null
+  },
+  "historyTopic": {
+    "items": [
+      {
+        "id": "00000000-0000-4000-8000-000000000008",
+        "topicId": "00000000-0000-4000-8000-000000009001",
+        "startedAt": "2026-09-07T06:00:00.000Z",
+        "endedAt": "2026-09-07T06:50:00.000Z",
+        "plannedMinutes": 50,
+        "focusedMilliseconds": 3000000,
+        "pausedMilliseconds": 0,
+        "status": "completed",
+        "counted": true,
+        "localDate": "2026-09-07",
+        "year": 2026,
+        "month": 9,
+        "note": null,
+        "noteHighlighted": false,
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "topic": {
+          "id": "00000000-0000-4000-8000-000000009001",
+          "name": "Writing",
+          "icon": "pen",
+          "color": "topic.2",
+          "status": "active"
+        }
+      },
+      {
+        "id": "00000000-0000-4000-8000-000000000006",
+        "topicId": "00000000-0000-4000-8000-000000009001",
+        "startedAt": "2026-09-05T06:00:00.000Z",
+        "endedAt": "2026-09-05T06:50:00.000Z",
+        "plannedMinutes": 50,
+        "focusedMilliseconds": 3000000,
+        "pausedMilliseconds": 0,
+        "status": "completed",
+        "counted": true,
+        "localDate": "2026-09-05",
+        "year": 2026,
+        "month": 9,
+        "note": null,
+        "noteHighlighted": false,
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "topic": {
+          "id": "00000000-0000-4000-8000-000000009001",
+          "name": "Writing",
+          "icon": "pen",
+          "color": "topic.2",
+          "status": "active"
+        }
+      },
+      {
+        "id": "00000000-0000-4000-8000-000000000004",
+        "topicId": "00000000-0000-4000-8000-000000009001",
+        "startedAt": "2026-09-03T06:00:00.000Z",
+        "endedAt": "2026-09-03T06:50:00.000Z",
+        "plannedMinutes": 50,
+        "focusedMilliseconds": 3000000,
+        "pausedMilliseconds": 0,
+        "status": "completed",
+        "counted": true,
+        "localDate": "2026-09-03",
+        "year": 2026,
+        "month": 9,
+        "note": null,
+        "noteHighlighted": false,
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "topic": {
+          "id": "00000000-0000-4000-8000-000000009001",
+          "name": "Writing",
+          "icon": "pen",
+          "color": "topic.2",
+          "status": "active"
+        }
+      }
+    ],
+    "nextCursor": null
+  },
+  "profile": {
+    "id": "00000000-0000-4000-8000-0000000000aa",
+    "displayName": null,
+    "avatarUrl": null,
+    "bio": null,
+    "joinDate": "2026-08-01T00:00:00.000Z",
+    "timezone": "UTC"
+  },
+  "topics": [
+    {
+      "id": "00000000-0000-4000-8000-00000000a001",
+      "name": "Reading",
+      "icon": "book",
+      "color": "topic.1",
+      "description": null,
+      "status": "active",
+      "archivedAt": null,
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-01-01T00:00:00.000Z",
+      "lastUsedAt": "2026-10-02T06:00:00.000Z",
+      "lastPlannedMinutes": 40
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000009001",
+      "name": "Writing",
+      "icon": "pen",
+      "color": "topic.2",
+      "description": null,
+      "status": "active",
+      "archivedAt": null,
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-01-01T00:00:00.000Z",
+      "lastUsedAt": "2026-09-07T06:00:00.000Z",
+      "lastPlannedMinutes": 50
+    }
+  ]
+}

@@ -92,9 +92,11 @@ describe('highlighted session notes (HTTP + PostgreSQL)', () => {
     const { id } = await session(ada);
     await note(ada, id, 'Mine').expect(200);
     await highlight(bob, id).expect(404);
-    await unhighlight(bob, id).expect(404);
-    await highlight(ada, randomUUID()).expect(404);
     expect((await stored(ada, id)).noteHighlighted).toBe(false);
+    await highlight(ada, id).expect(200);
+    await unhighlight(bob, id).expect(404);
+    expect((await stored(ada, id)).noteHighlighted).toBe(true);
+    await highlight(ada, randomUUID()).expect(404);
   });
 
   it('keeps a highlighted note non-empty in the database too', async () => {

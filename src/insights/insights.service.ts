@@ -104,6 +104,15 @@ export class InsightsService {
     };
   }
 
+  /** Whether a month has a month attribution context: sessions or its tree belong to it. */
+  private async attributed(userId: string, month: MonthRef): Promise<boolean> {
+    const context = await this.prisma.monthAttributionContext.findUnique({
+      where: { userId_year_month: { userId, ...month } },
+      select: { userId: true },
+    });
+    return context !== null;
+  }
+
   async month(userId: string, requested?: Partial<MonthRef>): Promise<MonthInsightsDto> {
     if ((requested?.year === undefined) !== (requested?.month === undefined)) {
       throw badRequest('Give both year and month, or neither for the current month.');
@@ -115,7 +124,10 @@ export class InsightsService {
       requested?.year !== undefined && requested.month !== undefined
         ? { year: requested.year, month: requested.month }
         : current;
-    if (monthIndex(month) > monthIndex(current)) {
+    // A month after the user's own date is open only when the server already attributed to it
+    // (its month context exists): after a westward time zone change, a session can belong to a
+    // month the profile's calendar has not reached yet (X3.G). Any other later month is refused.
+    if (monthIndex(month) > monthIndex(current) && !(await this.attributed(userId, month))) {
       throw new NotFoundException('This month has not started yet.');
     }
     const from = firstDateOfMonth(month);

@@ -6,3 +6,6 @@ package-lock.json
 
 # Markdown follows the workspace docs style; not formatted by Prettier.
 *.md
+
+# X3 contract capture: generated, byte-identical in both repos (see test/x3/contract-capture.int-spec.ts).
+test/x3/core-loop-contract.json
