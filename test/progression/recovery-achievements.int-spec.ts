@@ -12,6 +12,8 @@ import { ConsistencyHarness, dateRange } from '../support/consistency-harness.js
  */
 
 const NOW = '2026-10-07T20:00:00.000Z';
+/** An action that caused nothing (A4.3 adds the reward lists). */
+const NOTHING = { newlyEarnedBadges: [], newlyUnlockedSpecies: [], newlyUnlockedCosmetics: [] };
 const MISSED = '2026-10-05';
 const RETURN = '2026-10-06';
 const t = new ConsistencyHarness(NOW);
@@ -92,6 +94,11 @@ describe('A4.2.G recovery achievements (HTTP + PostgreSQL)', () => {
           earnedAt: NOW,
         },
       ],
+      // A4.3: the 30-day streak also unlocks Bonsai and the Twig Frame.
+      newlyUnlockedSpecies: [expect.objectContaining({ id: 'bonsai', unlockedAt: NOW }) as unknown],
+      newlyUnlockedCosmetics: [
+        expect.objectContaining({ id: 'twig-frame', unlockedAt: NOW }) as unknown,
+      ],
     });
     const row = await t.prisma.userBadge.findUniqueOrThrow({
       where: { userId_badgeId: { userId: ada.userId, badgeId: 'focus-streak:30' } },
@@ -104,7 +111,7 @@ describe('A4.2.G recovery achievements (HTTP + PostgreSQL)', () => {
     const before = await ownedIds(ada.userId);
     const res = await recover(ada).expect(201);
     expect(res.body as RecoveryBody).toMatchObject({ longest: 11 });
-    expect((res.body as RecoveryBody).progression).toEqual({ newlyEarnedBadges: [] });
+    expect((res.body as RecoveryBody).progression).toEqual(NOTHING);
     expect(await ownedIds(ada.userId)).toEqual(before);
   });
 
@@ -239,7 +246,7 @@ describe('A4.2.G recovery achievements (HTTP + PostgreSQL)', () => {
     expect(session.status).toBe(201);
     expect(
       (session.body as { progression: { newlyEarnedBadges: BadgeBody[] } }).progression,
-    ).toEqual({ newlyEarnedBadges: [] });
+    ).toEqual(NOTHING);
   });
 
   it('answers null for a recovery stored before A4.2.G: nothing is fabricated', async () => {

@@ -183,10 +183,22 @@ export function planGrants(
     });
 }
 
-/** Stored in focus_sessions.progression_result: the badges this session caused, as ids. */
+/**
+ * Stored with the action (focus_sessions and streak_recoveries .progression_result): the badges
+ * it caused and the rewards those badges unlocked (A4.3), as ids. A result stored before A4.3
+ * has no reward lists: it unlocked none.
+ */
 export interface ProgressionResult {
   newlyEarnedBadgeIds: string[];
+  newlyUnlockedSpeciesIds: string[];
+  newlyUnlockedCosmeticIds: string[];
 }
+
+const RESULT_LISTS = [
+  'newlyEarnedBadgeIds',
+  'newlyUnlockedSpeciesIds',
+  'newlyUnlockedCosmeticIds',
+] as const;
 
 export function parseProgressionResult(value: unknown): ProgressionResult {
   const fail = (why: string): never => {
@@ -194,11 +206,21 @@ export function parseProgressionResult(value: unknown): ProgressionResult {
   };
   if (typeof value !== 'object' || value === null || Array.isArray(value)) fail('not an object');
   const record = value as Record<string, unknown>;
-  if (Object.keys(record).some((key) => key !== 'newlyEarnedBadgeIds')) fail('unexpected fields');
-  const ids = record['newlyEarnedBadgeIds'];
-  if (!Array.isArray(ids) || !ids.every((id) => typeof id === 'string' && isContentId(id))) {
-    fail('bad badge ids');
+  if (Object.keys(record).some((key) => !RESULT_LISTS.some((list) => list === key))) {
+    fail('unexpected fields');
   }
-  if (new Set(ids as string[]).size !== (ids as string[]).length) fail('duplicate badge ids');
-  return { newlyEarnedBadgeIds: [...(ids as string[])] };
+  if (!('newlyEarnedBadgeIds' in record)) fail('no badge ids');
+  const read = (key: (typeof RESULT_LISTS)[number]): string[] => {
+    const ids = record[key] ?? [];
+    if (!Array.isArray(ids) || !ids.every((id) => typeof id === 'string' && isContentId(id))) {
+      return fail(`bad ${key}`);
+    }
+    if (new Set(ids).size !== ids.length) fail(`duplicate ${key}`);
+    return [...(ids as string[])];
+  };
+  return {
+    newlyEarnedBadgeIds: read('newlyEarnedBadgeIds'),
+    newlyUnlockedSpeciesIds: read('newlyUnlockedSpeciesIds'),
+    newlyUnlockedCosmeticIds: read('newlyUnlockedCosmeticIds'),
+  };
 }

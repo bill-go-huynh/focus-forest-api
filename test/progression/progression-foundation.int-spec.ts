@@ -108,7 +108,7 @@ describe('A4.1 progression foundation (HTTP + PostgreSQL)', () => {
     it('seeds a reviewable catalog with stable, unique, valid identifiers', async () => {
       const badges = await t.prisma.badgeDefinition.findMany({ orderBy: { sortOrder: 'asc' } });
       const achievements = await t.prisma.achievementDefinition.findMany();
-      const species = await t.prisma.treeSpecies.findMany();
+      const species = await t.prisma.treeSpecies.findMany({ orderBy: { sortOrder: 'asc' } });
       for (const id of [...badges, ...achievements, ...species].map((row) => row.id)) {
         expect(isContentId(id)).toBe(true);
       }
@@ -126,7 +126,8 @@ describe('A4.1 progression foundation (HTTP + PostgreSQL)', () => {
         'focus-buddy',
         'community-contributor',
       ]);
-      expect(species.map((s) => s.id)).toEqual(['signature']);
+      // A4.3 seeds the other species in its own migration; the signature species stays first.
+      expect(species[0]?.id).toBe('signature');
       // Each achievement grants exactly one badge, by a criterion this product supports.
       expect(new Set(achievements.map((a) => a.badgeId)).size).toBe(achievements.length);
       for (const achievement of achievements) {

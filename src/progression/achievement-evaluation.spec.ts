@@ -287,9 +287,12 @@ describe('planGrants: what this evaluation grants, and what the session caused',
 describe('the progression result stored with a session (replayed as stored)', () => {
   it('holds the badge ids the session caused, in order', () => {
     const result = { newlyEarnedBadgeIds: ['first-session', 'focus-streak:3'] };
-    expect(parseProgressionResult(result)).toEqual(result);
+    // A4.3 reads it with no unlocked rewards.
+    const none = { newlyUnlockedSpeciesIds: [], newlyUnlockedCosmeticIds: [] };
+    expect(parseProgressionResult(result)).toEqual({ ...result, ...none });
     expect(parseProgressionResult({ newlyEarnedBadgeIds: [] })).toEqual({
       newlyEarnedBadgeIds: [],
+      ...none,
     });
   });
 

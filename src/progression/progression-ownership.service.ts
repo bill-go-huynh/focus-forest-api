@@ -177,6 +177,97 @@ export class ProgressionOwnershipService {
     return new Map(rows.map((row) => [row.id, toBadgeDto(row)]));
   }
 
+  /**
+   * Grants several species or cosmetics in one statement (rewards linked to achievements, A4.3),
+   * all at `at`, each acquirable at `at`. Returns the ids this call created: one already owned,
+   * or granted concurrently, is skipped.
+   */
+  async grantRewards(
+    kind: 'species' | 'cosmetic',
+    userId: string,
+    ids: readonly string[],
+    at: Date,
+    client: Client = this.prisma,
+  ): Promise<string[]> {
+    if (ids.length === 0) return [];
+    const definitions = new Map(
+      (kind === 'species'
+        ? await client.treeSpecies.findMany({ where: { id: { in: [...ids] } } })
+        : await client.cosmeticDefinition.findMany({ where: { id: { in: [...ids] } } })
+      ).map((definition) => [definition.id, definition as Acquisition]),
+    );
+    for (const id of ids) {
+      const definition = definitions.get(id);
+      if (!definition) throw new ContentNotFoundError(kind, id);
+      const check = acquirableAt(definition, at);
+      if (!check.acquirable) throw new ContentNotAcquirableError(kind, id, check.reason);
+    }
+    const created =
+      kind === 'species'
+        ? (
+            await client.userSpecies.createManyAndReturn({
+              data: ids.map((speciesId) => ({ userId, speciesId, unlockedAt: at })),
+              skipDuplicates: true,
+              select: { speciesId: true },
+            })
+          ).map((row) => row.speciesId)
+        : (
+            await client.userCosmetic.createManyAndReturn({
+              data: ids.map((cosmeticId) => ({ userId, cosmeticId, unlockedAt: at })),
+              skipDuplicates: true,
+              select: { cosmeticId: true },
+            })
+          ).map((row) => row.cosmeticId);
+    const createdIds = new Set(created);
+    return ids.filter((id) => createdIds.has(id));
+  }
+
+  /**
+   * Cosmetics the user owns, with their definitions, in catalog order: every system cosmetic
+   * (owned by everyone, without a row) and those unlocked, whatever their availability now.
+   */
+  async ownedCosmetics(userId: string, client: Client = this.prisma) {
+    const [system, unlocked] = await Promise.all([
+      client.cosmeticDefinition.findMany({ where: { source: 'system' } }),
+      client.userCosmetic.findMany({ where: { userId }, include: { cosmetic: true } }),
+    ]);
+    const owned = new Map(
+      system.map((c) => [c.id, { cosmetic: c, unlockedAt: null as Date | null }]),
+    );
+    for (const row of unlocked)
+      owned.set(row.cosmeticId, { cosmetic: row.cosmetic, unlockedAt: row.unlockedAt });
+    return [...owned.values()].sort(
+      (a, b) =>
+        a.cosmetic.sortOrder - b.cosmetic.sortOrder ||
+        (a.cosmetic.id < b.cosmetic.id ? -1 : a.cosmetic.id > b.cosmetic.id ? 1 : 0),
+    );
+  }
+
+  /** Species the user owns, with their definitions, in catalog order (system ones included). */
+  async ownedSpecies(userId: string, client: Client = this.prisma) {
+    const [system, unlocked] = await Promise.all([
+      client.treeSpecies.findMany({ where: { source: 'system' } }),
+      client.userSpecies.findMany({ where: { userId }, include: { species: true } }),
+    ]);
+    const owned = new Map(
+      system.map((s) => [s.id, { species: s, unlockedAt: null as Date | null }]),
+    );
+    for (const row of unlocked)
+      owned.set(row.speciesId, { species: row.species, unlockedAt: row.unlockedAt });
+    return [...owned.values()].sort(
+      (a, b) =>
+        a.species.sortOrder - b.species.sortOrder ||
+        (a.species.id < b.species.id ? -1 : a.species.id > b.species.id ? 1 : 0),
+    );
+  }
+
+  async ownsCosmetic(userId: string, cosmeticId: string, client: Client = this.prisma) {
+    const cosmetic = await client.cosmeticDefinition.findUnique({ where: { id: cosmeticId } });
+    if (!cosmetic) return { cosmetic: null, owned: false };
+    if (cosmetic.source === 'system') return { cosmetic, owned: true };
+    return { cosmetic, owned: (await STORES.cosmetic.owned(client, userId, cosmeticId)) !== null };
+  }
+
   /** Badge ids the user owns, in the order they were earned. */
   async ownedBadgeIds(userId: string, client: Client = this.prisma): Promise<string[]> {
     const rows = await client.userBadge.findMany({

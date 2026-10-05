@@ -94,7 +94,8 @@ describe('A4.2 achievement queries (HTTP + PostgreSQL)', () => {
     expect(smallMany).toBe(smallNine);
     expect(largeMany).toBe(smallNine);
     expect(getLarge).toBe(getSmall);
-    expect(smallNine).toBeLessThanOrEqual(8);
+    // A4.3 adds one statement each for rewards linked to owned badges (species, cosmetics).
+    expect(smallNine).toBeLessThanOrEqual(10);
   }, 120_000);
 
   it('is additive: no update or delete of existing rows, Core tables only gain a column', () => {

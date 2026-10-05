@@ -10,7 +10,6 @@ import { Clock } from '../common/clock.js';
 import { Prisma, type FocusSession } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ProductConfigService } from '../product-config/product-config.service.js';
-import { parseProgressionResult } from '../progression/achievement-evaluation.js';
 import { AchievementsService } from '../progression/achievements.service.js';
 import type { SessionProgressionDto } from '../progression/badge.dto.js';
 import { isCounted } from '../focus-stats/focus-stats.js';
@@ -281,18 +280,14 @@ export class SessionsService {
     row: FocusSession,
     client: Client = this.prisma,
   ): Promise<SubmittedSessionResponse> {
-    const progression =
-      row.progressionResult === null ? null : parseProgressionResult(row.progressionResult);
     return {
       ...toResponse(row),
       growth: row.growthResult === null ? null : parseGrowthResult(row.growthResult),
-      progression: progression && {
-        newlyEarnedBadges: await this.achievements.earnedBadges(
-          row.userId,
-          progression.newlyEarnedBadgeIds,
-          client,
-        ),
-      },
+      progression: await this.achievements.progressionView(
+        row.userId,
+        row.progressionResult,
+        client,
+      ),
     };
   }
 }

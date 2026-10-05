@@ -161,6 +161,9 @@ describe('focus sessions (HTTP + PostgreSQL)', () => {
         // A4.2 adds what the session caused in progression: here, the First Session badge.
         progression: {
           newlyEarnedBadges: [expect.objectContaining({ id: 'first-session' }) as unknown],
+          // A4.3: and the rewards it unlocked (First Session unlocks Oak).
+          newlyUnlockedSpecies: [expect.objectContaining({ id: 'oak' }) as unknown],
+          newlyUnlockedCosmetics: [],
         },
       });
       const row = await prisma.focusSession.findFirstOrThrow();

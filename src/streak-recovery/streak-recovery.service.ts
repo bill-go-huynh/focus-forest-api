@@ -5,7 +5,6 @@ import type { StreakResponse } from '../consistency/consistency.dto.js';
 import { StreakService } from '../consistency/streak.service.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { parseProgressionResult } from '../progression/achievement-evaluation.js';
 import { AchievementsService } from '../progression/achievements.service.js';
 import type { SessionProgressionDto } from '../progression/badge.dto.js';
 
@@ -48,16 +47,10 @@ export class StreakRecoveryService {
       });
       return { stored: progression, created };
     });
-    const progression = stored === null ? null : parseProgressionResult(stored);
     return {
       response: {
         ...(await this.streak.view(userId)),
-        progression: progression && {
-          newlyEarnedBadges: await this.achievements.earnedBadges(
-            userId,
-            progression.newlyEarnedBadgeIds,
-          ),
-        },
+        progression: await this.achievements.progressionView(userId, stored),
       },
       created,
     };

@@ -12,6 +12,8 @@ import { ConsistencyHarness, dateRange } from '../support/consistency-harness.js
  */
 
 const MIN = 60_000;
+/** An action that caused nothing (A4.3 adds the reward lists). */
+const NOTHING = { newlyEarnedBadges: [], newlyUnlockedSpecies: [], newlyUnlockedCosmetics: [] };
 const NOW = '2026-10-07T20:00:00.000Z';
 const t = new ConsistencyHarness(NOW);
 
@@ -198,6 +200,9 @@ describe('A4.2 achievements, badges, and showcase (HTTP + PostgreSQL)', () => {
             earnedAt: NOW,
           },
         ],
+        // A4.3: First Session also unlocks the Oak species.
+        newlyUnlockedSpecies: [expect.objectContaining({ id: 'oak', unlockedAt: NOW }) as unknown],
+        newlyUnlockedCosmetics: [],
       });
       expect(await owned(ada.userId)).toEqual([
         { userId: ada.userId, badgeId: 'first-session', earnedAt: new Date(NOW) },
@@ -209,7 +214,7 @@ describe('A4.2 achievements, badges, and showcase (HTTP + PostgreSQL)', () => {
       const { status, body } = await submit(ada, '2026-10-07T18:00:00.000Z', 3);
       expect(status).toBe(201);
       expect(body.counted).toBe(false);
-      expect(body.progression).toEqual({ newlyEarnedBadges: [] });
+      expect(body.progression).toEqual(NOTHING);
       expect(await ownedIds(ada.userId)).toEqual([]);
       expect(await achievement(ada, 'first-session')).toMatchObject({
         current: 0,
@@ -429,8 +434,9 @@ describe('A4.2 achievements, badges, and showcase (HTTP + PostgreSQL)', () => {
       const results = await Promise.all(
         Array.from({ length: 8 }, () => service.reconcile(ada.userId)),
       );
+      // A4.3: an evaluation answers its badges and the rewards linked to them.
       const granted = results
-        .flat()
+        .flatMap((r) => r.badges)
         .map((g) => g.badgeId)
         .sort();
       expect(granted).toEqual([
@@ -443,7 +449,11 @@ describe('A4.2 achievements, badges, and showcase (HTTP + PostgreSQL)', () => {
       expect(before).toHaveLength(4);
       await achievements(ada);
       await badges(ada);
-      expect(await service.reconcile(ada.userId)).toEqual([]);
+      expect(await service.reconcile(ada.userId)).toEqual({
+        badges: [],
+        species: [],
+        cosmetics: [],
+      });
       expect(await owned(ada.userId)).toEqual(before);
     });
   });

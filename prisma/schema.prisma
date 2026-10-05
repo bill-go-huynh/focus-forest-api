@@ -79,6 +79,7 @@ model User {
   forestAreaUnlocks       ForestAreaUnlock[]
   badges                  UserBadge[]
   badgeShowcase           BadgeShowcase[]
+  equipment               UserEquipment[]
   species                 UserSpecies[]
   cosmetics               UserCosmetic[]
 
@@ -647,7 +648,9 @@ model CosmeticDefinition {
 
   achievement AchievementDefinition? @relation(fields: [achievementId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   owners      UserCosmetic[]
+  equipped    UserEquipment[]
 
+  @@unique([id, type])
   @@map("cosmetic_definitions")
 }
 
@@ -663,6 +666,21 @@ model UserBadge {
 
   @@id([userId, badgeId])
   @@map("user_badges")
+}
+
+/// What the user shows (A4.3): one owned cosmetic per slot, the slot being the cosmetic's
+/// type (the profile frame belongs to the profile only). Ownership is checked by a trigger.
+model UserEquipment {
+  userId     String       @map("user_id") @db.Uuid
+  slot       CosmeticType
+  cosmeticId String       @map("cosmetic_id")
+  equippedAt DateTime     @default(now()) @map("equipped_at")
+
+  user     User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cosmetic CosmeticDefinition @relation(fields: [cosmeticId, slot], references: [id, type], onDelete: Restrict, onUpdate: Restrict)
+
+  @@id([userId, slot])
+  @@map("user_equipment")
 }
 
 /// The user's ordered badge showcase (A4.2): at most three owned badges, positions 1 to 3.

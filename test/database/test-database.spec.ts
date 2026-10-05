@@ -30,6 +30,10 @@ describe('contentSeedStatements', () => {
       'tree_species',
       'badge_definitions',
       'achievement_definitions',
+      // A4.3: the species (bases, then variants) and the cosmetic catalog.
+      'tree_species',
+      'tree_species',
+      'cosmetic_definitions',
     ]);
     expect(statements.join('\n')).not.toMatch(/product_config/);
   });

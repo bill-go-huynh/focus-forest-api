@@ -64,7 +64,18 @@
           "artworkId": "first-session",
           "earnedAt": "2026-09-01T22:00:00.000Z"
         }
-      ]
+      ],
+      "newlyUnlockedSpecies": [
+        {
+          "id": "oak",
+          "name": "Oak",
+          "description": "A sturdy oak, grown from your first focus session.",
+          "rarity": "common",
+          "baseSpeciesId": null,
+          "unlockedAt": "2026-09-01T22:00:00.000Z"
+        }
+      ],
+      "newlyUnlockedCosmetics": []
     }
   },
   "sessionDiscarded": {
@@ -118,7 +129,9 @@
       "monthClosed": false
     },
     "progression": {
-      "newlyEarnedBadges": []
+      "newlyEarnedBadges": [],
+      "newlyUnlockedSpecies": [],
+      "newlyUnlockedCosmetics": []
     }
   },
   "homeGrowing": {
@@ -529,7 +542,9 @@
       "monthClosed": false
     },
     "progression": {
-      "newlyEarnedBadges": []
+      "newlyEarnedBadges": [],
+      "newlyUnlockedSpecies": [],
+      "newlyUnlockedCosmetics": []
     }
   },
   "sessionLate": {
@@ -555,7 +570,9 @@
       "monthClosed": true
     },
     "progression": {
-      "newlyEarnedBadges": []
+      "newlyEarnedBadges": [],
+      "newlyUnlockedSpecies": [],
+      "newlyUnlockedCosmetics": []
     }
   },
   "forest": {

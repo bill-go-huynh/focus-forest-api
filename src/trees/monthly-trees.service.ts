@@ -10,7 +10,7 @@ import {
 import { consistencyRulesFrom } from '../consistency/consistency-rules.js';
 import { dbDate, localDateFromDb, lockUser } from '../consistency/db.js';
 import { GoalsService } from '../consistency/goals.service.js';
-import { unprocessable } from '../consistency/http-errors.js';
+import { conflict, unprocessable } from '../consistency/http-errors.js';
 import { RestDaysService } from '../consistency/rest-days.service.js';
 import { streakMilestoneEvents } from '../consistency/streak.js';
 import { StreakService } from '../consistency/streak.service.js';
@@ -20,6 +20,8 @@ import { FocusStatsService } from '../focus-stats/focus-stats.service.js';
 import type { FocusSessionStatus, MonthlyTree, Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ProductConfigService } from '../product-config/product-config.service.js';
+import { ProgressionOwnershipService } from '../progression/progression-ownership.service.js';
+import { checkSpeciesSelection } from '../progression/rewards-rules.js';
 import { localDateOf, type MonthRef } from '../sessions/attribution/calendar.js';
 import { TimezoneRequiredError } from '../sessions/attribution/month-context.js';
 import { MonthAttributionService } from '../sessions/attribution/month-attribution.service.js';
@@ -39,6 +41,11 @@ import { variationSeed } from './variation-seed.js';
 import { vitalityOn } from './vitality.js';
 
 type Client = Prisma.TransactionClient;
+
+const SPECIES_MESSAGES = {
+  species_not_owned: 'Only species you have unlocked can be chosen.',
+  species_not_selectable: 'This species cannot be chosen now.',
+} as const;
 
 /** The signature species until more species arrive (Phase 4 Progression). */
 export const SIGNATURE_SPECIES = 'signature';
@@ -76,6 +83,7 @@ export class MonthlyTreesService {
     private readonly restDays: RestDaysService,
     private readonly streak: StreakService,
     private readonly userToday: UserTodayService,
+    private readonly ownership: ProgressionOwnershipService,
     private readonly clock: Clock,
   ) {}
 
@@ -201,6 +209,45 @@ export class MonthlyTreesService {
         },
         { timeout: 15_000 },
       );
+    } catch (error) {
+      if (error instanceof TimezoneRequiredError) throw unprocessable(error.code, error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Chooses the current month's species (A4.3; docs/03_TREE_SYSTEM.md §9): an owned, selectable
+   * species, while the tree is a growing Seed. The tree is resolved as viewing it does (created
+   * as a Seed, reconciled), under the user's row lock, which session submission takes too: the
+   * first counted session either grows the species chosen before it, or freezes the tree before
+   * the choice. A species changes nothing the tree earns.
+   */
+  async selectSpecies(userId: string, speciesId: string): Promise<CurrentTreeResponse> {
+    try {
+      const tree = await this.prisma.$transaction(
+        async (tx) => {
+          await lockUser(tx, userId);
+          const month = await this.attribution.attribute(userId, this.clock.now(), tx);
+          const { tree: found } = await this.ensureTree(tx, userId, month);
+          const current = await this.reconcile(tx, userId, found);
+          const species = await tx.treeSpecies.findUnique({ where: { id: speciesId } });
+          const owned =
+            species !== null && (await this.ownership.ownsSpecies(userId, speciesId, tx));
+          const check = checkSpeciesSelection({ tree: current, species, owned }, this.clock.now());
+          if (!check.ok) {
+            throw check.reason === 'species_locked'
+              ? conflict(check.reason, 'This month’s tree has started growing: its species is set.')
+              : unprocessable(check.reason, SPECIES_MESSAGES[check.reason]);
+          }
+          if (current.species === speciesId) return current;
+          return tx.monthlyTree.update({
+            where: { userId_year_month: { userId, year: current.year, month: current.month } },
+            data: { species: speciesId },
+          });
+        },
+        { timeout: 15_000 },
+      );
+      return await this.growingView(userId, tree);
     } catch (error) {
       if (error instanceof TimezoneRequiredError) throw unprocessable(error.code, error.message);
       throw error;

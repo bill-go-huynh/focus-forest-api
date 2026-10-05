@@ -1,6 +1,6 @@
 import { ArrayMaxSize, ArrayUnique, IsArray, IsString } from 'class-validator';
 
-import type { BadgeCategory, ContentRarity } from './progression-rules.js';
+import type { BadgeCategory, ContentRarity, CosmeticType } from './progression-rules.js';
 
 /** A badge as the app shows it. Artwork is bundled in the app, by `artworkId`. */
 export interface BadgeDto {
@@ -27,9 +27,86 @@ export function toBadgeDto(badge: BadgeDto): BadgeDto {
   };
 }
 
-/** What a submitted session caused (A4.2); null for sessions stored before A4.2. */
+/** A species as the app shows it. Its drawing lives in the app, by `id`. */
+export interface SpeciesDto {
+  id: string;
+  name: string;
+  description: string;
+  rarity: ContentRarity;
+  /** For a rare variant: the species it varies. */
+  baseSpeciesId: string | null;
+}
+
+export function toSpeciesDto(species: SpeciesDto): SpeciesDto {
+  return {
+    id: species.id,
+    name: species.name,
+    description: species.description,
+    rarity: species.rarity,
+    baseSpeciesId: species.baseSpeciesId,
+  };
+}
+
+/** A cosmetic as the app shows it. Its artwork is bundled in the app, by `artworkId`. */
+export interface CosmeticDto {
+  id: string;
+  name: string;
+  description: string;
+  /** Also its equipment slot. */
+  type: CosmeticType;
+  rarity: ContentRarity;
+  artworkId: string;
+}
+
+export function toCosmeticDto(cosmetic: CosmeticDto): CosmeticDto {
+  return {
+    id: cosmetic.id,
+    name: cosmetic.name,
+    description: cosmetic.description,
+    type: cosmetic.type,
+    rarity: cosmetic.rarity,
+    artworkId: cosmetic.artworkId,
+  };
+}
+
+/**
+ * What an action (a submitted session, an accepted recovery) caused in progression: the badges
+ * it earned (A4.2) and the species and cosmetics those badges unlocked (A4.3). Stored with the
+ * action and answered unchanged on replays; null for actions stored before A4.2.
+ */
 export interface SessionProgressionDto {
   newlyEarnedBadges: EarnedBadgeDto[];
+  newlyUnlockedSpecies: (SpeciesDto & { unlockedAt: string })[];
+  newlyUnlockedCosmetics: (CosmeticDto & { unlockedAt: string })[];
+}
+
+export interface SpeciesResponse {
+  /** Owned species in catalog order; `selectable` when it can be chosen for a month now. */
+  items: (SpeciesDto & { selectable: boolean })[];
+  /** The current month's tree: its species, and whether it is frozen (from Sprout on). */
+  current: { year: number; month: number; speciesId: string; locked: boolean };
+}
+
+export interface CosmeticsResponse {
+  /** Owned cosmetics in catalog order. */
+  items: (CosmeticDto & { equipped: boolean })[];
+}
+
+export interface EquipmentResponse {
+  /** The garden: one cosmetic or nothing per scene slot (nothing shows the app's default). */
+  forest: Record<'background' | 'decoration' | 'fauna' | 'weather' | 'effect', CosmeticDto | null>;
+  /** The profile only: never on trees, the forest, or recaps. */
+  profileFrame: CosmeticDto | null;
+}
+
+export class EquipDto {
+  @IsString({ message: 'cosmeticId must be a cosmetic id.' })
+  cosmeticId!: string;
+}
+
+export class SelectSpeciesDto {
+  @IsString({ message: 'speciesId must be a species id.' })
+  speciesId!: string;
 }
 
 export interface AchievementDto {

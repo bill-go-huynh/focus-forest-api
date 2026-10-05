@@ -14,6 +14,7 @@ import {
   byCatalogOrder,
   earnableAchievements,
   isReached,
+  parseProgressionResult,
   planGrants,
   progressOf,
   withoutRecovery,
@@ -25,13 +26,30 @@ import {
 } from './achievement-evaluation.js';
 import {
   toBadgeDto,
+  toCosmeticDto,
+  toSpeciesDto,
+  type SessionProgressionDto,
   type AchievementsResponse,
   type BadgesResponse,
   type EarnedBadgeDto,
 } from './badge.dto.js';
 import { ProgressionOwnershipService } from './progression-ownership.service.js';
+import { acquirableAt, type Acquisition } from './progression-rules.js';
 
 type Client = PrismaService | Prisma.TransactionClient;
+
+export interface RewardGrant {
+  id: string;
+  /** Its achievement's badge was caused by the action being evaluated. */
+  causedByAction: boolean;
+}
+
+/** What one evaluation granted: badges, and the rewards linked to owned badges. */
+export interface Evaluation {
+  badges: PlannedGrant[];
+  species: RewardGrant[];
+  cosmetics: RewardGrant[];
+}
 
 /** The authoritative action being evaluated: what it crossed is what it caused. */
 type Cause =
@@ -80,8 +98,11 @@ export class AchievementsService {
     return caused(await this.evaluate(tx, userId, { kind: 'recovery', missedDate }));
   }
 
-  /** Grants what Core truth already earned. Idempotent; the grants it created. */
-  reconcile(userId: string, client: Client = this.prisma): Promise<PlannedGrant[]> {
+  /**
+   * Grants what Core truth already earned, and the rewards of badges already owned (owners from
+   * before A4.3). Idempotent; what it created, never reported as caused by an action.
+   */
+  reconcile(userId: string, client: Client = this.prisma): Promise<Evaluation> {
     return this.evaluate(client, userId, null);
   }
 
@@ -156,6 +177,53 @@ export class AchievementsService {
     return this.badges(userId);
   }
 
+  /**
+   * A stored progression result as the app shows it: the badges with their earned times and the
+   * rewards with their unlock times, in the stored order. Null stays null (before A4.2).
+   */
+  async progressionView(
+    userId: string,
+    stored: unknown,
+    client: Client = this.prisma,
+  ): Promise<SessionProgressionDto | null> {
+    if (stored === null) return null;
+    const result = parseProgressionResult(stored);
+    const species = result.newlyUnlockedSpeciesIds;
+    const cosmetics = result.newlyUnlockedCosmeticIds;
+    const [badges, speciesRows, cosmeticRows] = await Promise.all([
+      this.earnedBadges(userId, result.newlyEarnedBadgeIds, client),
+      species.length === 0
+        ? []
+        : client.userSpecies.findMany({
+            where: { userId, speciesId: { in: species } },
+            include: { species: true },
+          }),
+      cosmetics.length === 0
+        ? []
+        : client.userCosmetic.findMany({
+            where: { userId, cosmeticId: { in: cosmetics } },
+            include: { cosmetic: true },
+          }),
+    ]);
+    const speciesById = new Map(speciesRows.map((row) => [row.speciesId, row]));
+    const cosmeticsById = new Map(cosmeticRows.map((row) => [row.cosmeticId, row]));
+    return {
+      newlyEarnedBadges: badges,
+      newlyUnlockedSpecies: species.flatMap((id) => {
+        const row = speciesById.get(id);
+        return row
+          ? [{ ...toSpeciesDto(row.species), unlockedAt: row.unlockedAt.toISOString() }]
+          : [];
+      }),
+      newlyUnlockedCosmetics: cosmetics.flatMap((id) => {
+        const row = cosmeticsById.get(id);
+        return row
+          ? [{ ...toCosmeticDto(row.cosmetic), unlockedAt: row.unlockedAt.toISOString() }]
+          : [];
+      }),
+    };
+  }
+
   /** Owned badges by id, in the given order, as the app shows them (a session's result). */
   async earnedBadges(
     userId: string,
@@ -174,9 +242,69 @@ export class AchievementsService {
     });
   }
 
-  private async evaluate(client: Client, userId: string, cause: Cause): Promise<PlannedGrant[]> {
+  /**
+   * One evaluation: grants the badges reached, then the rewards (species, cosmetics) linked to
+   * every owned badge's achievement and not yet owned (A4.3), all in the caller's transaction.
+   * A reward is caused by the action exactly when its badge is.
+   */
+  private async evaluate(client: Client, userId: string, cause: Cause): Promise<Evaluation> {
     const now = this.clock.now();
-    const earnable = earnableAchievements(await this.definitions(client), now);
+    const definitions = await this.definitions(client);
+    const badges = await this.grantReachedBadges(client, userId, cause, definitions, now);
+    const causedBadges = new Set(badges.filter((g) => g.causedByAction).map((g) => g.badgeId));
+    const badgeOf = new Map(definitions.map((a) => [a.id, a.badgeId]));
+    const isCaused = (achievementId: string | null) =>
+      achievementId !== null && causedBadges.has(badgeOf.get(achievementId) ?? '');
+    const [species, cosmetics] = await Promise.all([
+      client.treeSpecies.findMany({
+        where: {
+          achievement: { badge: { owners: { some: { userId } } } },
+          owners: { none: { userId } },
+        },
+        orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+      }),
+      client.cosmeticDefinition.findMany({
+        where: {
+          achievement: { badge: { owners: { some: { userId } } } },
+          owners: { none: { userId } },
+        },
+        orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+      }),
+    ]);
+    const grant = async (
+      kind: 'species' | 'cosmetic',
+      rewards: readonly (Acquisition & { id: string; achievementId: string | null })[],
+    ): Promise<RewardGrant[]> => {
+      // Availability decides acquisition: a reward no longer acquirable is not granted now.
+      const acquirable = rewards.filter((reward) => acquirableAt(reward, now).acquirable);
+      const created = new Set(
+        await this.ownership.grantRewards(
+          kind,
+          userId,
+          acquirable.map((reward) => reward.id),
+          now,
+          client,
+        ),
+      );
+      return acquirable
+        .filter((reward) => created.has(reward.id))
+        .map((reward) => ({ id: reward.id, causedByAction: isCaused(reward.achievementId) }));
+    };
+    return {
+      badges,
+      species: await grant('species', species),
+      cosmetics: await grant('cosmetic', cosmetics),
+    };
+  }
+
+  private async grantReachedBadges(
+    client: Client,
+    userId: string,
+    cause: Cause,
+    definitions: Awaited<ReturnType<AchievementsService['definitions']>>,
+    now: Date,
+  ): Promise<PlannedGrant[]> {
+    const earnable = earnableAchievements(definitions, now);
     if (earnable.length === 0) return [];
     const owned = await client.userBadge.findMany({
       where: { userId, badgeId: { in: earnable.map((a) => a.badgeId) } },
@@ -297,10 +425,10 @@ export class AchievementsService {
   }
 }
 
-function caused(grants: readonly PlannedGrant[]): ProgressionResult {
+function caused(evaluation: Evaluation): ProgressionResult {
   return {
-    newlyEarnedBadgeIds: grants
-      .filter((grant) => grant.causedByAction)
-      .map((grant) => grant.badgeId),
+    newlyEarnedBadgeIds: evaluation.badges.filter((g) => g.causedByAction).map((g) => g.badgeId),
+    newlyUnlockedSpeciesIds: evaluation.species.filter((g) => g.causedByAction).map((g) => g.id),
+    newlyUnlockedCosmeticIds: evaluation.cosmetics.filter((g) => g.causedByAction).map((g) => g.id),
   };
 }
