@@ -184,7 +184,12 @@ describe('auth (HTTP + PostgreSQL)', () => {
     it('rejects a tampered access token', async () => {
       const body = asAuth(await signUp());
       const token = body.accessToken;
-      const tampered = `${token.slice(0, -2)}${token.endsWith('A') ? 'B' : 'A'}${token.slice(-1)}`;
+      // Change the signature's first character, always to a different one: every bit of it is
+      // significant (a trailing base64url character may carry unused padding bits).
+      const [header, payload, signature = ''] = token.split('.');
+      const first = signature.startsWith('A') ? 'B' : 'A';
+      const tampered = `${header}.${payload}.${first}${signature.slice(1)}`;
+      expect(tampered).not.toBe(token);
       await http().get('/test-protected').set('Authorization', `Bearer ${tampered}`).expect(401);
     });
 
