@@ -20,6 +20,7 @@ import {
   withoutRecovery,
   withoutSession,
   type AchievementInput,
+  type AchievementValues,
   type EarnableAchievement,
   type PlannedGrant,
   type ProgressionResult,
@@ -134,6 +135,11 @@ export class AchievementsService {
         progressVisible: achievement.progressVisible,
       })),
     };
+  }
+
+  /** Each criterion's current value for the user, read once (the Collection Book's hints). */
+  async values(userId: string, client: Client = this.prisma): Promise<AchievementValues> {
+    return achievementValues(await this.input(client, userId));
   }
 
   /** Owned badges in earned order, and the showcase in the user's order. */

@@ -20,6 +20,7 @@ import { FocusStatsService } from '../focus-stats/focus-stats.service.js';
 import type { FocusSessionStatus, MonthlyTree, Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ProductConfigService } from '../product-config/product-config.service.js';
+import { AchievementsService } from '../progression/achievements.service.js';
 import { ProgressionOwnershipService } from '../progression/progression-ownership.service.js';
 import { checkSpeciesSelection } from '../progression/rewards-rules.js';
 import { localDateOf, type MonthRef } from '../sessions/attribution/calendar.js';
@@ -84,6 +85,7 @@ export class MonthlyTreesService {
     private readonly streak: StreakService,
     private readonly userToday: UserTodayService,
     private readonly ownership: ProgressionOwnershipService,
+    private readonly achievements: AchievementsService,
     private readonly clock: Clock,
   ) {}
 
@@ -217,7 +219,8 @@ export class MonthlyTreesService {
 
   /**
    * Chooses the current month's species (A4.3; docs/03_TREE_SYSTEM.md §9): an owned, selectable
-   * species, while the tree is a growing Seed. The tree is resolved as viewing it does (created
+   * species, while the tree is a growing Seed. Ownership is reconciled first, so a user who
+   * already qualifies needs no earlier read (A4.4.G). The tree is resolved as viewing it does (created
    * as a Seed, reconciled), under the user's row lock, which session submission takes too: the
    * first counted session either grows the species chosen before it, or freezes the tree before
    * the choice. A species changes nothing the tree earns.
@@ -227,6 +230,9 @@ export class MonthlyTreesService {
       const tree = await this.prisma.$transaction(
         async (tx) => {
           await lockUser(tx, userId);
+          // Ownership first (A4.4.G): a species the user already qualifies for is granted here,
+          // in this transaction under the lock, with no unlock reported as new.
+          await this.achievements.reconcile(userId, tx);
           const month = await this.attribution.attribute(userId, this.clock.now(), tx);
           const { tree: found } = await this.ensureTree(tx, userId, month);
           const current = await this.reconcile(tx, userId, found);

@@ -10,6 +10,7 @@ import {
   type CosmeticsResponse,
   type EquipmentResponse,
 } from './badge.dto.js';
+import { CollectionService, type CollectionResponse } from './collection.service.js';
 import { RewardsService } from './rewards.service.js';
 
 // Always the signed-in user's own achievements, badges, and showcase.
@@ -19,7 +20,17 @@ export class ProgressionController {
   constructor(
     private readonly achievements: AchievementsService,
     private readonly rewards: RewardsService,
+    private readonly collectionBook: CollectionService,
   ) {}
+
+  /**
+   * The Collection Book (A4.4): owned and still-obtainable species, badges, and cosmetics, with
+   * honest hints. Derived on every read; a query only (mutations stay on their own routes).
+   */
+  @Get('collection')
+  collection(@CurrentUser() user: AuthenticatedUser): Promise<CollectionResponse> {
+    return this.collectionBook.collection(user.userId);
+  }
 
   @Get('achievements')
   list(@CurrentUser() user: AuthenticatedUser): Promise<AchievementsResponse> {
