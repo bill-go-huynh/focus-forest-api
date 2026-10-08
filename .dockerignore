@@ -1,0 +1,11 @@
+node_modules
+dist
+coverage
+test
+docker
+*.log
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
+src/generated

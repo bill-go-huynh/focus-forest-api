@@ -4,8 +4,11 @@
 // (docs/12_PRODUCT_IMPLEMENTATION_PLAN.md).
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  /// Explicit, so the client is the same wherever it is generated (CR.7: the Docker build
+  /// generates it before tsconfig is present, and the inferred `.ts` imports broke `node dist`).
+  importFileExtension = "js"
 }
 
 datasource db {
