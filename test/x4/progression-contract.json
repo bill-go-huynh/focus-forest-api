@@ -1,0 +1,1933 @@
+{
+  "achievements": {
+    "items": [
+      {
+        "id": "first-session",
+        "badge": {
+          "id": "first-session",
+          "name": "First Session",
+          "description": "Your first counted focus session.",
+          "category": "focus",
+          "rarity": "common",
+          "artworkId": "first-session"
+        },
+        "unit": "sessions",
+        "current": 8,
+        "target": 1,
+        "completed": true,
+        "earnedAt": "2026-10-01T09:00:00.000Z",
+        "progressVisible": false
+      },
+      {
+        "id": "focus-hours:10",
+        "badge": {
+          "id": "focus-hours:10",
+          "name": "10 Hours",
+          "description": "10 hours of counted focus.",
+          "category": "focus",
+          "rarity": "common",
+          "artworkId": "focus-hours-10"
+        },
+        "unit": "minutes",
+        "current": 5880,
+        "target": 600,
+        "completed": true,
+        "earnedAt": "2026-10-01T09:00:00.000Z",
+        "progressVisible": true
+      },
+      {
+        "id": "focus-hours:50",
+        "badge": {
+          "id": "focus-hours:50",
+          "name": "50 Hours",
+          "description": "50 hours of counted focus.",
+          "category": "focus",
+          "rarity": "common",
+          "artworkId": "focus-hours-50"
+        },
+        "unit": "minutes",
+        "current": 5880,
+        "target": 3000,
+        "completed": true,
+        "earnedAt": "2026-10-01T09:00:00.000Z",
+        "progressVisible": true
+      },
+      {
+        "id": "focus-hours:100",
+        "badge": {
+          "id": "focus-hours:100",
+          "name": "100 Hours",
+          "description": "100 hours of counted focus.",
+          "category": "focus",
+          "rarity": "rare",
+          "artworkId": "focus-hours-100"
+        },
+        "unit": "minutes",
+        "current": 5880,
+        "target": 6000,
+        "completed": false,
+        "earnedAt": null,
+        "progressVisible": true
+      },
+      {
+        "id": "focus-hours:500",
+        "badge": {
+          "id": "focus-hours:500",
+          "name": "500 Hours",
+          "description": "500 hours of counted focus.",
+          "category": "focus",
+          "rarity": "legendary",
+          "artworkId": "focus-hours-500"
+        },
+        "unit": "minutes",
+        "current": 5880,
+        "target": 30000,
+        "completed": false,
+        "earnedAt": null,
+        "progressVisible": true
+      },
+      {
+        "id": "focus-streak:3",
+        "badge": {
+          "id": "focus-streak:3",
+          "name": "3-Day Streak",
+          "description": "Focused 3 days in a row.",
+          "category": "consistency",
+          "rarity": "common",
+          "artworkId": "focus-streak-3"
+        },
+        "unit": "days",
+        "current": 8,
+        "target": 3,
+        "completed": true,
+        "earnedAt": "2026-10-01T09:00:00.000Z",
+        "progressVisible": true
+      },
+      {
+        "id": "focus-streak:7",
+        "badge": {
+          "id": "focus-streak:7",
+          "name": "7-Day Streak",
+          "description": "Focused 7 days in a row.",
+          "category": "consistency",
+          "rarity": "common",
+          "artworkId": "focus-streak-7"
+        },
+        "unit": "days",
+        "current": 8,
+        "target": 7,
+        "completed": true,
+        "earnedAt": "2026-10-01T09:00:00.000Z",
+        "progressVisible": true
+      },
+      {
+        "id": "focus-streak:30",
+        "badge": {
+          "id": "focus-streak:30",
+          "name": "30-Day Streak",
+          "description": "Focused 30 days in a row.",
+          "category": "consistency",
+          "rarity": "rare",
+          "artworkId": "focus-streak-30"
+        },
+        "unit": "days",
+        "current": 8,
+        "target": 30,
+        "completed": false,
+        "earnedAt": null,
+        "progressVisible": true
+      },
+      {
+        "id": "focus-streak:100",
+        "badge": {
+          "id": "focus-streak:100",
+          "name": "100-Day Streak",
+          "description": "Focused 100 days in a row.",
+          "category": "consistency",
+          "rarity": "legendary",
+          "artworkId": "focus-streak-100"
+        },
+        "unit": "days",
+        "current": 8,
+        "target": 100,
+        "completed": false,
+        "earnedAt": null,
+        "progressVisible": true
+      }
+    ]
+  },
+  "badges": {
+    "items": [
+      {
+        "id": "first-session",
+        "name": "First Session",
+        "description": "Your first counted focus session.",
+        "category": "focus",
+        "rarity": "common",
+        "artworkId": "first-session",
+        "earnedAt": "2026-10-01T09:00:00.000Z"
+      },
+      {
+        "id": "focus-hours:10",
+        "name": "10 Hours",
+        "description": "10 hours of counted focus.",
+        "category": "focus",
+        "rarity": "common",
+        "artworkId": "focus-hours-10",
+        "earnedAt": "2026-10-01T09:00:00.000Z"
+      },
+      {
+        "id": "focus-hours:50",
+        "name": "50 Hours",
+        "description": "50 hours of counted focus.",
+        "category": "focus",
+        "rarity": "common",
+        "artworkId": "focus-hours-50",
+        "earnedAt": "2026-10-01T09:00:00.000Z"
+      },
+      {
+        "id": "focus-streak:3",
+        "name": "3-Day Streak",
+        "description": "Focused 3 days in a row.",
+        "category": "consistency",
+        "rarity": "common",
+        "artworkId": "focus-streak-3",
+        "earnedAt": "2026-10-01T09:00:00.000Z"
+      },
+      {
+        "id": "focus-streak:7",
+        "name": "7-Day Streak",
+        "description": "Focused 7 days in a row.",
+        "category": "consistency",
+        "rarity": "common",
+        "artworkId": "focus-streak-7",
+        "earnedAt": "2026-10-01T09:00:00.000Z"
+      }
+    ],
+    "showcase": []
+  },
+  "speciesOpen": {
+    "items": [
+      {
+        "id": "signature",
+        "name": "Signature Tree",
+        "description": "The broad-leaf tree every forest begins with.",
+        "rarity": "common",
+        "baseSpeciesId": null,
+        "selectable": true
+      },
+      {
+        "id": "oak",
+        "name": "Oak",
+        "description": "A sturdy oak, grown from your first focus session.",
+        "rarity": "common",
+        "baseSpeciesId": null,
+        "selectable": true
+      },
+      {
+        "id": "sakura",
+        "name": "Sakura",
+        "description": "A cherry tree with arching branches.",
+        "rarity": "common",
+        "baseSpeciesId": null,
+        "selectable": true
+      },
+      {
+        "id": "pine",
+        "name": "Pine",
+        "description": "An evergreen pine that keeps its needles all year.",
+        "rarity": "common",
+        "baseSpeciesId": null,
+        "selectable": true
+      },
+      {
+        "id": "maple",
+        "name": "Maple",
+        "description": "A maple whose leaves turn warm red and orange.",
+        "rarity": "common",
+        "baseSpeciesId": null,
+        "selectable": true
+      }
+    ],
+    "current": {
+      "year": 2026,
+      "month": 10,
+      "speciesId": "signature",
+      "locked": false
+    }
+  },
+  "cosmetics": {
+    "items": [
+      {
+        "id": "meadow",
+        "name": "Meadow",
+        "description": "Soft green hills behind your forest.",
+        "type": "background",
+        "rarity": "common",
+        "artworkId": "meadow",
+        "equipped": false
+      },
+      {
+        "id": "mossy-stones",
+        "name": "Mossy Stones",
+        "description": "A few quiet stones on the ground.",
+        "type": "decoration",
+        "rarity": "common",
+        "artworkId": "mossy-stones",
+        "equipped": false
+      },
+      {
+        "id": "stone-lantern",
+        "name": "Stone Lantern",
+        "description": "A small stone lantern by the path.",
+        "type": "decoration",
+        "rarity": "common",
+        "artworkId": "stone-lantern",
+        "equipped": false
+      }
+    ]
+  },
+  "equipmentEmpty": {
+    "forest": {
+      "background": null,
+      "decoration": null,
+      "fauna": null,
+      "weather": null,
+      "effect": null
+    },
+    "profileFrame": null
+  },
+  "collectionBefore": {
+    "sections": [
+      {
+        "kind": "species",
+        "owned": 5,
+        "total": 9,
+        "items": [
+          {
+            "kind": "species",
+            "id": "signature",
+            "name": "Signature Tree",
+            "description": "The broad-leaf tree every forest begins with.",
+            "rarity": "common",
+            "artworkId": null,
+            "owned": true,
+            "ownedAt": null,
+            "source": "system",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": null,
+            "baseSpeciesId": null,
+            "selected": true
+          },
+          {
+            "kind": "species",
+            "id": "oak",
+            "name": "Oak",
+            "description": "A sturdy oak, grown from your first focus session.",
+            "rarity": "common",
+            "artworkId": null,
+            "owned": true,
+            "ownedAt": "2026-10-01T09:00:00.000Z",
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": null,
+            "baseSpeciesId": null,
+            "selected": false
+          },
+          {
+            "kind": "species",
+            "id": "sakura",
+            "name": "Sakura",
+            "description": "A cherry tree with arching branches.",
+            "rarity": "common",
+            "artworkId": null,
+            "owned": true,
+            "ownedAt": "2026-10-01T09:00:00.000Z",
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": null,
+            "baseSpeciesId": null,
+            "selected": false
+          },
+          {
+            "kind": "species",
+            "id": "pine",
+            "name": "Pine",
+            "description": "An evergreen pine that keeps its needles all year.",
+            "rarity": "common",
+            "artworkId": null,
+            "owned": true,
+            "ownedAt": "2026-10-01T09:00:00.000Z",
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": null,
+            "baseSpeciesId": null,
+            "selected": false
+          },
+          {
+            "kind": "species",
+            "id": "maple",
+            "name": "Maple",
+            "description": "A maple whose leaves turn warm red and orange.",
+            "rarity": "common",
+            "artworkId": null,
+            "owned": true,
+            "ownedAt": "2026-10-01T09:00:00.000Z",
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": null,
+            "baseSpeciesId": null,
+            "selected": false
+          },
+          {
+            "kind": "species",
+            "id": "bonsai",
+            "name": "Bonsai",
+            "description": "A small, patient tree shaped with care.",
+            "rarity": "rare",
+            "artworkId": null,
+            "owned": false,
+            "ownedAt": null,
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": {
+              "type": "achievement",
+              "achievementId": "focus-streak:30",
+              "name": "30-Day Streak",
+              "description": "Focused 30 days in a row.",
+              "unit": "days",
+              "target": 30,
+              "current": 8
+            },
+            "baseSpeciesId": null,
+            "selected": false
+          },
+          {
+            "kind": "species",
+            "id": "fantasy",
+            "name": "Fantasy Tree",
+            "description": "A tree from a quieter, stranger forest.",
+            "rarity": "rare",
+            "artworkId": null,
+            "owned": false,
+            "ownedAt": null,
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": {
+              "type": "achievement",
+              "achievementId": "focus-hours:100",
+              "name": "100 Hours",
+              "description": "100 hours of counted focus.",
+              "unit": "minutes",
+              "target": 6000,
+              "current": 5880
+            },
+            "baseSpeciesId": null,
+            "selected": false
+          },
+          {
+            "kind": "species",
+            "id": "golden-sakura",
+            "name": "Golden Sakura",
+            "description": "A rare sakura with golden blossoms.",
+            "rarity": "legendary",
+            "artworkId": null,
+            "owned": false,
+            "ownedAt": null,
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": {
+              "type": "achievement",
+              "achievementId": "focus-hours:500",
+              "name": "500 Hours",
+              "description": "500 hours of counted focus.",
+              "unit": "minutes",
+              "target": 30000,
+              "current": 5880
+            },
+            "baseSpeciesId": "sakura",
+            "selected": false
+          },
+          {
+            "kind": "species",
+            "id": "ancient-pine",
+            "name": "Ancient Pine",
+            "description": "A rare pine, weathered by many seasons.",
+            "rarity": "legendary",
+            "artworkId": null,
+            "owned": false,
+            "ownedAt": null,
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": {
+              "type": "achievement",
+              "achievementId": "focus-streak:100",
+              "name": "100-Day Streak",
+              "description": "Focused 100 days in a row.",
+              "unit": "days",
+              "target": 100,
+              "current": 8
+            },
+            "baseSpeciesId": "pine",
+            "selected": false
+          }
+        ]
+      },
+      {
+        "kind": "badges",
+        "owned": 5,
+        "total": 9,
+        "items": [
+          {
+            "kind": "badge",
+            "id": "first-session",
+            "name": "First Session",
+            "description": "Your first counted focus session.",
+            "rarity": "common",
+            "artworkId": "first-session",
+            "owned": true,
+            "ownedAt": "2026-10-01T09:00:00.000Z",
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": null,
+            "category": "focus",
+            "showcasePosition": null
+          },
+          {
+            "kind": "badge",
+            "id": "focus-hours:10",
+            "name": "10 Hours",
+            "description": "10 hours of counted focus.",
+            "rarity": "common",
+            "artworkId": "focus-hours-10",
+            "owned": true,
+            "ownedAt": "2026-10-01T09:00:00.000Z",
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": null,
+            "category": "focus",
+            "showcasePosition": null
+          },
+          {
+            "kind": "badge",
+            "id": "focus-hours:50",
+            "name": "50 Hours",
+            "description": "50 hours of counted focus.",
+            "rarity": "common",
+            "artworkId": "focus-hours-50",
+            "owned": true,
+            "ownedAt": "2026-10-01T09:00:00.000Z",
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": null,
+            "category": "focus",
+            "showcasePosition": null
+          },
+          {
+            "kind": "badge",
+            "id": "focus-hours:100",
+            "name": "100 Hours",
+            "description": "100 hours of counted focus.",
+            "rarity": "rare",
+            "artworkId": "focus-hours-100",
+            "owned": false,
+            "ownedAt": null,
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": {
+              "type": "achievement",
+              "achievementId": "focus-hours:100",
+              "name": "100 Hours",
+              "description": "100 hours of counted focus.",
+              "unit": "minutes",
+              "target": 6000,
+              "current": 5880
+            },
+            "category": "focus",
+            "showcasePosition": null
+          },
+          {
+            "kind": "badge",
+            "id": "focus-hours:500",
+            "name": "500 Hours",
+            "description": "500 hours of counted focus.",
+            "rarity": "legendary",
+            "artworkId": "focus-hours-500",
+            "owned": false,
+            "ownedAt": null,
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": {
+              "type": "achievement",
+              "achievementId": "focus-hours:500",
+              "name": "500 Hours",
+              "description": "500 hours of counted focus.",
+              "unit": "minutes",
+              "target": 30000,
+              "current": 5880
+            },
+            "category": "focus",
+            "showcasePosition": null
+          },
+          {
+            "kind": "badge",
+            "id": "focus-streak:3",
+            "name": "3-Day Streak",
+            "description": "Focused 3 days in a row.",
+            "rarity": "common",
+            "artworkId": "focus-streak-3",
+            "owned": true,
+            "ownedAt": "2026-10-01T09:00:00.000Z",
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": null,
+            "category": "consistency",
+            "showcasePosition": null
+          },
+          {
+            "kind": "badge",
+            "id": "focus-streak:7",
+            "name": "7-Day Streak",
+            "description": "Focused 7 days in a row.",
+            "rarity": "common",
+            "artworkId": "focus-streak-7",
+            "owned": true,
+            "ownedAt": "2026-10-01T09:00:00.000Z",
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": null,
+            "category": "consistency",
+            "showcasePosition": null
+          },
+          {
+            "kind": "badge",
+            "id": "focus-streak:30",
+            "name": "30-Day Streak",
+            "description": "Focused 30 days in a row.",
+            "rarity": "rare",
+            "artworkId": "focus-streak-30",
+            "owned": false,
+            "ownedAt": null,
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": {
+              "type": "achievement",
+              "achievementId": "focus-streak:30",
+              "name": "30-Day Streak",
+              "description": "Focused 30 days in a row.",
+              "unit": "days",
+              "target": 30,
+              "current": 8
+            },
+            "category": "consistency",
+            "showcasePosition": null
+          },
+          {
+            "kind": "badge",
+            "id": "focus-streak:100",
+            "name": "100-Day Streak",
+            "description": "Focused 100 days in a row.",
+            "rarity": "legendary",
+            "artworkId": "focus-streak-100",
+            "owned": false,
+            "ownedAt": null,
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": {
+              "type": "achievement",
+              "achievementId": "focus-streak:100",
+              "name": "100-Day Streak",
+              "description": "Focused 100 days in a row.",
+              "unit": "days",
+              "target": 100,
+              "current": 8
+            },
+            "category": "consistency",
+            "showcasePosition": null
+          }
+        ]
+      },
+      {
+        "kind": "cosmetics",
+        "owned": 3,
+        "total": 5,
+        "items": [
+          {
+            "kind": "cosmetic",
+            "id": "meadow",
+            "name": "Meadow",
+            "description": "Soft green hills behind your forest.",
+            "rarity": "common",
+            "artworkId": "meadow",
+            "owned": true,
+            "ownedAt": null,
+            "source": "system",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": null,
+            "type": "background",
+            "equipped": false
+          },
+          {
+            "kind": "cosmetic",
+            "id": "mossy-stones",
+            "name": "Mossy Stones",
+            "description": "A few quiet stones on the ground.",
+            "rarity": "common",
+            "artworkId": "mossy-stones",
+            "owned": true,
+            "ownedAt": null,
+            "source": "system",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": null,
+            "type": "decoration",
+            "equipped": false
+          },
+          {
+            "kind": "cosmetic",
+            "id": "stone-lantern",
+            "name": "Stone Lantern",
+            "description": "A small stone lantern by the path.",
+            "rarity": "common",
+            "artworkId": "stone-lantern",
+            "owned": true,
+            "ownedAt": "2026-10-01T09:00:00.000Z",
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": null,
+            "type": "decoration",
+            "equipped": false
+          },
+          {
+            "kind": "cosmetic",
+            "id": "misty-hills",
+            "name": "Misty Hills",
+            "description": "Far hills in a morning mist.",
+            "rarity": "rare",
+            "artworkId": "misty-hills",
+            "owned": false,
+            "ownedAt": null,
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": {
+              "type": "achievement",
+              "achievementId": "focus-hours:100",
+              "name": "100 Hours",
+              "description": "100 hours of counted focus.",
+              "unit": "minutes",
+              "target": 6000,
+              "current": 5880
+            },
+            "type": "background",
+            "equipped": false
+          },
+          {
+            "kind": "cosmetic",
+            "id": "twig-frame",
+            "name": "Twig Frame",
+            "description": "A frame of woven twigs for your profile.",
+            "rarity": "rare",
+            "artworkId": "twig-frame",
+            "owned": false,
+            "ownedAt": null,
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": {
+              "type": "achievement",
+              "achievementId": "focus-streak:30",
+              "name": "30-Day Streak",
+              "description": "Focused 30 days in a row.",
+              "unit": "days",
+              "target": 30,
+              "current": 8
+            },
+            "type": "profile_frame",
+            "equipped": false
+          }
+        ]
+      }
+    ]
+  },
+  "showcase": {
+    "items": [
+      {
+        "id": "first-session",
+        "name": "First Session",
+        "description": "Your first counted focus session.",
+        "category": "focus",
+        "rarity": "common",
+        "artworkId": "first-session",
+        "earnedAt": "2026-10-01T09:00:00.000Z"
+      },
+      {
+        "id": "focus-hours:10",
+        "name": "10 Hours",
+        "description": "10 hours of counted focus.",
+        "category": "focus",
+        "rarity": "common",
+        "artworkId": "focus-hours-10",
+        "earnedAt": "2026-10-01T09:00:00.000Z"
+      },
+      {
+        "id": "focus-hours:50",
+        "name": "50 Hours",
+        "description": "50 hours of counted focus.",
+        "category": "focus",
+        "rarity": "common",
+        "artworkId": "focus-hours-50",
+        "earnedAt": "2026-10-01T09:00:00.000Z"
+      },
+      {
+        "id": "focus-streak:3",
+        "name": "3-Day Streak",
+        "description": "Focused 3 days in a row.",
+        "category": "consistency",
+        "rarity": "common",
+        "artworkId": "focus-streak-3",
+        "earnedAt": "2026-10-01T09:00:00.000Z"
+      },
+      {
+        "id": "focus-streak:7",
+        "name": "7-Day Streak",
+        "description": "Focused 7 days in a row.",
+        "category": "consistency",
+        "rarity": "common",
+        "artworkId": "focus-streak-7",
+        "earnedAt": "2026-10-01T09:00:00.000Z"
+      }
+    ],
+    "showcase": [
+      {
+        "id": "focus-hours:50",
+        "name": "50 Hours",
+        "description": "50 hours of counted focus.",
+        "category": "focus",
+        "rarity": "common",
+        "artworkId": "focus-hours-50",
+        "earnedAt": "2026-10-01T09:00:00.000Z"
+      },
+      {
+        "id": "first-session",
+        "name": "First Session",
+        "description": "Your first counted focus session.",
+        "category": "focus",
+        "rarity": "common",
+        "artworkId": "first-session",
+        "earnedAt": "2026-10-01T09:00:00.000Z"
+      }
+    ]
+  },
+  "speciesSelected": {
+    "tree": {
+      "year": 2026,
+      "month": 10,
+      "status": "growing",
+      "species": "sakura",
+      "variationSeed": 1000001,
+      "partialFirstMonth": false,
+      "configVersion": 1,
+      "progress": {
+        "stage": "seed",
+        "stageNumber": 1,
+        "progressToNextStage": 0,
+        "growthMinutes": 0,
+        "fullness": {
+          "level": 0,
+          "maxLevel": 5
+        },
+        "blossoms": {
+          "level": 0,
+          "maxLevel": 7
+        },
+        "richness": {
+          "tier": 0,
+          "maxTier": 5
+        }
+      },
+      "traits": [],
+      "vitality": "quiet"
+    },
+    "stats": {
+      "focusedMinutes": 0,
+      "sessionCount": 0,
+      "activeDays": 0,
+      "dailyGoalsMet": 0,
+      "weeklyGoalsMet": 0,
+      "topTopicId": null
+    }
+  },
+  "equipped": {
+    "forest": {
+      "background": {
+        "id": "meadow",
+        "name": "Meadow",
+        "description": "Soft green hills behind your forest.",
+        "type": "background",
+        "rarity": "common",
+        "artworkId": "meadow"
+      },
+      "decoration": {
+        "id": "stone-lantern",
+        "name": "Stone Lantern",
+        "description": "A small stone lantern by the path.",
+        "type": "decoration",
+        "rarity": "common",
+        "artworkId": "stone-lantern"
+      },
+      "fauna": null,
+      "weather": null,
+      "effect": null
+    },
+    "profileFrame": null
+  },
+  "equipNotOwned": {
+    "statusCode": 422,
+    "error": "Unprocessable Entity",
+    "message": "Only cosmetics you own can be used.",
+    "code": "cosmetic_not_owned"
+  },
+  "equipWrongSlot": {
+    "statusCode": 422,
+    "error": "Unprocessable Entity",
+    "message": "This cosmetic does not go in that place.",
+    "code": "cosmetic_wrong_slot"
+  },
+  "sessionUnlock": {
+    "id": "00000000-0000-4000-8000-000000000401",
+    "topicId": "00000000-0000-4000-8000-00000000b001",
+    "startedAt": "2026-10-01T09:30:00.000Z",
+    "endedAt": "2026-10-01T11:40:00.000Z",
+    "plannedMinutes": 130,
+    "focusedMilliseconds": 7800000,
+    "pausedMilliseconds": 0,
+    "status": "completed",
+    "counted": true,
+    "localDate": "2026-10-01",
+    "year": 2026,
+    "month": 10,
+    "note": null,
+    "noteHighlighted": false,
+    "createdAt": "2026-01-01T00:00:00.000Z",
+    "growth": {
+      "tree": {
+        "year": 2026,
+        "month": 10,
+        "status": "growing",
+        "traits": [],
+        "species": "sakura",
+        "progress": {
+          "stage": "young_tree",
+          "blossoms": {
+            "level": 0,
+            "maxLevel": 7
+          },
+          "fullness": {
+            "level": 0,
+            "maxLevel": 5
+          },
+          "richness": {
+            "tier": 0,
+            "maxTier": 5
+          },
+          "stageNumber": 3,
+          "growthMinutes": 130,
+          "progressToNextStage": 0.041
+        },
+        "vitality": "recovering",
+        "configVersion": 1,
+        "variationSeed": 1000001,
+        "partialFirstMonth": false
+      },
+      "stage": {
+        "to": "young_tree",
+        "from": "seed"
+      },
+      "counted": true,
+      "newTraits": [],
+      "monthClosed": false
+    },
+    "progression": {
+      "newlyEarnedBadges": [
+        {
+          "id": "focus-hours:100",
+          "name": "100 Hours",
+          "description": "100 hours of counted focus.",
+          "category": "focus",
+          "rarity": "rare",
+          "artworkId": "focus-hours-100",
+          "earnedAt": "2026-10-01T12:00:00.000Z"
+        }
+      ],
+      "newlyUnlockedSpecies": [
+        {
+          "id": "fantasy",
+          "name": "Fantasy Tree",
+          "description": "A tree from a quieter, stranger forest.",
+          "rarity": "rare",
+          "baseSpeciesId": null,
+          "unlockedAt": "2026-10-01T12:00:00.000Z"
+        }
+      ],
+      "newlyUnlockedCosmetics": [
+        {
+          "id": "misty-hills",
+          "name": "Misty Hills",
+          "description": "Far hills in a morning mist.",
+          "type": "background",
+          "rarity": "rare",
+          "artworkId": "misty-hills",
+          "unlockedAt": "2026-10-01T12:00:00.000Z"
+        }
+      ]
+    }
+  },
+  "sessionReplay": {
+    "id": "00000000-0000-4000-8000-000000000401",
+    "topicId": "00000000-0000-4000-8000-00000000b001",
+    "startedAt": "2026-10-01T09:30:00.000Z",
+    "endedAt": "2026-10-01T11:40:00.000Z",
+    "plannedMinutes": 130,
+    "focusedMilliseconds": 7800000,
+    "pausedMilliseconds": 0,
+    "status": "completed",
+    "counted": true,
+    "localDate": "2026-10-01",
+    "year": 2026,
+    "month": 10,
+    "note": null,
+    "noteHighlighted": false,
+    "createdAt": "2026-01-01T00:00:00.000Z",
+    "growth": {
+      "tree": {
+        "year": 2026,
+        "month": 10,
+        "status": "growing",
+        "traits": [],
+        "species": "sakura",
+        "progress": {
+          "stage": "young_tree",
+          "blossoms": {
+            "level": 0,
+            "maxLevel": 7
+          },
+          "fullness": {
+            "level": 0,
+            "maxLevel": 5
+          },
+          "richness": {
+            "tier": 0,
+            "maxTier": 5
+          },
+          "stageNumber": 3,
+          "growthMinutes": 130,
+          "progressToNextStage": 0.041
+        },
+        "vitality": "recovering",
+        "configVersion": 1,
+        "variationSeed": 1000001,
+        "partialFirstMonth": false
+      },
+      "stage": {
+        "to": "young_tree",
+        "from": "seed"
+      },
+      "counted": true,
+      "newTraits": [],
+      "monthClosed": false
+    },
+    "progression": {
+      "newlyEarnedBadges": [
+        {
+          "id": "focus-hours:100",
+          "name": "100 Hours",
+          "description": "100 hours of counted focus.",
+          "category": "focus",
+          "rarity": "rare",
+          "artworkId": "focus-hours-100",
+          "earnedAt": "2026-10-01T12:00:00.000Z"
+        }
+      ],
+      "newlyUnlockedSpecies": [
+        {
+          "id": "fantasy",
+          "name": "Fantasy Tree",
+          "description": "A tree from a quieter, stranger forest.",
+          "rarity": "rare",
+          "baseSpeciesId": null,
+          "unlockedAt": "2026-10-01T12:00:00.000Z"
+        }
+      ],
+      "newlyUnlockedCosmetics": [
+        {
+          "id": "misty-hills",
+          "name": "Misty Hills",
+          "description": "Far hills in a morning mist.",
+          "type": "background",
+          "rarity": "rare",
+          "artworkId": "misty-hills",
+          "unlockedAt": "2026-10-01T12:00:00.000Z"
+        }
+      ]
+    }
+  },
+  "speciesLocked": {
+    "items": [
+      {
+        "id": "signature",
+        "name": "Signature Tree",
+        "description": "The broad-leaf tree every forest begins with.",
+        "rarity": "common",
+        "baseSpeciesId": null,
+        "selectable": true
+      },
+      {
+        "id": "oak",
+        "name": "Oak",
+        "description": "A sturdy oak, grown from your first focus session.",
+        "rarity": "common",
+        "baseSpeciesId": null,
+        "selectable": true
+      },
+      {
+        "id": "sakura",
+        "name": "Sakura",
+        "description": "A cherry tree with arching branches.",
+        "rarity": "common",
+        "baseSpeciesId": null,
+        "selectable": true
+      },
+      {
+        "id": "pine",
+        "name": "Pine",
+        "description": "An evergreen pine that keeps its needles all year.",
+        "rarity": "common",
+        "baseSpeciesId": null,
+        "selectable": true
+      },
+      {
+        "id": "maple",
+        "name": "Maple",
+        "description": "A maple whose leaves turn warm red and orange.",
+        "rarity": "common",
+        "baseSpeciesId": null,
+        "selectable": true
+      },
+      {
+        "id": "fantasy",
+        "name": "Fantasy Tree",
+        "description": "A tree from a quieter, stranger forest.",
+        "rarity": "rare",
+        "baseSpeciesId": null,
+        "selectable": true
+      }
+    ],
+    "current": {
+      "year": 2026,
+      "month": 10,
+      "speciesId": "sakura",
+      "locked": true
+    }
+  },
+  "speciesRefused": {
+    "statusCode": 409,
+    "error": "Conflict",
+    "message": "This month’s tree has started growing: its species is set.",
+    "code": "species_locked"
+  },
+  "badgesAfter": {
+    "items": [
+      {
+        "id": "first-session",
+        "name": "First Session",
+        "description": "Your first counted focus session.",
+        "category": "focus",
+        "rarity": "common",
+        "artworkId": "first-session",
+        "earnedAt": "2026-10-01T09:00:00.000Z"
+      },
+      {
+        "id": "focus-hours:10",
+        "name": "10 Hours",
+        "description": "10 hours of counted focus.",
+        "category": "focus",
+        "rarity": "common",
+        "artworkId": "focus-hours-10",
+        "earnedAt": "2026-10-01T09:00:00.000Z"
+      },
+      {
+        "id": "focus-hours:50",
+        "name": "50 Hours",
+        "description": "50 hours of counted focus.",
+        "category": "focus",
+        "rarity": "common",
+        "artworkId": "focus-hours-50",
+        "earnedAt": "2026-10-01T09:00:00.000Z"
+      },
+      {
+        "id": "focus-streak:3",
+        "name": "3-Day Streak",
+        "description": "Focused 3 days in a row.",
+        "category": "consistency",
+        "rarity": "common",
+        "artworkId": "focus-streak-3",
+        "earnedAt": "2026-10-01T09:00:00.000Z"
+      },
+      {
+        "id": "focus-streak:7",
+        "name": "7-Day Streak",
+        "description": "Focused 7 days in a row.",
+        "category": "consistency",
+        "rarity": "common",
+        "artworkId": "focus-streak-7",
+        "earnedAt": "2026-10-01T09:00:00.000Z"
+      },
+      {
+        "id": "focus-hours:100",
+        "name": "100 Hours",
+        "description": "100 hours of counted focus.",
+        "category": "focus",
+        "rarity": "rare",
+        "artworkId": "focus-hours-100",
+        "earnedAt": "2026-10-01T12:00:00.000Z"
+      }
+    ],
+    "showcase": [
+      {
+        "id": "focus-hours:50",
+        "name": "50 Hours",
+        "description": "50 hours of counted focus.",
+        "category": "focus",
+        "rarity": "common",
+        "artworkId": "focus-hours-50",
+        "earnedAt": "2026-10-01T09:00:00.000Z"
+      },
+      {
+        "id": "first-session",
+        "name": "First Session",
+        "description": "Your first counted focus session.",
+        "category": "focus",
+        "rarity": "common",
+        "artworkId": "first-session",
+        "earnedAt": "2026-10-01T09:00:00.000Z"
+      }
+    ]
+  },
+  "collectionAfter": {
+    "sections": [
+      {
+        "kind": "species",
+        "owned": 6,
+        "total": 9,
+        "items": [
+          {
+            "kind": "species",
+            "id": "signature",
+            "name": "Signature Tree",
+            "description": "The broad-leaf tree every forest begins with.",
+            "rarity": "common",
+            "artworkId": null,
+            "owned": true,
+            "ownedAt": null,
+            "source": "system",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": null,
+            "baseSpeciesId": null,
+            "selected": false
+          },
+          {
+            "kind": "species",
+            "id": "oak",
+            "name": "Oak",
+            "description": "A sturdy oak, grown from your first focus session.",
+            "rarity": "common",
+            "artworkId": null,
+            "owned": true,
+            "ownedAt": "2026-10-01T09:00:00.000Z",
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": null,
+            "baseSpeciesId": null,
+            "selected": false
+          },
+          {
+            "kind": "species",
+            "id": "sakura",
+            "name": "Sakura",
+            "description": "A cherry tree with arching branches.",
+            "rarity": "common",
+            "artworkId": null,
+            "owned": true,
+            "ownedAt": "2026-10-01T09:00:00.000Z",
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": null,
+            "baseSpeciesId": null,
+            "selected": true
+          },
+          {
+            "kind": "species",
+            "id": "pine",
+            "name": "Pine",
+            "description": "An evergreen pine that keeps its needles all year.",
+            "rarity": "common",
+            "artworkId": null,
+            "owned": true,
+            "ownedAt": "2026-10-01T09:00:00.000Z",
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": null,
+            "baseSpeciesId": null,
+            "selected": false
+          },
+          {
+            "kind": "species",
+            "id": "maple",
+            "name": "Maple",
+            "description": "A maple whose leaves turn warm red and orange.",
+            "rarity": "common",
+            "artworkId": null,
+            "owned": true,
+            "ownedAt": "2026-10-01T09:00:00.000Z",
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": null,
+            "baseSpeciesId": null,
+            "selected": false
+          },
+          {
+            "kind": "species",
+            "id": "bonsai",
+            "name": "Bonsai",
+            "description": "A small, patient tree shaped with care.",
+            "rarity": "rare",
+            "artworkId": null,
+            "owned": false,
+            "ownedAt": null,
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": {
+              "type": "achievement",
+              "achievementId": "focus-streak:30",
+              "name": "30-Day Streak",
+              "description": "Focused 30 days in a row.",
+              "unit": "days",
+              "target": 30,
+              "current": 8
+            },
+            "baseSpeciesId": null,
+            "selected": false
+          },
+          {
+            "kind": "species",
+            "id": "fantasy",
+            "name": "Fantasy Tree",
+            "description": "A tree from a quieter, stranger forest.",
+            "rarity": "rare",
+            "artworkId": null,
+            "owned": true,
+            "ownedAt": "2026-10-01T12:00:00.000Z",
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": null,
+            "baseSpeciesId": null,
+            "selected": false
+          },
+          {
+            "kind": "species",
+            "id": "golden-sakura",
+            "name": "Golden Sakura",
+            "description": "A rare sakura with golden blossoms.",
+            "rarity": "legendary",
+            "artworkId": null,
+            "owned": false,
+            "ownedAt": null,
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": {
+              "type": "achievement",
+              "achievementId": "focus-hours:500",
+              "name": "500 Hours",
+              "description": "500 hours of counted focus.",
+              "unit": "minutes",
+              "target": 30000,
+              "current": 6010
+            },
+            "baseSpeciesId": "sakura",
+            "selected": false
+          },
+          {
+            "kind": "species",
+            "id": "ancient-pine",
+            "name": "Ancient Pine",
+            "description": "A rare pine, weathered by many seasons.",
+            "rarity": "legendary",
+            "artworkId": null,
+            "owned": false,
+            "ownedAt": null,
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": {
+              "type": "achievement",
+              "achievementId": "focus-streak:100",
+              "name": "100-Day Streak",
+              "description": "Focused 100 days in a row.",
+              "unit": "days",
+              "target": 100,
+              "current": 8
+            },
+            "baseSpeciesId": "pine",
+            "selected": false
+          }
+        ]
+      },
+      {
+        "kind": "badges",
+        "owned": 6,
+        "total": 9,
+        "items": [
+          {
+            "kind": "badge",
+            "id": "first-session",
+            "name": "First Session",
+            "description": "Your first counted focus session.",
+            "rarity": "common",
+            "artworkId": "first-session",
+            "owned": true,
+            "ownedAt": "2026-10-01T09:00:00.000Z",
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": null,
+            "category": "focus",
+            "showcasePosition": 2
+          },
+          {
+            "kind": "badge",
+            "id": "focus-hours:10",
+            "name": "10 Hours",
+            "description": "10 hours of counted focus.",
+            "rarity": "common",
+            "artworkId": "focus-hours-10",
+            "owned": true,
+            "ownedAt": "2026-10-01T09:00:00.000Z",
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": null,
+            "category": "focus",
+            "showcasePosition": null
+          },
+          {
+            "kind": "badge",
+            "id": "focus-hours:50",
+            "name": "50 Hours",
+            "description": "50 hours of counted focus.",
+            "rarity": "common",
+            "artworkId": "focus-hours-50",
+            "owned": true,
+            "ownedAt": "2026-10-01T09:00:00.000Z",
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": null,
+            "category": "focus",
+            "showcasePosition": 1
+          },
+          {
+            "kind": "badge",
+            "id": "focus-hours:100",
+            "name": "100 Hours",
+            "description": "100 hours of counted focus.",
+            "rarity": "rare",
+            "artworkId": "focus-hours-100",
+            "owned": true,
+            "ownedAt": "2026-10-01T12:00:00.000Z",
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": null,
+            "category": "focus",
+            "showcasePosition": null
+          },
+          {
+            "kind": "badge",
+            "id": "focus-hours:500",
+            "name": "500 Hours",
+            "description": "500 hours of counted focus.",
+            "rarity": "legendary",
+            "artworkId": "focus-hours-500",
+            "owned": false,
+            "ownedAt": null,
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": {
+              "type": "achievement",
+              "achievementId": "focus-hours:500",
+              "name": "500 Hours",
+              "description": "500 hours of counted focus.",
+              "unit": "minutes",
+              "target": 30000,
+              "current": 6010
+            },
+            "category": "focus",
+            "showcasePosition": null
+          },
+          {
+            "kind": "badge",
+            "id": "focus-streak:3",
+            "name": "3-Day Streak",
+            "description": "Focused 3 days in a row.",
+            "rarity": "common",
+            "artworkId": "focus-streak-3",
+            "owned": true,
+            "ownedAt": "2026-10-01T09:00:00.000Z",
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": null,
+            "category": "consistency",
+            "showcasePosition": null
+          },
+          {
+            "kind": "badge",
+            "id": "focus-streak:7",
+            "name": "7-Day Streak",
+            "description": "Focused 7 days in a row.",
+            "rarity": "common",
+            "artworkId": "focus-streak-7",
+            "owned": true,
+            "ownedAt": "2026-10-01T09:00:00.000Z",
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": null,
+            "category": "consistency",
+            "showcasePosition": null
+          },
+          {
+            "kind": "badge",
+            "id": "focus-streak:30",
+            "name": "30-Day Streak",
+            "description": "Focused 30 days in a row.",
+            "rarity": "rare",
+            "artworkId": "focus-streak-30",
+            "owned": false,
+            "ownedAt": null,
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": {
+              "type": "achievement",
+              "achievementId": "focus-streak:30",
+              "name": "30-Day Streak",
+              "description": "Focused 30 days in a row.",
+              "unit": "days",
+              "target": 30,
+              "current": 8
+            },
+            "category": "consistency",
+            "showcasePosition": null
+          },
+          {
+            "kind": "badge",
+            "id": "focus-streak:100",
+            "name": "100-Day Streak",
+            "description": "Focused 100 days in a row.",
+            "rarity": "legendary",
+            "artworkId": "focus-streak-100",
+            "owned": false,
+            "ownedAt": null,
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": {
+              "type": "achievement",
+              "achievementId": "focus-streak:100",
+              "name": "100-Day Streak",
+              "description": "Focused 100 days in a row.",
+              "unit": "days",
+              "target": 100,
+              "current": 8
+            },
+            "category": "consistency",
+            "showcasePosition": null
+          }
+        ]
+      },
+      {
+        "kind": "cosmetics",
+        "owned": 4,
+        "total": 5,
+        "items": [
+          {
+            "kind": "cosmetic",
+            "id": "meadow",
+            "name": "Meadow",
+            "description": "Soft green hills behind your forest.",
+            "rarity": "common",
+            "artworkId": "meadow",
+            "owned": true,
+            "ownedAt": null,
+            "source": "system",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": null,
+            "type": "background",
+            "equipped": true
+          },
+          {
+            "kind": "cosmetic",
+            "id": "mossy-stones",
+            "name": "Mossy Stones",
+            "description": "A few quiet stones on the ground.",
+            "rarity": "common",
+            "artworkId": "mossy-stones",
+            "owned": true,
+            "ownedAt": null,
+            "source": "system",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": null,
+            "type": "decoration",
+            "equipped": false
+          },
+          {
+            "kind": "cosmetic",
+            "id": "stone-lantern",
+            "name": "Stone Lantern",
+            "description": "A small stone lantern by the path.",
+            "rarity": "common",
+            "artworkId": "stone-lantern",
+            "owned": true,
+            "ownedAt": "2026-10-01T09:00:00.000Z",
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": null,
+            "type": "decoration",
+            "equipped": true
+          },
+          {
+            "kind": "cosmetic",
+            "id": "misty-hills",
+            "name": "Misty Hills",
+            "description": "Far hills in a morning mist.",
+            "rarity": "rare",
+            "artworkId": "misty-hills",
+            "owned": true,
+            "ownedAt": "2026-10-01T12:00:00.000Z",
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": null,
+            "type": "background",
+            "equipped": false
+          },
+          {
+            "kind": "cosmetic",
+            "id": "twig-frame",
+            "name": "Twig Frame",
+            "description": "A frame of woven twigs for your profile.",
+            "rarity": "rare",
+            "artworkId": "twig-frame",
+            "owned": false,
+            "ownedAt": null,
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": {
+              "type": "achievement",
+              "achievementId": "focus-streak:30",
+              "name": "30-Day Streak",
+              "description": "Focused 30 days in a row.",
+              "unit": "days",
+              "target": 30,
+              "current": 8
+            },
+            "type": "profile_frame",
+            "equipped": false
+          }
+        ]
+      }
+    ]
+  },
+  "unequipped": {
+    "forest": {
+      "background": {
+        "id": "meadow",
+        "name": "Meadow",
+        "description": "Soft green hills behind your forest.",
+        "type": "background",
+        "rarity": "common",
+        "artworkId": "meadow"
+      },
+      "decoration": null,
+      "fauna": null,
+      "weather": null,
+      "effect": null
+    },
+    "profileFrame": null
+  }
+}
