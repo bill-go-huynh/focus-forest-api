@@ -19,6 +19,7 @@ export default defineConfig({
       TEST_DATABASE_URL: testDatabaseUrl,
       DATABASE_URL: testDatabaseUrl,
       JWT_ACCESS_SECRET: 'test-only-access-token-secret-0123456789',
+      ADMIN_JWT_SECRET: 'test-only-admin-token-secret-9876543210',
     },
     include: ['**/*.int-spec.ts'],
     globalSetup: ['./test/database/global-setup.ts'],

@@ -748,3 +748,53 @@ model AnalyticsEvent {
   @@index([name, occurredAt])
   @@map("analytics_events")
 }
+
+/// Early admin roles (docs/09; CR.3). `moderator` and `content` arrive with their phases.
+enum AdminRole {
+  admin
+  support
+
+  @@map("admin_role")
+}
+
+enum AdminStatus {
+  active
+  disabled
+
+  @@map("admin_status")
+}
+
+/// An admin of the internal tool (CR.3): not an app user, with its own credentials and tokens.
+/// Created by `npm run admin:create`; there is no creation endpoint.
+model AdminUser {
+  id           String      @id @db.Uuid
+  /// Lowercased (CHECK).
+  email        String      @unique
+  passwordHash String      @map("password_hash")
+  role         AdminRole
+  status       AdminStatus @default(active)
+  createdAt    DateTime    @default(now()) @map("created_at")
+  lastSignInAt DateTime?   @map("last_sign_in_at")
+
+  auditEntries AdminAuditLog[]
+
+  @@map("admin_users")
+}
+
+/// Who did what, when, and why (docs/09). Append-only: a trigger refuses UPDATE and DELETE.
+model AdminAuditLog {
+  id         String   @id @db.Uuid
+  adminId    String   @map("admin_id") @db.Uuid
+  action     String
+  targetType String?  @map("target_type")
+  targetId   String?  @map("target_id")
+  reason     String?
+  details    Json     @default("{}")
+  createdAt  DateTime @map("created_at")
+
+  admin AdminUser @relation(fields: [adminId], references: [id], onDelete: Restrict)
+
+  @@index([createdAt])
+  @@index([targetType, targetId])
+  @@map("admin_audit_log")
+}

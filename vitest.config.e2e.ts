@@ -11,6 +11,7 @@ export default defineConfig({
       NODE_ENV: 'test',
       DATABASE_URL: 'postgresql://test:test@localhost:5432/test',
       JWT_ACCESS_SECRET: 'test-only-access-token-secret-0123456789',
+      ADMIN_JWT_SECRET: 'test-only-admin-token-secret-9876543210',
     },
     include: ['**/*.e2e-spec.ts'],
   },

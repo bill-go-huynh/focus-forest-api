@@ -14,6 +14,13 @@ async function bootstrap(): Promise<void> {
   const config = app.get(ConfigService<EnvironmentVariables, true>);
 
   configureApp(app);
+  // Browsers may call the API only from listed origins (the admin web app, CR.3). The mobile app
+  // is not a browser and needs none.
+  const origins = (config.get('CORS_ORIGINS', { infer: true }) ?? '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+  if (origins.length > 0) app.enableCors({ origin: origins });
 
   if (config.get('NODE_ENV', { infer: true }) !== NodeEnv.Production) {
     const document = SwaggerModule.createDocument(

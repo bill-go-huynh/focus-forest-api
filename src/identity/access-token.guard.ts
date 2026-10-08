@@ -11,7 +11,13 @@ import { AccessTokens } from './access-tokens.js';
 import type { AuthenticatedRequest } from './current-user.decorator.js';
 import { IS_PUBLIC } from './public.decorator.js';
 
-/** Global guard: every route requires a valid access token of an active user unless @Public(). */
+/** Set by `@AdminController`: admin routes have their own guard and token (CR.3). */
+export const IS_ADMIN_ROUTE = 'admin:isAdminRoute';
+
+/**
+ * Global guard: every route requires a valid access token of an active user unless @Public().
+ * Admin routes are left to the admin guard, which never accepts an app token.
+ */
 @Injectable()
 export class AccessTokenGuard implements CanActivate {
   constructor(
@@ -26,6 +32,7 @@ export class AccessTokenGuard implements CanActivate {
       context.getClass(),
     ]);
     if (isPublic) return true;
+    if (this.reflector.get<boolean | undefined>(IS_ADMIN_ROUTE, context.getClass())) return true;
 
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const [scheme, token] = (request.headers.authorization ?? '').split(' ');

@@ -29,4 +29,14 @@ describe('validateEnv (auth settings)', () => {
       /ACCESS_TOKEN_TTL_SECONDS/,
     );
   });
+
+  it('leaves the admin off without a secret, and refuses a short one (CR.3)', () => {
+    const env = validateEnv(base);
+    expect(env.ADMIN_JWT_SECRET).toBeUndefined();
+    expect(env.ADMIN_TOKEN_TTL_SECONDS).toBe(1800);
+    expect(() => validateEnv({ ...base, ADMIN_JWT_SECRET: 'short' })).toThrow(/ADMIN_JWT_SECRET/);
+    expect(() => validateEnv({ ...base, ADMIN_TOKEN_TTL_SECONDS: '7200' })).toThrow(
+      /ADMIN_TOKEN_TTL_SECONDS/,
+    );
+  });
 });

@@ -3,6 +3,7 @@ import {
   IsEnum,
   IsInt,
   IsNotEmpty,
+  IsOptional,
   IsString,
   Max,
   Min,
@@ -46,6 +47,27 @@ export class EnvironmentVariables {
   @Min(1)
   @Max(365)
   REFRESH_TOKEN_TTL_DAYS: number = 30;
+
+  /**
+   * Signs admin tokens (CR.3): at least 32 random characters, different from JWT_ACCESS_SECRET.
+   * Without it the admin is off (every admin route answers 503).
+   */
+  @IsOptional()
+  @IsString()
+  @MinLength(32)
+  ADMIN_JWT_SECRET?: string;
+
+  /** Admin tokens are short-lived and not refreshed. */
+  @Type(() => Number)
+  @IsInt()
+  @Min(60)
+  @Max(3600)
+  ADMIN_TOKEN_TTL_SECONDS: number = 1800;
+
+  /** Browser origins allowed to call the API (the admin web app), comma separated. */
+  @IsOptional()
+  @IsString()
+  CORS_ORIGINS?: string;
 }
 
 export function validateEnv(config: Record<string, unknown>): EnvironmentVariables {
