@@ -68,6 +68,11 @@ export class UpdatePreferencesDto {
   @IsBoolean({ message: 'reducedMotion must be true or false.' })
   reducedMotion?: boolean;
 
+  /** Product analytics (CR.1): off stores no event. */
+  @ValidateIf(isSent('shareUsageData'))
+  @IsBoolean({ message: 'shareUsageData must be true or false.' })
+  shareUsageData?: boolean;
+
   @ValidateIf(isSent('notifications'))
   @IsObject({ message: 'notifications must be an object.' })
   @ValidateNested()
@@ -88,6 +93,7 @@ export interface PreferencesResponse {
   sound: boolean;
   haptics: boolean;
   reducedMotion: boolean;
+  shareUsageData: boolean;
   notifications: Record<
     NotificationCategoryKey,
     NotificationSettingResponse | ReminderSettingResponse

@@ -82,6 +82,7 @@ model User {
   equipment               UserEquipment[]
   species                 UserSpecies[]
   cosmetics               UserCosmetic[]
+  analyticsEvents         AnalyticsEvent[]
 
   @@map("users")
 }
@@ -118,13 +119,15 @@ enum Theme {
 /// exists only once the user changes something; defaults live in code
 /// (src/identity/preferences.defaults.ts).
 model UserPreferences {
-  userId        String   @id @map("user_id") @db.Uuid
-  theme         Theme
-  sound         Boolean
-  haptics       Boolean
+  userId         String   @id @map("user_id") @db.Uuid
+  theme          Theme
+  sound          Boolean
+  haptics        Boolean
   /// In-app toggle. Clients also respect the system reduce-motion setting.
-  reducedMotion Boolean  @map("reduced_motion")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  reducedMotion  Boolean  @map("reduced_motion")
+  /// Product analytics (CR.1): on by default for the checkpoint; off stores no event.
+  shareUsageData Boolean  @default(true) @map("share_usage_data")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -722,4 +725,26 @@ model UserCosmetic {
 
   @@id([userId, cosmeticId])
   @@map("user_cosmetics")
+}
+
+/// A product analytics event (CR.1; docs/08 §6). Operational data for the Core Loop Checkpoint,
+/// never product truth: no product feature reads it. The id is the client's, so a retried batch
+/// stores each event once. The name is CHECKed against a closed allowlist; props hold only
+/// allowlisted integers. Deleted with the user.
+model AnalyticsEvent {
+  id         String   @id @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  name       String
+  occurredAt DateTime @map("occurred_at")
+  receivedAt DateTime @map("received_at")
+  localDate  DateTime @map("local_date") @db.Date
+  platform   String
+  appVersion String   @map("app_version")
+  props      Json     @default("{}")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, localDate])
+  @@index([name, occurredAt])
+  @@map("analytics_events")
 }

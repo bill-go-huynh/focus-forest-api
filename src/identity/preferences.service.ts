@@ -39,6 +39,7 @@ export class PreferencesService {
       sound: display?.sound ?? DEFAULT_DISPLAY_PREFERENCES.sound,
       haptics: display?.haptics ?? DEFAULT_DISPLAY_PREFERENCES.haptics,
       reducedMotion: display?.reducedMotion ?? DEFAULT_DISPLAY_PREFERENCES.reducedMotion,
+      shareUsageData: display?.shareUsageData ?? DEFAULT_DISPLAY_PREFERENCES.shareUsageData,
       notifications: settings,
     };
   }

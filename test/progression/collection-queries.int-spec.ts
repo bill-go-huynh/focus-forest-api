@@ -1,4 +1,4 @@
-import { readdirSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 
 import { ConsistencyHarness } from '../support/consistency-harness.js';
 
@@ -103,8 +103,13 @@ describe('A4.4 collection queries (HTTP + PostgreSQL)', () => {
   }, 120_000);
 
   it('adds no migration: the Collection Book is derived', () => {
+    // No migration (A4.4's or any later one) stores the Collection Book: no table, no column.
     const migrations = readdirSync('prisma/migrations').filter((name) => !name.endsWith('.toml'));
-    expect(migrations.at(-1)).toMatch(/_species_cosmetics_equipment$/);
     expect(migrations.some((name) => /collection/.test(name))).toBe(false);
+    const sql = migrations
+      .map((name) => readFileSync(`prisma/migrations/${name}/migration.sql`, 'utf8'))
+      .join('\n');
+    expect(sql).not.toMatch(/CREATE TABLE "[a-z_]*collection[a-z_]*"/i);
+    expect(sql).not.toMatch(/ADD COLUMN\s+"[a-z_]*collection[a-z_]*"/i);
   });
 });

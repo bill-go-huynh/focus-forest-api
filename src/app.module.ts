@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
+import { AnalyticsModule } from './analytics/analytics.module.js';
 import { ClockModule } from './common/clock.js';
 import { validateEnv } from './config/env.validation.js';
 import { ConsistencyModule } from './consistency/consistency.module.js';
@@ -33,6 +34,7 @@ import { TreesModule } from './trees/trees.module.js';
     InsightsModule,
     ProgressionModule,
     StreakRecoveryModule,
+    AnalyticsModule,
   ],
   controllers: [HealthController],
 })

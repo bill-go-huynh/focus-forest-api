@@ -5,6 +5,8 @@ import type { Theme } from '../generated/prisma/client.js';
  * - theme: follows the system setting (docs/01_DESIGN_SYSTEM.md §10)
  * - sound, haptics: on, so completion is noticeable face-down (docs/02_UX_PRINCIPLES.md → Timer)
  * - reducedMotion: off in-app; the system setting is still respected (docs/11_ACCESSIBILITY.md)
+ * - shareUsageData: on for the Core Loop Checkpoint (CR.1, user decision 2026-10-08), with a
+ *   toggle and a disclosure in Settings; revisit before a public beta (consent)
  * - notifications: every category off until the user opts in, with no reminder time
  *   (docs/11_ACCESSIBILITY.md → Notification control)
  */
@@ -13,11 +15,13 @@ export const DEFAULT_DISPLAY_PREFERENCES: {
   sound: boolean;
   haptics: boolean;
   reducedMotion: boolean;
+  shareUsageData: boolean;
 } = {
   theme: 'system',
   sound: true,
   haptics: true,
   reducedMotion: false,
+  shareUsageData: true,
 };
 
 export const DEFAULT_NOTIFICATION_ENABLED = false;

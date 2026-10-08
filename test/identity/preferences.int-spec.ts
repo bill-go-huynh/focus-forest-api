@@ -19,6 +19,7 @@ interface PreferencesBody {
   sound: boolean;
   haptics: boolean;
   reducedMotion: boolean;
+  shareUsageData: boolean;
   notifications: Record<string, NotificationSetting>;
 }
 
@@ -30,6 +31,8 @@ const DEFAULTS: PreferencesBody = {
   sound: true,
   haptics: true,
   reducedMotion: false,
+  // CR.1: usage data is shared by default for the checkpoint, and can be turned off.
+  shareUsageData: true,
   notifications: {
     dailyGoalReminder: offTimed,
     scheduledFocusReminder: offTimed,
@@ -87,7 +90,7 @@ describe('preferences (HTTP + PostgreSQL)', () => {
       .send(body as object);
 
   describe('defaults', () => {
-    it('gives a new user the documented defaults: system theme, sound and haptics on, every notification off', async () => {
+    it('gives a new user the documented defaults: system theme, sound and haptics on, usage data shared, every notification off', async () => {
       const token = await signUp();
       expect(asPreferences(await get(token).expect(200))).toEqual(DEFAULTS);
     });
@@ -105,6 +108,7 @@ describe('preferences (HTTP + PostgreSQL)', () => {
       ['sound', false],
       ['haptics', false],
       ['reducedMotion', true],
+      ['shareUsageData', false],
     ])('updates %s on its own, leaving everything else unchanged', async (key, value) => {
       const token = await signUp();
 
@@ -134,6 +138,7 @@ describe('preferences (HTTP + PostgreSQL)', () => {
       ['a non-boolean sound', { sound: 'yes' }],
       ['a null haptics', { haptics: null }],
       ['a non-boolean reducedMotion', { reducedMotion: 1 }],
+      ['a null shareUsageData', { shareUsageData: null }],
       ['an unknown preference', { fontSize: 'large' }],
       ['a profile field', { displayName: 'Ada' }],
     ])('rejects %s', async (_case, body) => {
