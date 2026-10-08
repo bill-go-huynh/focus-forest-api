@@ -40,6 +40,11 @@ export class ProductConfig<R extends ConfigRegistry> {
     }
     return value as ConfigValue<R, K>;
   }
+
+  /** Every value of this version, as a copy (the admin's read-only view, CR.4). */
+  allValues(): Record<string, unknown> {
+    return structuredClone(this.values);
+  }
 }
 
 function deepFreeze<T>(value: T): T {
