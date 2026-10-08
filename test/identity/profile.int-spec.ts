@@ -18,7 +18,7 @@ interface ProfileBody {
   timezone: string | null;
 }
 
-const PROFILE_KEYS = ['avatarUrl', 'bio', 'displayName', 'id', 'joinDate', 'timezone'];
+const PROFILE_KEYS = ['avatarUrl', 'bio', 'displayName', 'id', 'joinDate', 'timezone', 'username'];
 
 const asProfile = (res: request.Response): ProfileBody => res.body as ProfileBody;
 const messageOf = (res: request.Response): string =>
@@ -75,6 +75,7 @@ describe('profile (HTTP + PostgreSQL)', () => {
         bio: null,
         joinDate: user.createdAt.toISOString(),
         timezone: null,
+        username: null,
       });
     });
 

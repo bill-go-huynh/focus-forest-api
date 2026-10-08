@@ -40,6 +40,12 @@ export class UpdateProfileDto {
   @ValidateIf((dto: UpdateProfileDto) => dto.timezone !== undefined)
   @IsIanaTimeZone()
   timezone?: string;
+
+  /** A5.1. Normalized and checked by the service (`username.ts`); it can be changed, never cleared. */
+  @ValidateIf((dto: UpdateProfileDto) => dto.username !== undefined)
+  @IsString({ message: 'username must be text.' })
+  @MaxLength(64, { message: 'username is too long.' })
+  username?: string;
 }
 
 export interface ProfileResponse {
@@ -51,4 +57,6 @@ export interface ProfileResponse {
   /** ISO 8601. Set by the server at sign-up, never editable. */
   joinDate: string;
   timezone: string | null;
+  /** A5.1: the unique `@username`, lowercase. Null until chosen. */
+  username: string | null;
 }

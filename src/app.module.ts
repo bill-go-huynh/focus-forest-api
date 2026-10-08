@@ -15,6 +15,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
 import { ProductConfigModule } from './product-config/product-config.module.js';
 import { ProgressionModule } from './progression/progression.module.js';
 import { SessionsModule } from './sessions/sessions.module.js';
+import { SocialModule } from './social/social.module.js';
 import { StreakRecoveryModule } from './streak-recovery/streak-recovery.module.js';
 import { TopicsModule } from './topics/topics.module.js';
 import { TreesModule } from './trees/trees.module.js';
@@ -35,6 +36,7 @@ import { TreesModule } from './trees/trees.module.js';
     InsightsModule,
     ProgressionModule,
     StreakRecoveryModule,
+    SocialModule,
     AnalyticsModule,
     AdminModule,
   ],

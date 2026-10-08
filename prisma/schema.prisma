@@ -59,6 +59,8 @@ model User {
   status       UserStatus @default(active)
   /// Set in onboarding. Null until then.
   displayName  String?    @map("display_name")
+  /// A5.1: the unique, searchable `@username`. Lowercase `[a-z0-9_]{3,20}` (CHECK). Null until chosen.
+  username     String?    @unique
   bio          String?
   /// Not writable yet: uploads arrive with object storage (docs/08 §5). Until
   /// then clients show an initials-based avatar when this is null.
@@ -86,6 +88,11 @@ model User {
   species                 UserSpecies[]
   cosmetics               UserCosmetic[]
   analyticsEvents         AnalyticsEvent[]
+  following               Follow[]                  @relation("follower")
+  followers               Follow[]                  @relation("followee")
+  blocking                Block[]                   @relation("blocker")
+  blockedBy               Block[]                   @relation("blocked")
+  privacySettings         PrivacySettings?
 
   @@map("users")
 }
@@ -753,6 +760,62 @@ model AnalyticsEvent {
 }
 
 /// Early admin roles (docs/09; CR.3). `moderator` and `content` arrive with their phases.
+/// Who can see one category of a user's content (spec §19.1). Friends = mutual follows.
+enum PrivacyLevel {
+  public
+  friends
+  private
+
+  @@map("privacy_level")
+}
+
+/// A5.1: one user following another. No approval step; a mutual follow is a friendship.
+/// A trigger refuses a follow while either user blocks the other.
+model Follow {
+  followerId String   @map("follower_id") @db.Uuid
+  followeeId String   @map("followee_id") @db.Uuid
+  createdAt  DateTime @map("created_at")
+
+  follower User @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followee User @relation("followee", fields: [followeeId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followeeId])
+  @@index([followerId, createdAt])
+  @@index([followeeId, createdAt])
+  @@map("follows")
+}
+
+/// A5.1: a block overrides everything, in both directions (spec §19.2).
+model Block {
+  blockerId String   @map("blocker_id") @db.Uuid
+  blockedId String   @map("blocked_id") @db.Uuid
+  createdAt DateTime @map("created_at")
+
+  blocker User @relation("blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@id([blockerId, blockedId])
+  @@index([blockedId])
+  @@index([blockerId, createdAt])
+  @@map("blocks")
+}
+
+/// A5.1: per-category visibility. No row means the defaults in `src/social/visibility.ts`;
+/// the first change writes every category, so the database holds no second set of defaults.
+model PrivacySettings {
+  userId      String       @id @map("user_id") @db.Uuid
+  profile     PrivacyLevel
+  forest      PrivacyLevel
+  statistics  PrivacyLevel
+  badges      PrivacyLevel
+  currentTree PrivacyLevel @map("current_tree")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("privacy_settings")
+}
+
 enum AdminRole {
   admin
   support
