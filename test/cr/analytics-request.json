@@ -1,0 +1,36 @@
+{
+  "events": [
+    {
+      "id": "0c0c0c0c-0000-4000-8000-000000000001",
+      "name": "app_opened",
+      "occurredAt": "2026-09-03T07:58:00.000Z",
+      "localDate": "2026-09-03",
+      "platform": "ios",
+      "appVersion": "0.1.0",
+      "props": {}
+    },
+    {
+      "id": "0c0c0c0c-0000-4000-8000-000000000002",
+      "name": "focus_started",
+      "occurredAt": "2026-09-03T08:00:00.000Z",
+      "localDate": "2026-09-03",
+      "platform": "ios",
+      "appVersion": "0.1.0",
+      "props": {
+        "plannedMinutes": 25
+      }
+    },
+    {
+      "id": "0c0c0c0c-0000-4000-8000-000000000003",
+      "name": "recap_opened",
+      "occurredAt": "2026-09-03T08:30:00.000Z",
+      "localDate": "2026-09-03",
+      "platform": "ios",
+      "appVersion": "0.1.0",
+      "props": {
+        "year": 2026,
+        "month": 8
+      }
+    }
+  ]
+}
