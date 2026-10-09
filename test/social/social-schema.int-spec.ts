@@ -61,4 +61,43 @@ describe('social schema (A5.1, PostgreSQL)', () => {
     await expect(insert('everyone')).rejects.toThrow();
     await expect(insert('public')).resolves.toBe(1);
   });
+
+  describe('reactions (A5.2)', () => {
+    const reaction = (
+      reactorId: string,
+      ownerId: string,
+      targetType: 'forest' | 'tree' | 'badge',
+      targetKey: string,
+    ) =>
+      t.prisma.reaction.create({
+        data: {
+          reactorId,
+          ownerId,
+          targetType,
+          targetKey,
+          reaction: 'fire',
+          createdAt: new Date(),
+        },
+      });
+
+    it('refuses reacting to yourself and malformed target keys', async () => {
+      const { ada, bob } = await users();
+      await expect(reaction(ada, ada, 'forest', '')).rejects.toThrow();
+      await expect(reaction(ada, bob, 'forest', 'x')).rejects.toThrow();
+      await expect(reaction(ada, bob, 'tree', '2026-13')).rejects.toThrow();
+      await expect(reaction(ada, bob, 'badge', 'First')).rejects.toThrow();
+      await reaction(ada, bob, 'tree', '2026-09');
+      await reaction(ada, bob, 'badge', 'focus-streak:7');
+      await expect(reaction(ada, bob, 'tree', '2026-09')).rejects.toThrow();
+    });
+
+    it('refuses a reaction while either user blocks the other', async () => {
+      const { ada, bob } = await users();
+      await t.prisma.block.create({
+        data: { blockerId: bob, blockedId: ada, createdAt: new Date() },
+      });
+      await expect(reaction(ada, bob, 'forest', '')).rejects.toThrow(/blocked/);
+      await expect(reaction(bob, ada, 'forest', '')).rejects.toThrow(/blocked/);
+    });
+  });
 });

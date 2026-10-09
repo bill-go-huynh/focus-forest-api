@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 
 import { PrismaService } from '../prisma/prisma.service.js';
-import type { RelationshipResponse } from './dto/social.dto.js';
+import type { RelationshipResponse, UserCardResponse } from './dto/social.dto.js';
 import {
   canSee,
+  PRIVACY_CATEGORIES,
   PRIVACY_DEFAULTS,
   relationOf,
   type PrivacyCategory,
@@ -97,6 +98,23 @@ export class VisibilityService {
 
   can(viewing: Viewing, category: PrivacyCategory): boolean {
     return canSee(viewing.settings[category], viewing.relation);
+  }
+
+  /** The user card: identity, the profile when visible, and what each category lets the viewer see. */
+  card(viewing: Viewing): UserCardResponse {
+    const profile = this.can(viewing, 'profile');
+    return {
+      id: viewing.owner.id,
+      username: viewing.owner.username,
+      displayName: viewing.owner.displayName,
+      avatarUrl: viewing.owner.avatarUrl,
+      bio: profile ? viewing.owner.bio : null,
+      joinDate: profile ? viewing.owner.createdAt.toISOString() : null,
+      relationship: viewing.relationship,
+      visible: Object.fromEntries(
+        PRIVACY_CATEGORIES.map((category) => [category, this.can(viewing, category)]),
+      ) as UserCardResponse['visible'],
+    };
   }
 
   /** How the viewer and each listed user follow each other, in two statements. */

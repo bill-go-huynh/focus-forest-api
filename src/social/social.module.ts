@@ -2,13 +2,27 @@ import { Module } from '@nestjs/common';
 
 import { PrivacyService } from './privacy.service.js';
 import { SocialGraphService } from './social-graph.service.js';
-import { PrivacyController, SocialGraphController, UsersController } from './social.controller.js';
+import { ReactionsService } from './reactions.service.js';
+import {
+  PrivacyController,
+  ReactionsReceivedController,
+  SocialGraphController,
+  UsersController,
+} from './social.controller.js';
 import { VisibilityService } from './visibility.service.js';
 
-/** A5.1 Social: the follow graph, blocks, privacy, and the visibility gate for later modules. */
+/**
+ * Social (A5.1–A5.2): the follow graph, blocks, privacy, reactions, and the visibility gate that
+ * every cross-user read goes through.
+ */
 @Module({
-  controllers: [UsersController, SocialGraphController, PrivacyController],
-  providers: [SocialGraphService, PrivacyService, VisibilityService],
-  exports: [VisibilityService],
+  controllers: [
+    UsersController,
+    SocialGraphController,
+    PrivacyController,
+    ReactionsReceivedController,
+  ],
+  providers: [SocialGraphService, PrivacyService, VisibilityService, ReactionsService],
+  exports: [VisibilityService, ReactionsService],
 })
 export class SocialModule {}

@@ -18,10 +18,12 @@ import {
   UpdatePrivacyDto,
   type BlockedUserResponse,
   type PageResponse,
+  type ReactionReceivedResponse,
   type UserCardResponse,
   type UserSummaryResponse,
 } from './dto/social.dto.js';
 import { PrivacyService } from './privacy.service.js';
+import { ReactionsService } from './reactions.service.js';
 import { SocialGraphService } from './social-graph.service.js';
 import type { PrivacySettingsValues } from './visibility.js';
 
@@ -120,6 +122,20 @@ export class SocialGraphController {
     @Param('userId', userId) targetId: string,
   ): Promise<void> {
     return this.graph.unblock(user.userId, targetId);
+  }
+}
+
+@Controller('me/reactions')
+export class ReactionsReceivedController {
+  constructor(private readonly reactions: ReactionsService) {}
+
+  /** The reactions the signed-in user received, newest first (A5.2). */
+  @Get()
+  received(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: CursorQuery,
+  ): Promise<PageResponse<ReactionReceivedResponse>> {
+    return this.reactions.received(user.userId, query.cursor);
   }
 }
 

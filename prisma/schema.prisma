@@ -93,6 +93,8 @@ model User {
   blocking                Block[]                   @relation("blocker")
   blockedBy               Block[]                   @relation("blocked")
   privacySettings         PrivacySettings?
+  reactionsGiven          Reaction[]                @relation("reactor")
+  reactionsReceived       Reaction[]                @relation("reactionOwner")
 
   @@map("users")
 }
@@ -814,6 +816,47 @@ model PrivacySettings {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("privacy_settings")
+}
+
+/// What a reaction is on (spec §13.3–13.4): a whole forest, one month's tree, or an owned badge.
+enum ReactionTargetType {
+  forest
+  tree
+  badge
+
+  @@map("reaction_target_type")
+}
+
+/// The five spec §13.4 reactions, as stable ids. The app draws them (🔥 🌱 👏 ❤️ ✨).
+enum ReactionKind {
+  fire
+  sprout
+  clap
+  heart
+  sparkles
+
+  @@map("reaction_kind")
+}
+
+/// A5.2: one user's reaction to another's content. No text. Each kind at most once per target
+/// and reactor. A block removes reactions both ways, and a trigger refuses one next to a block.
+model Reaction {
+  id         String             @id @default(uuid(7)) @db.Uuid
+  reactorId  String             @map("reactor_id") @db.Uuid
+  ownerId    String             @map("owner_id") @db.Uuid
+  targetType ReactionTargetType @map("target_type")
+  /// '' for a forest, 'YYYY-MM' for a tree, the badge id for a badge (CHECK).
+  targetKey  String             @map("target_key")
+  reaction   ReactionKind
+  createdAt  DateTime           @map("created_at")
+
+  reactor User @relation("reactor", fields: [reactorId], references: [id], onDelete: Cascade)
+  owner   User @relation("reactionOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@unique([reactorId, ownerId, targetType, targetKey, reaction])
+  @@index([ownerId, targetType, targetKey])
+  @@index([ownerId, createdAt])
+  @@map("reactions")
 }
 
 enum AdminRole {

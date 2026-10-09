@@ -1,7 +1,7 @@
-/** Where a social list continues: after this row in (createdAt DESC, userId DESC) order. */
+/** Where a social list continues: after this row in (createdAt DESC, id DESC) order. The id is a user's or a reaction's. */
 export interface SocialPosition {
   createdAt: Date;
-  userId: string;
+  id: string;
 }
 
 const VERSION = 1;
@@ -9,7 +9,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 /** Opaque base64url JSON `{ v, t, u }`. Unsigned: it only positions a list of the caller's own. */
 export function encodeSocialCursor(position: SocialPosition): string {
-  const payload = { v: VERSION, t: position.createdAt.toISOString(), u: position.userId };
+  const payload = { v: VERSION, t: position.createdAt.toISOString(), u: position.id };
   return Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
 }
 
@@ -28,5 +28,5 @@ export function decodeSocialCursor(cursor: string): SocialPosition | null {
   if (typeof t !== 'string' || typeof u !== 'string' || !UUID.test(u)) return null;
   const createdAt = new Date(t);
   if (Number.isNaN(createdAt.getTime()) || createdAt.toISOString() !== t) return null;
-  return { createdAt, userId: u };
+  return { createdAt, id: u };
 }

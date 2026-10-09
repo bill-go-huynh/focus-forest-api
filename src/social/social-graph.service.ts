@@ -15,14 +15,12 @@ import type {
   UserCardResponse,
   UserSummaryResponse,
 } from './dto/social.dto.js';
+import { blockedEitherWay, lockPair } from './pair-lock.js';
 import { decodeSocialCursor, encodeSocialCursor, type SocialPosition } from './social-cursor.js';
 import { relationship, VisibilityService } from './visibility.service.js';
-import { PRIVACY_CATEGORIES } from './visibility.js';
 
 const PAGE = 50;
 const SEARCH_LIMIT = 20;
-
-type Tx = Prisma.TransactionClient;
 
 interface ListedRow {
   id: string;
@@ -109,6 +107,15 @@ export class SocialGraphService {
           ],
         },
       });
+      // Reactions too (A5.2): blocked users cannot react (spec §19.2), and none stay behind.
+      await tx.reaction.deleteMany({
+        where: {
+          OR: [
+            { reactorId: viewerId, ownerId: targetId },
+            { reactorId: targetId, ownerId: viewerId },
+          ],
+        },
+      });
     });
   }
 
@@ -120,19 +127,7 @@ export class SocialGraphService {
   async card(viewerId: string, targetId: string): Promise<UserCardResponse> {
     const viewing = await this.visibility.view(viewerId, targetId);
     if (!viewing) throw userNotFound();
-    const profile = this.visibility.can(viewing, 'profile');
-    return {
-      id: viewing.owner.id,
-      username: viewing.owner.username,
-      displayName: viewing.owner.displayName,
-      avatarUrl: viewing.owner.avatarUrl,
-      bio: profile ? viewing.owner.bio : null,
-      joinDate: profile ? viewing.owner.createdAt.toISOString() : null,
-      relationship: viewing.relationship,
-      visible: Object.fromEntries(
-        PRIVACY_CATEGORIES.map((category) => [category, this.visibility.can(viewing, category)]),
-      ) as UserCardResponse['visible'],
-    };
+    return this.visibility.card(viewing);
   }
 
   /** Usernames starting with `q`: exact match first, then alphabetical. */
@@ -223,24 +218,6 @@ export class SocialGraphService {
   }
 }
 
-/** One lock per unordered pair of users, held until the transaction ends. */
-async function lockPair(tx: Tx, a: string, b: string): Promise<void> {
-  const key = a < b ? `social:${a}:${b}` : `social:${b}:${a}`;
-  await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))::text`;
-}
-
-async function blockedEitherWay(tx: Tx, a: string, b: string): Promise<boolean> {
-  const count = await tx.block.count({
-    where: {
-      OR: [
-        { blockerId: a, blockedId: b },
-        { blockerId: b, blockedId: a },
-      ],
-    },
-  });
-  return count > 0;
-}
-
 function position(cursor: string | undefined): SocialPosition | null {
   if (cursor === undefined) return null;
   const decoded = decodeSocialCursor(cursor);
@@ -250,13 +227,13 @@ function position(cursor: string | undefined): SocialPosition | null {
 
 function afterClause(column: 'f.created_at' | 'b.created_at', after: SocialPosition | null) {
   if (!after) return Prisma.empty;
-  return Prisma.sql`AND (${Prisma.raw(column)}, u.id) < (${after.createdAt}, ${after.userId}::uuid)`;
+  return Prisma.sql`AND (${Prisma.raw(column)}, u.id) < (${after.createdAt}, ${after.id}::uuid)`;
 }
 
 function nextCursor(rows: ListedRow[], page: ListedRow[]): string | null {
   const last = page.at(-1);
   if (rows.length <= page.length || !last) return null;
-  return encodeSocialCursor({ createdAt: last.listed_at, userId: last.id });
+  return encodeSocialCursor({ createdAt: last.listed_at, id: last.id });
 }
 
 /** The same answer for a missing, suspended, or blocking user: a block is never revealed. */

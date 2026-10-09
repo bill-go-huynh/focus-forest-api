@@ -19,6 +19,7 @@ import { SocialModule } from './social/social.module.js';
 import { StreakRecoveryModule } from './streak-recovery/streak-recovery.module.js';
 import { TopicsModule } from './topics/topics.module.js';
 import { TreesModule } from './trees/trees.module.js';
+import { VisitsModule } from './visits/visits.module.js';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { TreesModule } from './trees/trees.module.js';
     ProgressionModule,
     StreakRecoveryModule,
     SocialModule,
+    VisitsModule,
     AnalyticsModule,
     AdminModule,
   ],

@@ -1,5 +1,6 @@
 import { IsIn, IsOptional, IsString, MaxLength, ValidateIf } from 'class-validator';
 
+import type { ReactionKindId } from '../reaction-target.js';
 import { PRIVACY_LEVELS, type PrivacyLevel, type PrivacyCategory } from '../visibility.js';
 
 /** How the signed-in user and another user follow each other. Friends = mutual follows. */
@@ -33,6 +34,23 @@ export interface BlockedUserResponse {
   displayName: string | null;
   avatarUrl: string | null;
   blockedAt: string;
+}
+
+/** A5.2: the reactions on one target. Counts only, every kind present; `mine` is the viewer's. */
+export interface ReactionSummaryResponse {
+  /** `forest`, `tree:YYYY-MM`, or `badge:<badge id>`. */
+  target: string;
+  counts: Record<ReactionKindId, number>;
+  mine: ReactionKindId[];
+}
+
+/** A5.2: one reaction the signed-in user received. */
+export interface ReactionReceivedResponse {
+  id: string;
+  reaction: ReactionKindId;
+  target: string;
+  createdAt: string;
+  from: UserSummaryResponse;
 }
 
 export interface PageResponse<T> {
@@ -80,4 +98,11 @@ export class UpdatePrivacyDto implements Partial<Record<PrivacyCategory, Privacy
   @ValidateIf(isSent('currentTree'))
   @IsIn(PRIVACY_LEVELS, { message: `currentTree ${LEVEL_MESSAGE}` })
   currentTree?: PrivacyLevel;
+}
+
+/** A5.2: `?target=forest|tree:YYYY-MM|badge:<id>`, checked by `parseReactionTarget`. */
+export class ReactionTargetQuery {
+  @IsString({ message: 'target must be text.' })
+  @MaxLength(128, { message: 'target is too long.' })
+  target!: string;
 }

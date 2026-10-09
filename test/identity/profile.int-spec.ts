@@ -84,11 +84,22 @@ describe('profile (HTTP + PostgreSQL)', () => {
       await http().patch('/me/profile').send({ displayName: 'Ada' }).expect(401);
     });
 
-    it('does not expose any route to read another user by id', async () => {
+    // Phase 1 had no route to another user. From A5.2 one exists, but only through their privacy
+    // settings: a stranger sees identity alone, never the bio, time zone, or join date.
+    it('shows another user only through their privacy settings', async () => {
       const ada = await signUp('ada@example.com');
       const grace = await signUp('grace@example.com');
-      await http()
+      await patchProfile(grace.token, { bio: 'Compilers.', timezone: 'Europe/London' }).expect(200);
+      const res = await http()
         .get(`/users/${grace.userId}/profile`)
+        .set('Authorization', `Bearer ${ada.token}`)
+        .expect(200);
+      const body = res.body as { user: Record<string, unknown> };
+      expect(body.user).toMatchObject({ bio: null, joinDate: null });
+      expect(JSON.stringify(body)).not.toContain('Compilers.');
+      expect(JSON.stringify(body)).not.toContain('Europe/London');
+      await http()
+        .get(`/users/${grace.userId}/timezone`)
         .set('Authorization', `Bearer ${ada.token}`)
         .expect(404);
     });
