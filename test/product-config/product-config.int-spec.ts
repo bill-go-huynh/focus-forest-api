@@ -110,6 +110,15 @@ describe('product configuration (PostgreSQL)', () => {
     expect(await prisma.activeProductConfig.count()).toBe(1);
   });
 
+  // A5.4: Prisma batches concurrent findUnique calls into one `IN` query, which a Boolean key
+  // does not support. The live room channel reads the active version for several sockets at once.
+  it('reads the active version many times at once', async () => {
+    const v1 = await service.createVersion({ 'test.minutes': 7 }, 'concurrent');
+    await service.activate(v1.version);
+    const reads = await Promise.all(Array.from({ length: 8 }, () => service.active()));
+    expect(reads.map((config) => config.get('test.minutes'))).toEqual(Array(8).fill(7));
+  });
+
   it('cannot point the active version at a version that does not exist', async () => {
     await expect(repository.setActiveVersion(999)).rejects.toThrow();
   });

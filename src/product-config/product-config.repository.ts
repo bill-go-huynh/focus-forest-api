@@ -22,7 +22,9 @@ export class ProductConfigRepository {
   }
 
   async findActiveVersion(): Promise<StoredConfigVersion | null> {
-    const active = await this.prisma.activeProductConfig.findUnique({
+    // findFirst, not findUnique: Prisma batches concurrent findUnique calls into one `IN` query,
+    // which the Boolean key does not support (found in A5.4).
+    const active = await this.prisma.activeProductConfig.findFirst({
       where: { id: true },
       include: { configVersion: true },
     });
