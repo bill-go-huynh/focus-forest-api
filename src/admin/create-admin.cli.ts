@@ -22,7 +22,7 @@ async function main(): Promise<void> {
   const databaseUrl = process.env['DATABASE_URL'];
   if (!email || !password || !databaseUrl) {
     throw new Error(
-      'Usage: DATABASE_URL=… ADMIN_PASSWORD=… npm run admin:create -- --email <email> [--role admin|support]',
+      'Usage: DATABASE_URL=… ADMIN_PASSWORD=… npm run admin:create -- --email <email> [--role admin|support|moderator]',
     );
   }
   const config = { get: () => databaseUrl } as unknown as ConfigService<EnvironmentVariables, true>;

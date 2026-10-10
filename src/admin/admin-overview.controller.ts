@@ -15,6 +15,8 @@ export interface AdminDashboard {
   sessionsToday: number;
   discardedToday: number;
   activeUsersLast7Days: number;
+  /** A5.3: reports waiting for a moderator (open or in review). */
+  openReports: number;
   generatedAt: string;
 }
 
@@ -47,7 +49,7 @@ export class AdminOverviewController {
     const now = this.clock.now();
     const today = new Date(`${now.toISOString().slice(0, 10)}T00:00:00.000Z`);
     const weekAgo = new Date(now.getTime() - 7 * DAY);
-    const [signups, sessions, discarded, active] = await Promise.all([
+    const [signups, sessions, discarded, active, openReports] = await Promise.all([
       this.prisma.user.count({ where: { createdAt: { gte: weekAgo } } }),
       this.prisma.focusSession.count({ where: { startedAt: { gte: today } } }),
       this.prisma.focusSession.count({ where: { startedAt: { gte: today }, status: 'discarded' } }),
@@ -59,12 +61,14 @@ export class AdminOverviewController {
           SELECT user_id FROM focus_sessions
             WHERE started_at >= ${weekAgo} AND status <> 'discarded'
         ) AS active`,
+      this.prisma.report.count({ where: { status: { in: ['open', 'in_review'] } } }),
     ]);
     return {
       signupsLast7Days: signups,
       sessionsToday: sessions,
       discardedToday: discarded,
       activeUsersLast7Days: Number(active[0]?.count ?? 0),
+      openReports,
       generatedAt: now.toISOString(),
     };
   }

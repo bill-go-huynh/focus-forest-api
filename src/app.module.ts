@@ -10,6 +10,7 @@ import { ForestModule } from './forest/forest.module.js';
 import { HealthController } from './health/health.controller.js';
 import { HomeModule } from './home/home.module.js';
 import { InsightsModule } from './insights/insights.module.js';
+import { ModerationModule } from './moderation/moderation.module.js';
 import { IdentityModule } from './identity/identity.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { ProductConfigModule } from './product-config/product-config.module.js';
@@ -39,6 +40,7 @@ import { VisitsModule } from './visits/visits.module.js';
     StreakRecoveryModule,
     SocialModule,
     VisitsModule,
+    ModerationModule,
     AnalyticsModule,
     AdminModule,
   ],

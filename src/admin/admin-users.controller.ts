@@ -37,7 +37,9 @@ export class AdminUsersController {
     return this.users.sessions(id, query.cursor);
   }
 
+  /** Support cases only: moderators never read notes (A5.3, least privilege). */
   @Post(':id/sessions/:sessionId/note-reveal')
+  @AdminRoles('admin', 'support')
   @HttpCode(200)
   revealNote(
     @CurrentAdmin() admin: AuthenticatedAdmin,

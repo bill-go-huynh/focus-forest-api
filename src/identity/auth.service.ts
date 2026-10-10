@@ -63,7 +63,9 @@ export class AuthService {
       throw new UnauthorizedException(INVALID_CREDENTIALS);
     }
     if (user.status !== 'active') {
-      throw new ForbiddenException('This account is suspended.');
+      throw new ForbiddenException(
+        user.status === 'banned' ? 'This account is banned.' : 'This account is suspended.',
+      );
     }
     return this.issueTokens(user, randomUUID());
   }

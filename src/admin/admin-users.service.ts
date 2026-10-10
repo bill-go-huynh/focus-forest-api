@@ -29,7 +29,9 @@ export interface AdminUserRow {
   id: string;
   email: string;
   displayName: string | null;
-  status: 'active' | 'suspended';
+  /** A5.3. */
+  username: string | null;
+  status: 'active' | 'suspended' | 'banned';
   joinedAt: string;
   timezone: string | null;
 }
@@ -57,6 +59,17 @@ export interface AdminUserDetail {
   rewards: { badges: number; species: number; cosmetics: number };
   shareUsageData: boolean;
   checkpoint: UserMetrics;
+  /** A5.3 (docs/09: reports involving the user, block relationships). Counts only. */
+  moderation: {
+    reportsAbout: number;
+    openReportsAbout: number;
+    reportsFiled: number;
+    warnings: number;
+    /** Users this user blocks. */
+    blocking: number;
+    /** Users who block this user. */
+    blockedBy: number;
+  };
 }
 
 export interface AdminSessionRow {
@@ -107,6 +120,7 @@ export class AdminUsersService {
             OR: [
               { email: { contains: q, mode: 'insensitive' } },
               { displayName: { contains: q, mode: 'insensitive' } },
+              { username: { contains: q, mode: 'insensitive' } },
             ],
           };
     const rows = await this.prisma.user.findMany({
@@ -159,6 +173,7 @@ export class AdminUsersService {
         this.streak.history(userId),
         this.checkpoint.forUser(userId),
       ]);
+    const moderation = await this.moderationCounts(userId);
     const streak = user.timezone
       ? summarizeStreak(history, localDateOf(this.clock.now(), user.timezone))
       : null;
@@ -174,7 +189,23 @@ export class AdminUsersService {
       rewards: { badges, species, cosmetics },
       shareUsageData: user.preferences?.shareUsageData ?? true,
       checkpoint: checkpoint!,
+      moderation,
     };
+  }
+
+  private async moderationCounts(userId: string): Promise<AdminUserDetail['moderation']> {
+    const [reportsAbout, openReportsAbout, reportsFiled, warnings, blocking, blockedBy] =
+      await Promise.all([
+        this.prisma.report.count({ where: { targetId: userId } }),
+        this.prisma.report.count({
+          where: { targetId: userId, status: { in: ['open', 'in_review'] } },
+        }),
+        this.prisma.report.count({ where: { reporterId: userId } }),
+        this.prisma.userWarning.count({ where: { userId } }),
+        this.prisma.block.count({ where: { blockerId: userId } }),
+        this.prisma.block.count({ where: { blockedId: userId } }),
+      ]);
+    return { reportsAbout, openReportsAbout, reportsFiled, warnings, blocking, blockedBy };
   }
 
   async sessions(userId: string, cursor: string | undefined): Promise<Page<AdminSessionRow>> {
@@ -325,7 +356,8 @@ export class AdminUsersService {
     return this.prisma.$transaction(async (tx) => {
       const user = await tx.user.findUnique({ where: { id: userId }, select: { status: true } });
       if (!user) throw notFound();
-      if (user.status === status) {
+      // Suspending needs an active account; reactivating lifts a suspension or a ban (A5.3).
+      if (status === 'suspended' ? user.status !== 'active' : user.status === 'active') {
         throw new ConflictException({
           statusCode: 409,
           error: 'Conflict',
@@ -372,6 +404,7 @@ const USER_ROW = {
   id: true,
   email: true,
   displayName: true,
+  username: true,
   status: true,
   createdAt: true,
   timezone: true,
@@ -381,7 +414,8 @@ function toRow(user: {
   id: string;
   email: string;
   displayName: string | null;
-  status: 'active' | 'suspended';
+  username: string | null;
+  status: 'active' | 'suspended' | 'banned';
   createdAt: Date;
   timezone: string | null;
 }): AdminUserRow {
@@ -389,6 +423,7 @@ function toRow(user: {
     id: user.id,
     email: user.email,
     displayName: user.displayName,
+    username: user.username,
     status: user.status,
     joinedAt: user.createdAt.toISOString(),
     timezone: user.timezone,

@@ -18,6 +18,7 @@
     "sessionsToday": 2,
     "discardedToday": 1,
     "activeUsersLast7Days": 1,
+    "openReports": 0,
     "generatedAt": "2026-09-03T12:00:30.000Z"
   },
   "users": {
@@ -26,6 +27,7 @@
         "id": "00000000-0000-4000-8000-0000000000cc",
         "email": "tester@example.com",
         "displayName": "Tess",
+        "username": null,
         "status": "active",
         "joinedAt": "2026-09-01T08:00:00.000Z",
         "timezone": "UTC"
@@ -38,6 +40,7 @@
       "id": "00000000-0000-4000-8000-0000000000cc",
       "email": "tester@example.com",
       "displayName": "Tess",
+      "username": null,
       "status": "active",
       "joinedAt": "2026-09-01T08:00:00.000Z",
       "timezone": "UTC",
@@ -82,6 +85,14 @@
       "secondMonthReturn": null,
       "lastActiveOn": "2026-09-03",
       "daysSinceLastActive": 0
+    },
+    "moderation": {
+      "reportsAbout": 0,
+      "openReportsAbout": 0,
+      "reportsFiled": 0,
+      "warnings": 0,
+      "blocking": 0,
+      "blockedBy": 0
     }
   },
   "sessions": {
@@ -140,6 +151,7 @@
     "id": "00000000-0000-4000-8000-0000000000cc",
     "email": "tester@example.com",
     "displayName": "Tess",
+    "username": null,
     "status": "suspended",
     "joinedAt": "2026-09-01T08:00:00.000Z",
     "timezone": "UTC"
@@ -148,6 +160,7 @@
     "id": "00000000-0000-4000-8000-0000000000cc",
     "email": "tester@example.com",
     "displayName": "Tess",
+    "username": null,
     "status": "active",
     "joinedAt": "2026-09-01T08:00:00.000Z",
     "timezone": "UTC"

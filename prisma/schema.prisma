@@ -45,6 +45,8 @@ model ActiveProductConfig {
 enum UserStatus {
   active
   suspended
+  /// A5.3: removed for abuse. Like a suspension it ends every sign-in; only an admin lifts it.
+  banned
 
   @@map("user_status")
 }
@@ -95,6 +97,9 @@ model User {
   privacySettings         PrivacySettings?
   reactionsGiven          Reaction[]                @relation("reactor")
   reactionsReceived       Reaction[]                @relation("reactionOwner")
+  reportsFiled            Report[]                  @relation("reporter")
+  reportsAbout            Report[]                  @relation("reportTarget")
+  warnings                UserWarning[]
 
   @@map("users")
 }
@@ -859,9 +864,92 @@ model Reaction {
   @@map("reactions")
 }
 
+/// What a report is about (spec §19.3).
+enum ReportCategory {
+  account
+  username
+  avatar
+  bio
+  behavior
+
+  @@map("report_category")
+}
+
+enum ReportStatus {
+  open
+  in_review
+  resolved
+  dismissed
+
+  @@map("report_status")
+}
+
+/// What a moderator did when resolving a report (docs/09 Reports and moderation).
+enum ModerationAction {
+  none
+  warn
+  reset_username
+  reset_bio
+  reset_avatar
+  suspend
+  ban
+
+  @@map("moderation_action")
+}
+
+/// A5.3: a user's report about another user. Survives the reporter's deletion (the reporter
+/// becomes null) and goes with the reported user. One unfinished report per reporter, user, and
+/// category (a partial unique index). CHECKs keep the resolution consistent with the status.
+model Report {
+  id               String            @id @default(uuid(7)) @db.Uuid
+  reporterId       String?           @map("reporter_id") @db.Uuid
+  targetId         String            @map("target_id") @db.Uuid
+  category         ReportCategory
+  /// Optional, at most 500 characters, written by the reporter for the moderators.
+  details          String?
+  status           ReportStatus      @default(open)
+  createdAt        DateTime          @map("created_at")
+  reviewedById     String?           @map("reviewed_by_id") @db.Uuid
+  reviewedAt       DateTime?         @map("reviewed_at")
+  resolvedById     String?           @map("resolved_by_id") @db.Uuid
+  resolvedAt       DateTime?         @map("resolved_at")
+  /// Set when resolved, null when dismissed.
+  action           ModerationAction?
+  resolutionReason String?           @map("resolution_reason")
+
+  reporter   User?         @relation("reporter", fields: [reporterId], references: [id], onDelete: SetNull)
+  target     User          @relation("reportTarget", fields: [targetId], references: [id], onDelete: Cascade)
+  reviewedBy AdminUser?    @relation("reviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  resolvedBy AdminUser?    @relation("resolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+  warnings   UserWarning[]
+
+  @@index([status, createdAt])
+  @@index([targetId])
+  @@index([reporterId])
+  @@map("reports")
+}
+
+/// A5.3: a moderator's warning to a user, with a message the user reads in the app.
+model UserWarning {
+  id             String    @id @default(uuid(7)) @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  reportId       String?   @map("report_id") @db.Uuid
+  message        String
+  createdAt      DateTime  @map("created_at")
+  acknowledgedAt DateTime? @map("acknowledged_at")
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  report Report? @relation(fields: [reportId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@map("user_warnings")
+}
+
 enum AdminRole {
   admin
   support
+  /// A5.3: reports and moderation (docs/09).
+  moderator
 
   @@map("admin_role")
 }
@@ -885,7 +973,9 @@ model AdminUser {
   createdAt    DateTime    @default(now()) @map("created_at")
   lastSignInAt DateTime?   @map("last_sign_in_at")
 
-  auditEntries AdminAuditLog[]
+  auditEntries    AdminAuditLog[]
+  reportsReviewed Report[]        @relation("reviewer")
+  reportsResolved Report[]        @relation("resolver")
 
   @@map("admin_users")
 }
