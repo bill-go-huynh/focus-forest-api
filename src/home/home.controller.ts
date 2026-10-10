@@ -10,6 +10,8 @@ import { GoalsService } from '../consistency/goals.service.js';
 import { RestDaysService } from '../consistency/rest-days.service.js';
 import { StreakService } from '../consistency/streak.service.js';
 import { UserTodayService } from '../consistency/user-today.service.js';
+import type { EventCardDto } from '../events/events.dto.js';
+import { EventsService } from '../events/events.service.js';
 import type { PendingCeremonyDto } from '../forest/forest.dto.js';
 import { FocusStatsService } from '../focus-stats/focus-stats.service.js';
 import { ForestService } from '../forest/forest.service.js';
@@ -41,6 +43,8 @@ export interface HomeResponse {
     sessionCount: number;
     activeDays: number;
   };
+  /** A5.6: at most one quiet event card (docs/02: the tree stays the hero). */
+  event: EventCardDto | null;
 }
 
 /** Home shows a few quick-start chips; the topic picker has the full list. */
@@ -59,6 +63,7 @@ export class HomeController {
     private readonly userToday: UserTodayService,
     private readonly topics: TopicsService,
     private readonly stats: FocusStatsService,
+    private readonly events: EventsService,
   ) {}
 
   /** Everything Home shows, in one request (docs/07 → Recommendation). */
@@ -69,13 +74,14 @@ export class HomeController {
     const tree = await this.trees.currentState(user.userId);
     const today = await this.userToday.today(user.userId);
     const weekStart = weekStartOf(today);
-    const [goals, streak, rest, topics, pendingCeremony, weekDays] = await Promise.all([
+    const [goals, streak, rest, topics, pendingCeremony, weekDays, event] = await Promise.all([
       this.goals.view(user.userId),
       this.streak.view(user.userId),
       this.restDays.view(user.userId),
       this.topics.list(user.userId, 'active', 'recent'),
       this.forest.pendingCeremony(user.userId),
       this.stats.scopeDays(user.userId, { from: weekStart, to: addDays(weekStart, 6) }),
+      this.events.homeCard(user.userId),
     ]);
     return {
       today,
@@ -94,6 +100,7 @@ export class HomeController {
         sessionCount: weekDays.reduce((sum, day) => sum + day.sessionCount, 0),
         activeDays: weekDays.filter((day) => day.sessionCount > 0).length,
       },
+      event,
     };
   }
 }

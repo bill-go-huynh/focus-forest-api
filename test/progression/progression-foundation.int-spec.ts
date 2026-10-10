@@ -467,13 +467,14 @@ describe('A4.1 progression foundation (HTTP + PostgreSQL)', () => {
       ]);
     });
 
-    it('never opens event or season cosmetics before their systems exist', async () => {
+    // Events exist from A5.6; seasons wait for theirs.
+    it('never opens season cosmetics before their system exists', async () => {
       await t.prisma.cosmeticDefinition.create({
         data: {
           id: 'harvest-lantern',
           type: 'decoration',
           rarity: 'rare',
-          source: 'event',
+          source: 'season',
           availability: 'limited',
           availableFrom: new Date('2026-10-01'),
           availableUntil: new Date('2026-11-01'),

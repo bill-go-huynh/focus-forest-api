@@ -194,7 +194,9 @@ describe('monthly tree and session growth (HTTP + PostgreSQL)', () => {
       const body = res.body as SessionBody;
 
       // A4.2 adds `progression` (the badges this session caused) beside `growth`.
-      expect(Object.keys(body).sort()).toEqual([...PHASE2_FIELDS, 'growth', 'progression'].sort());
+      expect(Object.keys(body).sort()).toEqual(
+        [...PHASE2_FIELDS, 'events', 'growth', 'progression'].sort(),
+      );
       expect(body).toMatchObject({
         status: 'completed',
         counted: true,
@@ -525,6 +527,7 @@ describe('monthly tree and session growth (HTTP + PostgreSQL)', () => {
       rest: { today: true, allowance: { used: 1, remaining: 1 } },
     });
     expect(Object.keys(res.body as object).sort()).toEqual([
+      'event',
       'goals',
       'pendingCeremony',
       'recentTopics',

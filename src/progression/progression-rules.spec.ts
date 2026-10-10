@@ -51,13 +51,15 @@ describe('acquirableAt: whether content can be acquired now (never whether it st
     });
   });
 
-  it('never opens event or season content before those systems exist (Phases 14, 17)', () => {
-    for (const source of ['event', 'season'] as const) {
-      expect(acquirableAt(definition({ source }), at)).toEqual({
-        acquirable: false,
-        reason: 'source_not_available',
-      });
-    }
+  it('never opens season content before its system exists', () => {
+    expect(acquirableAt(definition({ source: 'season' }), at)).toEqual({
+      acquirable: false,
+      reason: 'source_not_available',
+    });
+  });
+
+  it('opens event content from A5.6, within its window', () => {
+    expect(acquirableAt(definition({ source: 'event' }), at)).toEqual({ acquirable: true });
   });
 });
 

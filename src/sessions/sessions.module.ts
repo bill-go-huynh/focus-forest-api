@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { EventsModule } from '../events/events.module.js';
 import { ProductConfigModule } from '../product-config/product-config.module.js';
 import { ProgressionModule } from '../progression/progression.module.js';
 import { TreesModule } from '../trees/trees.module.js';
@@ -10,7 +11,7 @@ import { SessionsService } from './sessions.service.js';
 
 /** Focus sessions (Phase 2). */
 @Module({
-  imports: [ProductConfigModule, AttributionModule, TreesModule, ProgressionModule],
+  imports: [ProductConfigModule, AttributionModule, TreesModule, ProgressionModule, EventsModule],
   controllers: [SessionRulesController, SessionsController],
   providers: [SessionsService],
 })

@@ -10,6 +10,8 @@ import { Clock } from '../common/clock.js';
 import { Prisma, type FocusSession } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ProductConfigService } from '../product-config/product-config.service.js';
+import { parseEventResult, type SessionEventResult } from '../events/events.dto.js';
+import { EventsService } from '../events/events.service.js';
 import { AchievementsService } from '../progression/achievements.service.js';
 import type { SessionProgressionDto } from '../progression/badge.dto.js';
 import { isCounted } from '../focus-stats/focus-stats.js';
@@ -56,6 +58,11 @@ export interface SubmittedSessionResponse extends SessionResponse {
    * only; null for sessions stored before A4.2.
    */
   progression: SessionProgressionDto | null;
+  /**
+   * A5.6: the joined events whose window holds this session, with mission progress, what it
+   * completed, and the milestones it reached. Stored with the session; null before A5.6.
+   */
+  events: SessionEventResult[] | null;
 }
 
 export interface SubmitResult {
@@ -72,6 +79,7 @@ export class SessionsService {
     private readonly trees: MonthlyTreesService,
     private readonly closure: MonthClosureService,
     private readonly achievements: AchievementsService,
+    private readonly events: EventsService,
     private readonly clock: Clock,
   ) {}
 
@@ -157,11 +165,14 @@ export class SessionsService {
         // Then achievements, from the same stored truth: a grant commits with its session, or
         // neither does (the app keeps the session and submits it again).
         const progression = await this.achievements.evaluateSession(tx, userId, row);
+        // Then the joined events' missions, from the same stored truth (A5.6).
+        const events = await this.events.evaluateSession(tx, userId, row);
         const stored = await tx.focusSession.update({
           where: { userId_id: { userId, id } },
           data: {
             growthResult: growth as unknown as Prisma.InputJsonValue,
             progressionResult: progression as unknown as Prisma.InputJsonValue,
+            eventResult: events as unknown as Prisma.InputJsonValue,
           },
         });
         return { session: await this.toSubmittedResponse(stored, tx), created: true };
@@ -288,6 +299,7 @@ export class SessionsService {
         row.progressionResult,
         client,
       ),
+      events: parseEventResult(row.eventResult),
     };
   }
 }

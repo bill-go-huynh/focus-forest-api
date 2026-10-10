@@ -124,8 +124,10 @@ export class CollectionService {
         achievement ? { achievement, value: values[achievement.criterion] } : null,
       );
     };
+    // Event and season content is earned by taking part, never shown before it is owned (no FOMO).
     const reachable = (source: ContentSource, achievementId: string | null) =>
-      source !== 'achievement' || (achievementId !== null && earnable.has(achievementId));
+      source === 'system' ||
+      (source === 'achievement' && achievementId !== null && earnable.has(achievementId));
 
     const ownedBadges = new Map(userBadges.map((row) => [row.badgeId, row]));
     const badgeItems: CollectionItem[] = badges

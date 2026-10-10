@@ -104,6 +104,8 @@ model User {
   challengePlaces         ChallengeParticipant[]    @relation("challengePlace")
   challengesCreated       Challenge[]
   challengeInvitesSent    ChallengeParticipant[]    @relation("challengeInviter")
+  eventParticipations     EventParticipation[]
+  eventMilestoneGrants    EventMilestoneGrant[]
 
   @@map("users")
 }
@@ -306,6 +308,8 @@ model FocusSession {
   growthResult        Json?              @map("growth_result")
   /// The badges this session caused (A4.2), stored with it and replayed unchanged; null before.
   progressionResult   Json?              @map("progression_result")
+  /// A5.6: the joined events' mission progress this session caused. Null before A5.6.
+  eventResult         Json?              @map("event_result")
   createdAt           DateTime           @default(now()) @map("created_at")
   updatedAt           DateTime           @updatedAt @map("updated_at")
 
@@ -608,6 +612,7 @@ model BadgeDefinition {
 
   achievement AchievementDefinition?
   owners      UserBadge[]
+  milestones  EventMilestone[]
 
   @@map("badge_definitions")
 }
@@ -678,6 +683,7 @@ model CosmeticDefinition {
   achievement AchievementDefinition? @relation(fields: [achievementId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   owners      UserCosmetic[]
   equipped    UserEquipment[]
+  milestones  EventMilestone[]
 
   @@unique([id, type])
   @@map("cosmetic_definitions")
@@ -1091,6 +1097,109 @@ model ChallengeParticipant {
   @@id([challengeId, userId])
   @@index([userId, status])
   @@map("challenge_participants")
+}
+
+enum EventMissionMeasure {
+  focus_minutes
+  sessions
+  active_days
+  streak_days
+  focus_together_sessions
+
+  @@map("event_mission_measure")
+}
+
+/// A5.6 (docs/06 Event, spec §11): a time-bound program, as content (seed data until the admin
+/// content tools). Planned events are not shown; retired ones stay readable for those who joined.
+model Event {
+  id               String        @id
+  name             String
+  description      String
+  artworkId        String        @map("artwork_id")
+  status           ContentStatus
+  /// The window: missions count counted sessions that started in [startsAt, endsAt).
+  startsAt         DateTime      @map("starts_at")
+  endsAt           DateTime      @map("ends_at")
+  /// Entry condition: counted sessions before joining (0 = open to everyone).
+  entryMinSessions Int           @default(0) @map("entry_min_sessions")
+  sortOrder        Int           @default(0) @map("sort_order")
+
+  missions       EventMission[]
+  milestones     EventMilestone[]
+  participations EventParticipation[]
+  grants         EventMilestoneGrant[]
+
+  @@map("events")
+}
+
+/// A goal within an event (docs/06 EventMission), derived from the user's normal sessions.
+model EventMission {
+  eventId      String              @map("event_id")
+  id           String
+  measure      EventMissionMeasure
+  target       Int
+  /// For active days: the counted minutes a day needs (0 = any counted session).
+  dailyMinutes Int                 @default(0) @map("daily_minutes")
+  name         String
+  description  String
+  sortOrder    Int                 @default(0) @map("sort_order")
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, id])
+  @@map("event_missions")
+}
+
+/// Reached when enough missions are completed; grants its rewards once, owned forever.
+model EventMilestone {
+  eventId          String  @map("event_id")
+  id               String
+  requiredMissions Int     @map("required_missions")
+  badgeId          String? @map("badge_id")
+  cosmeticId       String? @map("cosmetic_id")
+  /// An event trait on the tree growing when it is reached (`event:<event id>`).
+  traitId          String? @map("trait_id")
+  name             String
+  sortOrder        Int     @default(0) @map("sort_order")
+
+  event    Event                 @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  badge    BadgeDefinition?      @relation(fields: [badgeId], references: [id], onDelete: Restrict)
+  cosmetic CosmeticDefinition?   @relation(fields: [cosmeticId], references: [id], onDelete: Restrict)
+  grants   EventMilestoneGrant[]
+
+  @@id([eventId, id])
+  @@map("event_milestones")
+}
+
+/// The user's choice to join (docs/02: events are invitations).
+model EventParticipation {
+  userId   String   @map("user_id") @db.Uuid
+  eventId  String   @map("event_id")
+  joinedAt DateTime @map("joined_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event Event @relation(fields: [eventId], references: [id], onDelete: Restrict)
+
+  @@id([userId, eventId])
+  @@map("event_participations")
+}
+
+/// A milestone reached by a participant: its rewards are granted once. The trait's tree is where
+/// it was placed (null until a growing tree exists to receive it).
+model EventMilestoneGrant {
+  userId      String   @map("user_id") @db.Uuid
+  eventId     String   @map("event_id")
+  milestoneId String   @map("milestone_id")
+  reachedAt   DateTime @map("reached_at")
+  traitYear   Int?     @map("trait_year")
+  traitMonth  Int?     @map("trait_month")
+
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event     Event          @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  milestone EventMilestone @relation(fields: [eventId, milestoneId], references: [eventId, id], onDelete: Restrict)
+
+  @@id([userId, eventId, milestoneId])
+  @@map("event_milestone_grants")
 }
 
 enum AdminRole {

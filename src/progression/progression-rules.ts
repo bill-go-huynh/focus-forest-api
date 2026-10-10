@@ -17,8 +17,8 @@ export type ContentStatus = (typeof CONTENT_STATUSES)[number];
 export const CONTENT_SOURCES = ['system', 'achievement', 'event', 'season'] as const;
 export type ContentSource = (typeof CONTENT_SOURCES)[number];
 
-/** Sources whose systems exist. Event and season content is defined, never acquired, until then. */
-export const ACQUIRABLE_SOURCES: readonly ContentSource[] = ['system', 'achievement'];
+/** Sources whose system exists: events from A5.6; seasons still wait for their module. */
+export const ACQUIRABLE_SOURCES: readonly ContentSource[] = ['system', 'achievement', 'event'];
 
 export const CONTENT_AVAILABILITIES = ['permanent', 'limited'] as const;
 export type ContentAvailability = (typeof CONTENT_AVAILABILITIES)[number];

@@ -448,6 +448,7 @@ describe('insights, records, and lifetime stats (HTTP + PostgreSQL)', () => {
       await submitted(ada, '2026-10-07T10:00:00.000Z', 20);
       const home = await get<Record<string, unknown>>(ada, '/me/home');
       expect(Object.keys(home).sort()).toEqual([
+        'event',
         'goals',
         'pendingCeremony',
         'recentTopics',

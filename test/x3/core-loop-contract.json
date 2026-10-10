@@ -76,7 +76,8 @@
         }
       ],
       "newlyUnlockedCosmetics": []
-    }
+    },
+    "events": []
   },
   "sessionDiscarded": {
     "id": "00000000-0000-4000-8000-000000000002",
@@ -132,7 +133,8 @@
       "newlyEarnedBadges": [],
       "newlyUnlockedSpecies": [],
       "newlyUnlockedCosmetics": []
-    }
+    },
+    "events": []
   },
   "homeGrowing": {
     "today": "2026-09-08",
@@ -262,7 +264,8 @@
       "focusedMilliseconds": 6000000,
       "sessionCount": 2,
       "activeDays": 2
-    }
+    },
+    "event": null
   },
   "currentTree": {
     "tree": {
@@ -485,7 +488,8 @@
       "focusedMilliseconds": 0,
       "sessionCount": 0,
       "activeDays": 0
-    }
+    },
+    "event": null
   },
   "sessionOctober": {
     "id": "00000000-0000-4000-8000-000000000050",
@@ -545,7 +549,8 @@
       "newlyEarnedBadges": [],
       "newlyUnlockedSpecies": [],
       "newlyUnlockedCosmetics": []
-    }
+    },
+    "events": []
   },
   "sessionLate": {
     "id": "00000000-0000-4000-8000-000000000051",
@@ -573,7 +578,8 @@
       "newlyEarnedBadges": [],
       "newlyUnlockedSpecies": [],
       "newlyUnlockedCosmetics": []
-    }
+    },
+    "events": []
   },
   "forest": {
     "items": [

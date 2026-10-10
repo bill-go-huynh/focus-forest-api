@@ -53,11 +53,16 @@ describe('collection visibility: owned forever, otherwise only what can be obtai
         availableFrom: new Date('2026-01-01T00:00:00.000Z'),
         availableUntil: new Date('2026-02-01T00:00:00.000Z'),
       }),
-      item({ source: 'event' }),
       item({ source: 'season' }),
     ]) {
       expect(isVisible(hidden, { owned: false, reachable: true }, now)).toBe(false);
     }
+    // A5.6: event content is acquirable during its event, but never reachable from the
+    // collection: it stays out of sight until owned (no FOMO).
+    expect(isVisible(item({ source: 'event' }), { owned: false, reachable: false }, now)).toBe(
+      false,
+    );
+    expect(isVisible(item({ source: 'event' }), { owned: true, reachable: false }, now)).toBe(true);
   });
 });
 
