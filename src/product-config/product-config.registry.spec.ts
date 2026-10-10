@@ -184,4 +184,52 @@ describe('production registry', () => {
       expect(problemsWith({ [key]: value }).length === 0).toBe(valid);
     });
   });
+
+  describe('challenge templates (A5.5)', () => {
+    const base = {
+      id: 'ten-hours-week',
+      kind: 'personal',
+      measure: 'focus_minutes',
+      goal: 'each',
+      target: 600,
+      dailyMinutes: 0,
+      days: 7,
+      maxParticipants: 1,
+    };
+    const problems = (templates: unknown) => problemsWith({ 'challenge.templates': templates });
+
+    it('accepts the defaults and a valid list', () => {
+      expect(problems([base])).toEqual([]);
+      expect(
+        problems([
+          base,
+          { ...base, id: 'team', kind: 'group', goal: 'shared', target: 3000, maxParticipants: 10 },
+          { ...base, id: 'days', measure: 'active_days', target: 7, dailyMinutes: 30 },
+        ]),
+      ).toEqual([]);
+    });
+
+    it.each([
+      ['an empty list', []],
+      ['two templates with one id', [base, base]],
+      ['a personal template for two', [{ ...base, maxParticipants: 2 }]],
+      ['a personal shared goal', [{ ...base, goal: 'shared' }]],
+      ['a friend template for one', [{ ...base, kind: 'friend', maxParticipants: 1 }]],
+      ['active days without a daily amount', [{ ...base, measure: 'active_days', target: 5 }]],
+      [
+        'more active days than the window',
+        [{ ...base, measure: 'active_days', target: 8, dailyMinutes: 30 }],
+      ],
+      ['a daily amount on a total', [{ ...base, dailyMinutes: 30 }]],
+      ['a race', [{ ...base, kind: 'friend', goal: 'first', maxParticipants: 2 }]],
+      ['an unknown measure', [{ ...base, measure: 'hours' }]],
+      ['a window over a month', [{ ...base, days: 32 }]],
+      ['more than ten people', [{ ...base, kind: 'group', maxParticipants: 11 }]],
+      ['an extra field', [{ ...base, reward: 'badge' }]],
+    ])('rejects %s', (_name, templates) => {
+      expect(problems(templates)).toEqual([
+        expect.stringContaining('"challenge.templates" must be'),
+      ]);
+    });
+  });
 });

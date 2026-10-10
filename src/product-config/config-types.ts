@@ -41,6 +41,24 @@ export function boolean(): ConfigValueType<boolean> {
   return { expected: 'a boolean', is: (value): value is boolean => typeof value === 'boolean' };
 }
 
+/** One of a closed set of strings (A5.5). */
+export function oneOf<const T extends string>(values: readonly T[]): ConfigValueType<T> {
+  return {
+    expected: `one of ${values.map((value) => JSON.stringify(value)).join(', ')}`,
+    is: (value): value is T =>
+      typeof value === 'string' && (values as readonly string[]).includes(value),
+  };
+}
+
+/** A stable identifier: lowercase letters and digits, words joined by single hyphens (A5.5). */
+export function slug(): ConfigValueType<string> {
+  return {
+    expected: 'a lowercase identifier like "ten-hours"',
+    is: (value): value is string =>
+      typeof value === 'string' && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value),
+  };
+}
+
 export function list<T>(item: ConfigValueType<T>): ConfigValueType<readonly T[]> {
   return {
     expected: `a list of ${item.expected}`,

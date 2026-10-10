@@ -101,6 +101,9 @@ model User {
   reportsAbout            Report[]                  @relation("reportTarget")
   warnings                UserWarning[]
   roomPlaces              RoomParticipant[]
+  challengePlaces         ChallengeParticipant[]    @relation("challengePlace")
+  challengesCreated       Challenge[]
+  challengeInvitesSent    ChallengeParticipant[]    @relation("challengeInviter")
 
   @@map("users")
 }
@@ -1013,6 +1016,81 @@ model RoomParticipant {
   @@unique([userId, sessionId])
   @@index([userId, leftAt])
   @@map("room_participants")
+}
+
+enum ChallengeKind {
+  personal
+  friend
+  group
+
+  @@map("challenge_kind")
+}
+
+enum ChallengeMeasure {
+  focus_minutes
+  sessions
+  active_days
+
+  @@map("challenge_measure")
+}
+
+enum ChallengeGoal {
+  each
+  shared
+
+  @@map("challenge_goal")
+}
+
+enum ChallengePlaceStatus {
+  invited
+  joined
+
+  @@map("challenge_place_status")
+}
+
+/// A5.5 (docs/06 Challenge, spec §15): a template's terms copied at creation, so a configuration
+/// change never alters it, and a window of local dates. Progress is derived from participants'
+/// counted sessions; `completedAt` is stored the first time the goal is seen reached, then kept.
+model Challenge {
+  id              String           @id @default(uuid(7)) @db.Uuid
+  templateId      String           @map("template_id")
+  kind            ChallengeKind
+  measure         ChallengeMeasure
+  goal            ChallengeGoal
+  target          Int
+  dailyMinutes    Int              @map("daily_minutes")
+  days            Int
+  maxParticipants Int              @map("max_participants")
+  configVersion   Int              @map("config_version")
+  startDate       DateTime         @map("start_date") @db.Date
+  endDate         DateTime         @map("end_date") @db.Date
+  createdById     String?          @map("created_by_id") @db.Uuid
+  createdAt       DateTime         @map("created_at")
+  completedAt     DateTime?        @map("completed_at")
+
+  createdBy    User?                  @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  participants ChallengeParticipant[]
+
+  @@map("challenges")
+}
+
+/// One person in a challenge: invited, then joined. Declining or leaving deletes the row: no trace,
+/// no penalty (docs/02).
+model ChallengeParticipant {
+  challengeId String               @map("challenge_id") @db.Uuid
+  userId      String               @map("user_id") @db.Uuid
+  status      ChallengePlaceStatus
+  invitedById String?              @map("invited_by_id") @db.Uuid
+  createdAt   DateTime             @map("created_at")
+  joinedAt    DateTime?            @map("joined_at")
+
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user      User      @relation("challengePlace", fields: [userId], references: [id], onDelete: Cascade)
+  invitedBy User?     @relation("challengeInviter", fields: [invitedById], references: [id], onDelete: SetNull)
+
+  @@id([challengeId, userId])
+  @@index([userId, status])
+  @@map("challenge_participants")
 }
 
 enum AdminRole {

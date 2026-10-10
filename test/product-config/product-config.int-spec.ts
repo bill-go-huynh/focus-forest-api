@@ -10,6 +10,7 @@ import { createTestPrismaClient, migrateFreshTestDatabase } from '../database/te
 import {
   CONSISTENCY_CONFIG_VALUES,
   CURRENT_CONFIG_VALUES,
+  FOREST_CONFIG_VALUES,
   SESSION_CONFIG_VALUES,
   TREE_CONFIG_VALUES,
 } from '../support/product-config-values.js';
@@ -36,7 +37,7 @@ describe('product configuration (PostgreSQL)', () => {
     await close();
   });
 
-  it('keeps every earlier version and activates the Phase 3 month-closure rules as version 5', async () => {
+  it('keeps every earlier version and activates the Phase 5 challenge templates as version 6', async () => {
     await migrateFreshTestDatabase();
     const seeded = createTestPrismaClient();
     try {
@@ -70,13 +71,24 @@ describe('product configuration (PostgreSQL)', () => {
         ...CONSISTENCY_CONFIG_VALUES,
       });
 
-      const config = await productionService.active();
-      expect(config.version).toBe(5);
-      const stored = await seeded.productConfigVersion.findUniqueOrThrow({
+      const forest = await seeded.productConfigVersion.findUniqueOrThrow({
         where: { version: 5 },
       });
+      expect(forest.values).toEqual({
+        ...SESSION_CONFIG_VALUES,
+        ...TREE_CONFIG_VALUES,
+        ...CONSISTENCY_CONFIG_VALUES,
+        ...FOREST_CONFIG_VALUES,
+      });
+      expect(forest.note).toMatch(/phase 3/i);
+
+      const config = await productionService.active();
+      expect(config.version).toBe(6);
+      const stored = await seeded.productConfigVersion.findUniqueOrThrow({
+        where: { version: 6 },
+      });
       expect(stored.values).toEqual(CURRENT_CONFIG_VALUES);
-      expect(stored.note).toMatch(/phase 3/i);
+      expect(stored.note).toMatch(/phase 5/i);
       for (const key of Object.keys(
         CURRENT_CONFIG_VALUES,
       ) as (keyof typeof CURRENT_CONFIG_VALUES)[]) {

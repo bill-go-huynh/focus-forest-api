@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 
 import { AdminModule } from './admin/admin.module.js';
 import { AnalyticsModule } from './analytics/analytics.module.js';
+import { ChallengesModule } from './challenges/challenges.module.js';
 import { ClockModule } from './common/clock.js';
 import { validateEnv } from './config/env.validation.js';
 import { ConsistencyModule } from './consistency/consistency.module.js';
@@ -43,6 +44,7 @@ import { VisitsModule } from './visits/visits.module.js';
     VisitsModule,
     ModerationModule,
     RoomsModule,
+    ChallengesModule,
     AnalyticsModule,
     AdminModule,
   ],

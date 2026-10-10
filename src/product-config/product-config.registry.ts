@@ -1,4 +1,36 @@
-import { boolean, increasingList, integer, shape, type ConfigRegistry } from './config-types.js';
+import { templateProblem, type ChallengeTemplate } from '../challenges/challenge-rules.js';
+import {
+  boolean,
+  increasingList,
+  integer,
+  list,
+  oneOf,
+  shape,
+  slug,
+  type ConfigRegistry,
+  type ConfigValueType,
+} from './config-types.js';
+
+/** A5.5: the challenge templates, coherent as a list (`templateProblem`). */
+function challengeTemplates(): ConfigValueType<readonly ChallengeTemplate[]> {
+  const items = list(
+    shape({
+      id: slug(),
+      kind: oneOf(['personal', 'friend', 'group']),
+      measure: oneOf(['focus_minutes', 'sessions', 'active_days']),
+      goal: oneOf(['each', 'shared']),
+      target: integer({ min: 1 }),
+      dailyMinutes: integer({ min: 0, max: 1440 }),
+      days: integer({ min: 1, max: 31 }),
+      maxParticipants: integer({ min: 1, max: 10 }),
+    }),
+  );
+  return {
+    expected: `${items.expected}, coherent (unique ids; fields that fit the kind and measure)`,
+    is: (value): value is readonly ChallengeTemplate[] =>
+      items.is(value) && templateProblem(value) === null,
+  };
+}
 
 export const PRODUCT_CONFIG_REGISTRY = Symbol('PRODUCT_CONFIG_REGISTRY');
 
@@ -152,6 +184,13 @@ export const productConfigRegistry = {
       seasonal: integer({ min: 1 }),
       decorations: integer({ min: 1 }),
     }),
+  },
+
+  // Phase 5 (A5.5): challenges. Cooperative and consistency formats only (docs/02): no races.
+  'challenge.templates': {
+    description:
+      'Challenge templates: who takes part (personal, friend, group), what is measured in the window (focused minutes, counted sessions, or days with at least dailyMinutes), whether every participant must reach the target or everyone adds up to it, the window in local days, and the size',
+    type: challengeTemplates(),
   },
 } as const satisfies ConfigRegistry;
 

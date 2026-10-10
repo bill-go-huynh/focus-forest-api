@@ -1,4 +1,4 @@
-import { boolean, increasingList, integer, list, shape } from './config-types.js';
+import { boolean, increasingList, integer, list, oneOf, shape, slug } from './config-types.js';
 
 describe('config value types', () => {
   it('integer accepts integers within its bounds', () => {
@@ -101,6 +101,26 @@ describe('config value types', () => {
       expect(shape({ floorPercent: integer({ min: 1, max: 100 }) }).expected).toBe(
         'an object { floorPercent: an integer from 1 to 100 }',
       );
+    });
+  });
+
+  describe('oneOf (A5.5)', () => {
+    const kind = oneOf(['personal', 'friend']);
+    it('accepts only the listed strings', () => {
+      expect(kind.is('personal')).toBe(true);
+      expect(kind.is('group')).toBe(false);
+      expect(kind.is(1)).toBe(false);
+      expect(kind.expected).toBe('one of "personal", "friend"');
+    });
+  });
+
+  describe('slug (A5.5)', () => {
+    it('accepts lowercase words joined by hyphens', () => {
+      expect(slug().is('seven-days')).toBe(true);
+      expect(slug().is('ten-hours-1')).toBe(true);
+      for (const value of ['Seven', 'seven_days', '-a', 'a-', '', 'a--b', 5]) {
+        expect(slug().is(value)).toBe(false);
+      }
     });
   });
 });

@@ -43,11 +43,78 @@ export const FOREST_CONFIG_VALUES = {
   'forest.areaLevels': { lake: 2, mountains: 3, night: 4, seasonal: 5, decorations: 6 },
 } as const;
 
+/** Phase 5 challenge templates (configuration version 6, A5.5). */
+export const CHALLENGE_CONFIG_VALUES = {
+  'challenge.templates': [
+    {
+      id: 'seven-days-thirty-minutes',
+      kind: 'personal',
+      measure: 'active_days',
+      goal: 'each',
+      target: 7,
+      dailyMinutes: 30,
+      days: 7,
+      maxParticipants: 1,
+    },
+    {
+      id: 'ten-hours-week',
+      kind: 'personal',
+      measure: 'focus_minutes',
+      goal: 'each',
+      target: 600,
+      dailyMinutes: 0,
+      days: 7,
+      maxParticipants: 1,
+    },
+    {
+      id: 'thirty-sessions-month',
+      kind: 'personal',
+      measure: 'sessions',
+      goal: 'each',
+      target: 30,
+      dailyMinutes: 0,
+      days: 30,
+      maxParticipants: 1,
+    },
+    {
+      id: 'steady-week-together',
+      kind: 'friend',
+      measure: 'active_days',
+      goal: 'each',
+      target: 7,
+      dailyMinutes: 15,
+      days: 7,
+      maxParticipants: 5,
+    },
+    {
+      id: 'ten-hours-each',
+      kind: 'friend',
+      measure: 'focus_minutes',
+      goal: 'each',
+      target: 600,
+      dailyMinutes: 0,
+      days: 14,
+      maxParticipants: 5,
+    },
+    {
+      id: 'team-fifty-hours',
+      kind: 'group',
+      measure: 'focus_minutes',
+      goal: 'shared',
+      target: 3000,
+      dailyMinutes: 0,
+      days: 7,
+      maxParticipants: 10,
+    },
+  ],
+} as const;
+
 export const CURRENT_CONFIG_VALUES = {
   ...SESSION_CONFIG_VALUES,
   ...TREE_CONFIG_VALUES,
   ...CONSISTENCY_CONFIG_VALUES,
   ...FOREST_CONFIG_VALUES,
+  ...CHALLENGE_CONFIG_VALUES,
 };
 
 /** A complete set of values: the current ones with some replaced. */

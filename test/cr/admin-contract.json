@@ -210,6 +210,68 @@
         }
       },
       "restDay.maxPerWeek": 2,
+      "challenge.templates": [
+        {
+          "id": "seven-days-thirty-minutes",
+          "days": 7,
+          "goal": "each",
+          "kind": "personal",
+          "target": 7,
+          "measure": "active_days",
+          "dailyMinutes": 30,
+          "maxParticipants": 1
+        },
+        {
+          "id": "ten-hours-week",
+          "days": 7,
+          "goal": "each",
+          "kind": "personal",
+          "target": 600,
+          "measure": "focus_minutes",
+          "dailyMinutes": 0,
+          "maxParticipants": 1
+        },
+        {
+          "id": "thirty-sessions-month",
+          "days": 30,
+          "goal": "each",
+          "kind": "personal",
+          "target": 30,
+          "measure": "sessions",
+          "dailyMinutes": 0,
+          "maxParticipants": 1
+        },
+        {
+          "id": "steady-week-together",
+          "days": 7,
+          "goal": "each",
+          "kind": "friend",
+          "target": 7,
+          "measure": "active_days",
+          "dailyMinutes": 15,
+          "maxParticipants": 5
+        },
+        {
+          "id": "ten-hours-each",
+          "days": 14,
+          "goal": "each",
+          "kind": "friend",
+          "target": 600,
+          "measure": "focus_minutes",
+          "dailyMinutes": 0,
+          "maxParticipants": 5
+        },
+        {
+          "id": "team-fifty-hours",
+          "days": 7,
+          "goal": "shared",
+          "kind": "group",
+          "target": 3000,
+          "measure": "focus_minutes",
+          "dailyMinutes": 0,
+          "maxParticipants": 10
+        }
+      ],
       "growth.dailySoftCap": 240,
       "growth.blossomPoints": {
         "dailyGoal": 1,
