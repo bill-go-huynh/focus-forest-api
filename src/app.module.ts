@@ -15,6 +15,7 @@ import { IdentityModule } from './identity/identity.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { ProductConfigModule } from './product-config/product-config.module.js';
 import { ProgressionModule } from './progression/progression.module.js';
+import { RoomsModule } from './rooms/rooms.module.js';
 import { SessionsModule } from './sessions/sessions.module.js';
 import { SocialModule } from './social/social.module.js';
 import { StreakRecoveryModule } from './streak-recovery/streak-recovery.module.js';
@@ -41,6 +42,7 @@ import { VisitsModule } from './visits/visits.module.js';
     SocialModule,
     VisitsModule,
     ModerationModule,
+    RoomsModule,
     AnalyticsModule,
     AdminModule,
   ],

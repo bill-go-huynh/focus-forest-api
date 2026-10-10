@@ -61,6 +61,8 @@ export const ACHIEVEMENT_CRITERIA = [
   'counted_sessions',
   'focused_minutes',
   'longest_streak_days',
+  'focus_together_sessions',
+  'focus_together_with_friend',
 ] as const;
 export type AchievementCriterion = (typeof ACHIEVEMENT_CRITERIA)[number];
 
@@ -68,6 +70,8 @@ const UNITS: Record<AchievementCriterion, 'sessions' | 'minutes' | 'days'> = {
   counted_sessions: 'sessions',
   focused_minutes: 'minutes',
   longest_streak_days: 'days',
+  focus_together_sessions: 'sessions',
+  focus_together_with_friend: 'sessions',
 };
 
 export function criterionUnit(criterion: AchievementCriterion): 'sessions' | 'minutes' | 'days' {

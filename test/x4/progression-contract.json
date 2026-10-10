@@ -153,6 +153,40 @@
         "completed": false,
         "earnedAt": null,
         "progressVisible": true
+      },
+      {
+        "id": "focus-together:first",
+        "badge": {
+          "id": "focus-together:first",
+          "name": "First Focus Together",
+          "description": "Your first session focused together with others.",
+          "category": "social",
+          "rarity": "common",
+          "artworkId": "focus-together-first"
+        },
+        "unit": "sessions",
+        "current": 0,
+        "target": 1,
+        "completed": false,
+        "earnedAt": null,
+        "progressVisible": false
+      },
+      {
+        "id": "focus-buddy",
+        "badge": {
+          "id": "focus-buddy",
+          "name": "Focus Buddy",
+          "description": "Focused together with a friend.",
+          "category": "social",
+          "rarity": "common",
+          "artworkId": "focus-buddy"
+        },
+        "unit": "sessions",
+        "current": 0,
+        "target": 1,
+        "completed": false,
+        "earnedAt": null,
+        "progressVisible": false
       }
     ]
   },
@@ -530,7 +564,7 @@
       {
         "kind": "badges",
         "owned": 5,
-        "total": 9,
+        "total": 11,
         "items": [
           {
             "kind": "badge",
@@ -751,6 +785,64 @@
               "current": 8
             },
             "category": "consistency",
+            "showcasePosition": null
+          },
+          {
+            "kind": "badge",
+            "id": "focus-together:first",
+            "name": "First Focus Together",
+            "description": "Your first session focused together with others.",
+            "rarity": "common",
+            "artworkId": "focus-together-first",
+            "owned": false,
+            "ownedAt": null,
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": {
+              "type": "achievement",
+              "achievementId": "focus-together:first",
+              "name": "First Focus Together",
+              "description": "Your first session focused together with others.",
+              "unit": "sessions",
+              "target": 1,
+              "current": null
+            },
+            "category": "social",
+            "showcasePosition": null
+          },
+          {
+            "kind": "badge",
+            "id": "focus-buddy",
+            "name": "Focus Buddy",
+            "description": "Focused together with a friend.",
+            "rarity": "common",
+            "artworkId": "focus-buddy",
+            "owned": false,
+            "ownedAt": null,
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": {
+              "type": "achievement",
+              "achievementId": "focus-buddy",
+              "name": "Focus Buddy",
+              "description": "Focused together with a friend.",
+              "unit": "sessions",
+              "target": 1,
+              "current": null
+            },
+            "category": "social",
             "showcasePosition": null
           }
         ]
@@ -1574,7 +1666,7 @@
       {
         "kind": "badges",
         "owned": 6,
-        "total": 9,
+        "total": 11,
         "items": [
           {
             "kind": "badge",
@@ -1787,6 +1879,64 @@
               "current": 8
             },
             "category": "consistency",
+            "showcasePosition": null
+          },
+          {
+            "kind": "badge",
+            "id": "focus-together:first",
+            "name": "First Focus Together",
+            "description": "Your first session focused together with others.",
+            "rarity": "common",
+            "artworkId": "focus-together-first",
+            "owned": false,
+            "ownedAt": null,
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": {
+              "type": "achievement",
+              "achievementId": "focus-together:first",
+              "name": "First Focus Together",
+              "description": "Your first session focused together with others.",
+              "unit": "sessions",
+              "target": 1,
+              "current": null
+            },
+            "category": "social",
+            "showcasePosition": null
+          },
+          {
+            "kind": "badge",
+            "id": "focus-buddy",
+            "name": "Focus Buddy",
+            "description": "Focused together with a friend.",
+            "rarity": "common",
+            "artworkId": "focus-buddy",
+            "owned": false,
+            "ownedAt": null,
+            "source": "achievement",
+            "availability": {
+              "status": "active",
+              "limited": false,
+              "availableFrom": null,
+              "availableUntil": null,
+              "obtainableNow": true
+            },
+            "unlock": {
+              "type": "achievement",
+              "achievementId": "focus-buddy",
+              "name": "Focus Buddy",
+              "description": "Focused together with a friend.",
+              "unit": "sessions",
+              "target": 1,
+              "current": null
+            },
+            "category": "social",
             "showcasePosition": null
           }
         ]

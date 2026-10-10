@@ -25,15 +25,20 @@ describe('contentSeedStatements', () => {
   it('takes only marked content seeds: the progression catalog, never configuration', () => {
     const statements = contentSeedStatements();
     expect(statements.length).toBeGreaterThan(0);
-    for (const statement of statements) expect(statement).toMatch(/^INSERT INTO "/);
-    expect(statements.map((s) => /^INSERT INTO "([a-z_]+)"/.exec(s)?.[1])).toEqual([
-      'tree_species',
-      'badge_definitions',
-      'achievement_definitions',
+    // Content definitions only: inserted, or (A5.4) a planned badge made active.
+    const statement = /^(INSERT INTO|UPDATE) "([a-z_]+)"/;
+    for (const sql of statements) expect(sql).toMatch(statement);
+    expect(statements.map((s) => statement.exec(s)?.slice(1).join(' '))).toEqual([
+      'INSERT INTO tree_species',
+      'INSERT INTO badge_definitions',
+      'INSERT INTO achievement_definitions',
       // A4.3: the species (bases, then variants) and the cosmetic catalog.
-      'tree_species',
-      'tree_species',
-      'cosmetic_definitions',
+      'INSERT INTO tree_species',
+      'INSERT INTO tree_species',
+      'INSERT INTO cosmetic_definitions',
+      // A5.4: the Focus Together badges become earnable.
+      'UPDATE badge_definitions',
+      'INSERT INTO achievement_definitions',
     ]);
     expect(statements.join('\n')).not.toMatch(/product_config/);
   });

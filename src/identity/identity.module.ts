@@ -35,6 +35,6 @@ import { ProfileService } from './profile.service.js';
     },
     { provide: APP_GUARD, useClass: AccessTokenGuard },
   ],
-  exports: [PasswordHasher],
+  exports: [PasswordHasher, AccessTokens],
 })
 export class IdentityModule {}

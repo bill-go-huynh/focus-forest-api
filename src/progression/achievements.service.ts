@@ -54,7 +54,10 @@ export interface Evaluation {
 
 /** The authoritative action being evaluated: what it crossed is what it caused. */
 type Cause =
-  { kind: 'session'; session: FocusSession } | { kind: 'recovery'; missedDate: LocalDate } | null;
+  | { kind: 'session'; session: FocusSession }
+  | { kind: 'recovery'; missedDate: LocalDate }
+  | { kind: 'room'; roomId: string }
+  | null;
 
 /**
  * Achievements and badges (A4.2; docs/06_DOMAIN_MODEL.md → Achievement, Badge). One evaluator:
@@ -97,6 +100,19 @@ export class AchievementsService {
     missedDate: LocalDate,
   ): Promise<ProgressionResult> {
     return caused(await this.evaluate(tx, userId, { kind: 'recovery', missedDate }));
+  }
+
+  /**
+   * After a Focus Together completion is stored, in the same transaction (A5.4): grants what is
+   * reached and returns what this completion caused (it is not stored: the completion's answer
+   * reports it once, and a repeat reports nothing).
+   */
+  async evaluateRoomCompletion(
+    tx: Prisma.TransactionClient,
+    userId: string,
+    roomId: string,
+  ): Promise<ProgressionResult> {
+    return caused(await this.evaluate(tx, userId, { kind: 'room', roomId }));
   }
 
   /**
@@ -355,6 +371,12 @@ export class AchievementsService {
   ) {
     if (cause.kind === 'recovery')
       return achievementValues(withoutRecovery(input, cause.missedDate));
+    if (cause.kind === 'room') {
+      return achievementValues({
+        ...input,
+        together: await this.together(client, userId, cause.roomId),
+      });
+    }
     const { session } = cause;
     // A discarded session changed nothing.
     if (!isCounted(session.status)) return achievementValues(input);
@@ -422,12 +444,37 @@ export class AchievementsService {
     return new Map(rows.map((row) => [row.badgeId, row.earnedAt]));
   }
 
-  /** Every criterion's source, read once: lifetime counted focus and the streak history. */
+  /** Every criterion's source, read once: lifetime counted focus, the streak, Focus Together. */
   private async input(client: Client, userId: string): Promise<AchievementInput> {
     return {
       lifetime: await this.stats.lifetime(userId, client),
       history: await this.streak.history(userId, client),
+      together: await this.together(client, userId),
     };
+  }
+
+  /**
+   * A5.4, derived from room places (no counters): the user's completed Focus Together sessions,
+   * and those in a room where someone who started with them is a friend (a mutual follow) now.
+   * `excludedRoomId` leaves one room out: the values just before its completion.
+   */
+  private async together(
+    client: Client,
+    userId: string,
+    excludedRoomId: string | null = null,
+  ): Promise<AchievementInput['together']> {
+    const [row] = await client.$queryRaw<{ sessions: bigint; with_friend: bigint }[]>`
+      SELECT COUNT(*) AS sessions,
+        COUNT(*) FILTER (WHERE EXISTS (
+          SELECT 1 FROM room_participants other
+          WHERE other.room_id = mine.room_id AND other.user_id <> mine.user_id AND other.in_session
+            AND EXISTS (SELECT 1 FROM follows WHERE follower_id = mine.user_id AND followee_id = other.user_id)
+            AND EXISTS (SELECT 1 FROM follows WHERE follower_id = other.user_id AND followee_id = mine.user_id)
+        )) AS with_friend
+      FROM room_participants mine
+      WHERE mine.user_id = ${userId}::uuid AND mine.session_id IS NOT NULL
+        AND (${excludedRoomId}::uuid IS NULL OR mine.room_id <> ${excludedRoomId}::uuid)`;
+    return { sessions: Number(row?.sessions ?? 0), withFriend: Number(row?.with_friend ?? 0) };
   }
 }
 

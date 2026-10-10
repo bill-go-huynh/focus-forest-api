@@ -30,6 +30,7 @@ const input = (
 ): AchievementInput => ({
   lifetime: { sessionCount, focusedMilliseconds: minutes * MIN },
   history: history(activeDates, restDates),
+  together: { sessions: 0, withFriend: 0 },
 });
 
 type Definition = Parameters<typeof earnableAchievements>[0][number];
@@ -59,11 +60,20 @@ const definition = (
   },
 });
 
+/** Values with no Focus Together sessions. */
+const values = (counted: number, minutes: number, streak: number) => ({
+  counted_sessions: counted,
+  focused_minutes: minutes,
+  longest_streak_days: streak,
+  focus_together_sessions: 0,
+  focus_together_with_friend: 0,
+});
+
 describe('achievement values: derived from Core truth, never counted separately', () => {
   it('counts counted sessions, whole focused minutes, and the longest streak in days', () => {
     expect(
       achievementValues(input(4, 59.99, ['2026-10-01', '2026-10-02', '2026-10-03', '2026-10-05'])),
-    ).toEqual({ counted_sessions: 4, focused_minutes: 59, longest_streak_days: 3 });
+    ).toEqual(values(4, 59, 3));
   });
 
   it('uses the longest streak, not the current one: a broken streak keeps its record', () => {
@@ -85,11 +95,7 @@ describe('achievement values: derived from Core truth, never counted separately'
       localDate: '2026-10-03',
       countedOnSameDay: 1,
     });
-    expect(achievementValues(alone)).toEqual({
-      counted_sessions: 2,
-      focused_minutes: 60,
-      longest_streak_days: 2,
-    });
+    expect(achievementValues(alone)).toEqual(values(2, 60, 2));
     const shared = withoutSession(all, {
       focusedMilliseconds: 40 * MIN,
       localDate: '2026-10-03',
@@ -103,6 +109,7 @@ describe('withoutRecovery: the values just before a streak recovery (A4.2.G)', (
   it('removes only the recovered day: no focus, no session, no active day changes', () => {
     const all: AchievementInput = {
       lifetime: { sessionCount: 4, focusedMilliseconds: 80 * MIN },
+      together: { sessions: 2, withFriend: 1 },
       history: {
         activeDates: ['2026-10-01', '2026-10-02', '2026-10-04', '2026-10-05'],
         restDates: [],
@@ -113,11 +120,15 @@ describe('withoutRecovery: the values just before a streak recovery (A4.2.G)', (
       counted_sessions: 4,
       focused_minutes: 80,
       longest_streak_days: 4,
+      focus_together_sessions: 2,
+      focus_together_with_friend: 1,
     });
     expect(achievementValues(withoutRecovery(all, '2026-10-03'))).toEqual({
       counted_sessions: 4,
       focused_minutes: 80,
       longest_streak_days: 2,
+      focus_together_sessions: 2,
+      focus_together_with_friend: 1,
     });
   });
 });
@@ -131,8 +142,8 @@ describe('thresholds', () => {
 });
 
 describe('earnable achievements', () => {
-  it('are active, acquirable, and in a category whose criteria exist (focus, consistency)', () => {
-    expect(EVALUATED_CATEGORIES).toEqual(['focus', 'consistency']);
+  it('are active, acquirable, and in a category whose criteria exist (focus, consistency, social)', () => {
+    expect(EVALUATED_CATEGORIES).toEqual(['focus', 'consistency', 'social']);
     const earnable = earnableAchievements(
       [
         definition('a', 'counted_sessions', 1),
@@ -151,7 +162,7 @@ describe('earnable achievements', () => {
       now,
     );
     // In catalog order: sort order, then id.
-    expect(earnable.map((a) => a.id)).toEqual(['a', 'legend', 'scarce']);
+    expect(earnable.map((a) => a.id)).toEqual(['a', 'legend', 'scarce', 'social']);
   });
 
   it('respect a limited window', () => {
@@ -208,7 +219,7 @@ describe('planGrants: what this evaluation grants, and what the session caused',
       planGrants(
         pending,
         {
-          after: { counted_sessions: 0, focused_minutes: 0, longest_streak_days: 0 },
+          after: values(0, 0, 0),
           before: null,
         },
         now,
@@ -221,8 +232,8 @@ describe('planGrants: what this evaluation grants, and what the session caused',
     const grants = planGrants(
       pending,
       {
-        after: { counted_sessions: 1, focused_minutes: 30, longest_streak_days: 1 },
-        before: { counted_sessions: 0, focused_minutes: 0, longest_streak_days: 0 },
+        after: values(1, 30, 1),
+        before: values(0, 0, 0),
       },
       now,
       new Map(),
@@ -234,8 +245,8 @@ describe('planGrants: what this evaluation grants, and what the session caused',
     const grants = planGrants(
       pending,
       {
-        after: { counted_sessions: 40, focused_minutes: 700, longest_streak_days: 4 },
-        before: { counted_sessions: 39, focused_minutes: 680, longest_streak_days: 4 },
+        after: values(40, 700, 4),
+        before: values(39, 680, 4),
       },
       now,
       crossings,
@@ -256,7 +267,7 @@ describe('planGrants: what this evaluation grants, and what the session caused',
     const [grant] = planGrants(
       [definition('focus-hours:10', 'focused_minutes', 600)],
       {
-        after: { counted_sessions: 0, focused_minutes: 600, longest_streak_days: 0 },
+        after: values(0, 600, 0),
         before: null,
       },
       now,
@@ -274,7 +285,7 @@ describe('planGrants: what this evaluation grants, and what the session caused',
         }),
       ],
       {
-        after: { counted_sessions: 0, focused_minutes: 600, longest_streak_days: 0 },
+        after: values(0, 600, 0),
         before: null,
       },
       now,
@@ -304,5 +315,25 @@ describe('the progression result stored with a session (replayed as stored)', ()
     ['more fields', { newlyEarnedBadgeIds: [], earnedAt: 'x' }],
   ])('refuses %s', (_, value) => {
     expect(() => parseProgressionResult(value)).toThrow(/progression result/i);
+  });
+});
+
+describe('Focus Together values (A5.4)', () => {
+  it('count completed room sessions, and those with a friend, apart from solo focus', () => {
+    const values = achievementValues({
+      ...input(10, 300),
+      together: { sessions: 3, withFriend: 1 },
+    });
+    expect(values).toMatchObject({ focus_together_sessions: 3, focus_together_with_friend: 1 });
+  });
+
+  it('are untouched by removing a solo session', () => {
+    const all = { ...input(2, 60, ['2026-10-01']), together: { sessions: 1, withFriend: 1 } };
+    const before = withoutSession(all, {
+      focusedMilliseconds: 30 * MIN,
+      localDate: '2026-10-01',
+      countedOnSameDay: 2,
+    });
+    expect(before.together).toEqual({ sessions: 1, withFriend: 1 });
   });
 });

@@ -25,14 +25,19 @@ export type AchievementValues = Record<AchievementCriterion, number>;
 export interface AchievementInput {
   lifetime: { sessionCount: number; focusedMilliseconds: number };
   history: ActivityHistory;
+  /**
+   * A5.4: completed Focus Together sessions (a participant's own counted session, linked to a
+   * room they started with), and those in a room where a friend focused too.
+   */
+  together: { sessions: number; withFriend: number };
 }
 
 /**
- * Categories whose criteria exist. Social (Phases 11–13), event (Phase 14), time-based (criteria
- * not yet defined by the product), and special badges are never evaluated, even if activated.
- * A category, never a rarity: category "rare" and rarity "rare" are unrelated.
+ * Categories whose criteria exist. Social is evaluated from A5.4 (Focus Together); event (Phase 14),
+ * time-based (criteria not yet defined by the product), and special badges are never evaluated,
+ * even if activated. A category, never a rarity: category "rare" and rarity "rare" are unrelated.
  */
-export const EVALUATED_CATEGORIES: readonly BadgeCategory[] = ['focus', 'consistency'];
+export const EVALUATED_CATEGORIES: readonly BadgeCategory[] = ['focus', 'consistency', 'social'];
 
 export interface AchievementBadge extends Acquisition {
   id: string;
@@ -74,6 +79,8 @@ export function achievementValues(input: AchievementInput): AchievementValues {
     counted_sessions: input.lifetime.sessionCount,
     focused_minutes: Math.floor(input.lifetime.focusedMilliseconds / 60_000),
     longest_streak_days: longestStreak(input.history),
+    focus_together_sessions: input.together.sessions,
+    focus_together_with_friend: input.together.withFriend,
   };
 }
 
@@ -88,6 +95,7 @@ export interface RemovedSession {
 export function withoutSession(input: AchievementInput, session: RemovedSession): AchievementInput {
   const aloneOnItsDay = session.countedOnSameDay <= 1;
   return {
+    ...input,
     lifetime: {
       sessionCount: input.lifetime.sessionCount - 1,
       focusedMilliseconds: input.lifetime.focusedMilliseconds - session.focusedMilliseconds,

@@ -144,6 +144,9 @@ describe('A4.1 progression foundation (HTTP + PostgreSQL)', () => {
         'focus-streak:7': ['longest_streak_days', 7],
         'focus-streak:30': ['longest_streak_days', 30],
         'focus-streak:100': ['longest_streak_days', 100],
+        // A5.4.
+        'focus-together:first': ['focus_together_sessions', 1],
+        'focus-buddy': ['focus_together_with_friend', 1],
       });
       // Every active badge from an achievement has one; planned ones need none yet.
       const granting = new Set(achievements.map((a) => a.badgeId));
@@ -152,22 +155,27 @@ describe('A4.1 progression foundation (HTTP + PostgreSQL)', () => {
       }
     });
 
-    it('defines Social badges for later without making them earnable now', async () => {
-      const social = await t.prisma.badgeDefinition.findMany({ where: { category: 'social' } });
+    // A4.1 defined the Social badges as planned; A5.4 makes the Focus Together ones earnable.
+    // The Community Tree badge waits for its phase.
+    it('makes the Focus Together badges earnable and keeps Community Contributor for later', async () => {
+      const social = await t.prisma.badgeDefinition.findMany({
+        where: { category: 'social' },
+        orderBy: { sortOrder: 'asc' },
+      });
       expect(social.map((b) => [b.id, b.status])).toEqual([
-        ['focus-together:first', 'planned'],
-        ['focus-buddy', 'planned'],
+        ['focus-together:first', 'active'],
+        ['focus-buddy', 'active'],
         ['community-contributor', 'planned'],
       ]);
       expect(
         await t.prisma.achievementDefinition.count({
-          where: { badgeId: { in: social.map((b) => b.id) } },
+          where: { badgeId: 'community-contributor' },
         }),
       ).toBe(0);
       const user = await t.signUp('ada@example.com');
-      await expect(ownership.grantBadge(user.userId, 'focus-buddy', at)).rejects.toBeInstanceOf(
-        ContentNotAcquirableError,
-      );
+      await expect(
+        ownership.grantBadge(user.userId, 'community-contributor', at),
+      ).rejects.toBeInstanceOf(ContentNotAcquirableError);
       expect(await t.prisma.userBadge.count()).toBe(0);
     });
 

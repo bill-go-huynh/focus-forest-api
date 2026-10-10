@@ -100,6 +100,7 @@ model User {
   reportsFiled            Report[]                  @relation("reporter")
   reportsAbout            Report[]                  @relation("reportTarget")
   warnings                UserWarning[]
+  roomPlaces              RoomParticipant[]
 
   @@map("users")
 }
@@ -309,6 +310,7 @@ model FocusSession {
   /// NoAction (checked at the end of the statement), so deleting a user still cascades.
   topic        Topic                   @relation(fields: [userId, topicId], references: [userId, id], onDelete: NoAction)
   monthContext MonthAttributionContext @relation(fields: [userId, year, month], references: [userId, year, month], onDelete: NoAction)
+  roomPlaces   RoomParticipant[]
 
   @@id([userId, id])
   @@index([userId, startedAt])
@@ -576,6 +578,10 @@ enum AchievementCriterion {
   counted_sessions
   focused_minutes
   longest_streak_days
+  /// A5.4: completed Focus Together sessions.
+  focus_together_sessions
+  /// A5.4: completed Focus Together sessions in a room where a friend (a mutual follow) focused too.
+  focus_together_with_friend
 
   @@map("achievement_criterion")
 }
@@ -943,6 +949,70 @@ model UserWarning {
 
   @@index([userId, createdAt])
   @@map("user_warnings")
+}
+
+enum RoomVisibility {
+  public
+  private
+
+  @@map("room_visibility")
+}
+
+/// Stored room status. Countdown, focusing, and ended are derived from the start time and the
+/// clock (`src/rooms/room-rules.ts`).
+enum RoomStatus {
+  lobby
+  in_session
+  closed
+
+  @@map("room_status")
+}
+
+/// A5.4 Focus Together (docs/06 FocusRoom, spec §14): a shared space to focus at the same time.
+/// The room grows no tree: each participant's focus is their own FocusSession. The host is not
+/// stored: it is the present participant who joined first.
+model FocusRoom {
+  id              String         @id @default(uuid(7)) @db.Uuid
+  /// Six characters without lookalikes, to share (CHECK).
+  code            String         @unique
+  name            String
+  topic           String?
+  durationMinutes Int            @map("duration_minutes")
+  maxParticipants Int            @map("max_participants")
+  visibility      RoomVisibility
+  status          RoomStatus     @default(lobby)
+  createdAt       DateTime       @map("created_at")
+  /// The server-decided synchronized start (docs/07 §6).
+  startsAt        DateTime?      @map("starts_at")
+  closedAt        DateTime?      @map("closed_at")
+
+  participants RoomParticipant[]
+
+  @@index([status, visibility, createdAt])
+  @@map("focus_rooms")
+}
+
+/// One person's place in a room. `leftAt` set means they left (quietly: nobody else is told).
+/// `inSession` marks who started with the room; `sessionId` links their own completed session.
+model RoomParticipant {
+  roomId      String    @map("room_id") @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  joinedAt    DateTime  @map("joined_at")
+  readyAt     DateTime? @map("ready_at")
+  leftAt      DateTime? @map("left_at")
+  inSession   Boolean   @default(false) @map("in_session")
+  sessionId   String?   @map("session_id") @db.Uuid
+  completedAt DateTime? @map("completed_at")
+
+  room    FocusRoom     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// The session must be the participant's own.
+  session FocusSession? @relation(fields: [userId, sessionId], references: [userId, id], onDelete: NoAction)
+
+  @@id([roomId, userId])
+  @@unique([userId, sessionId])
+  @@index([userId, leftAt])
+  @@map("room_participants")
 }
 
 enum AdminRole {

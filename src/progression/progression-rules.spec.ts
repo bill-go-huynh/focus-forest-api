@@ -81,7 +81,15 @@ describe('achievement criteria', () => {
       'counted_sessions',
       'focused_minutes',
       'longest_streak_days',
+      'focus_together_sessions',
+      'focus_together_with_friend',
     ]);
-    expect(ACHIEVEMENT_CRITERIA.map(criterionUnit)).toEqual(['sessions', 'minutes', 'days']);
+    expect(ACHIEVEMENT_CRITERIA.map(criterionUnit)).toEqual([
+      'sessions',
+      'minutes',
+      'days',
+      'sessions',
+      'sessions',
+    ]);
   });
 });

@@ -199,10 +199,10 @@ describe('A4.2.G recovery achievements (HTTP + PostgreSQL)', () => {
     expect(newly(res.body as RecoveryBody)).toEqual(['focus-streak:30']);
   });
 
-  it('never grants planned, Social, or Event badges', async () => {
+  // Social badges are evaluated from A5.4 (Focus Together); event and planned ones still never.
+  it('never grants planned or Event badges', async () => {
     const ada = await brokenRun('ada@example.com', 29);
     for (const [id, category, source, status] of [
-      ['streak-together', 'social', 'achievement', 'active'],
       ['event-streak', 'event', 'event', 'active'],
       ['planned-streak', 'consistency', 'achievement', 'planned'],
     ] as const) {
@@ -226,7 +226,7 @@ describe('A4.2.G recovery achievements (HTTP + PostgreSQL)', () => {
     const res = await recover(ada).expect(201);
     expect(newly(res.body as RecoveryBody)).toEqual(['focus-streak:30']);
     expect(await ownedIds(ada.userId)).not.toEqual(
-      expect.arrayContaining(['streak-together', 'event-streak', 'planned-streak']),
+      expect.arrayContaining(['event-streak', 'planned-streak']),
     );
   });
 

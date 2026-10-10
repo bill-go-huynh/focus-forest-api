@@ -322,17 +322,8 @@ describe('A4.2 achievements, badges, and showcase (HTTP + PostgreSQL)', () => {
       });
     });
 
-    it('never grants planned, Social, Event, time-based, or special-category badges', async () => {
+    it('never grants planned, Event, time-based, or special-category badges', async () => {
       const ada = await t.signUp('ada@example.com');
-      await t.prisma.achievementDefinition.create({
-        data: {
-          id: 'focus-together:first',
-          badgeId: 'focus-together:first',
-          criterion: 'counted_sessions',
-          target: 1,
-        },
-      });
-      await testAchievement('social-active', { category: 'social' });
       await testAchievement('event-badge', { category: 'event', source: 'event' });
       await testAchievement('early-bird', { category: 'time_based' });
       await testAchievement('rare-category', { category: 'rare' });
@@ -343,18 +334,26 @@ describe('A4.2 achievements, badges, and showcase (HTTP + PostgreSQL)', () => {
       expect(await ownedIds(ada.userId)).toEqual(['first-session', 'rare-rarity']);
       // Hidden until their phase: not shown as progress the user could make now.
       const listed = (await achievements(ada)).map((a) => a.id);
-      for (const id of [
-        'focus-together:first',
-        'social-active',
-        'event-badge',
-        'early-bird',
-        'rare-category',
-      ]) {
+      for (const id of ['community-contributor', 'event-badge', 'early-bird', 'rare-category']) {
         expect(listed).not.toContain(id);
       }
       // Category "rare" and rarity "rare" are different things.
       const rare = (await badges(ada)).items.find((b) => b.id === 'rare-rarity');
       expect(rare).toMatchObject({ category: 'focus', rarity: 'rare' });
+    });
+
+    // A5.4: the Focus Together badges are earnable, from a completed room only.
+    it('lists the Focus Together achievements, never earned by focusing alone', async () => {
+      const ada = await t.signUp('ada@example.com');
+      await submit(ada, '2026-10-07T18:00:00.000Z', 25);
+      const together = (await achievements(ada)).filter((a) =>
+        ['focus-together:first', 'focus-buddy'].includes(a.id),
+      );
+      expect(together.map((a) => [a.id, a.completed])).toEqual([
+        ['focus-together:first', false],
+        ['focus-buddy', false],
+      ]);
+      expect(await ownedIds(ada.userId)).toEqual(['first-session']);
     });
 
     it('keeps every user’s progress and ownership apart', async () => {
@@ -499,6 +498,9 @@ describe('A4.2 achievements, badges, and showcase (HTTP + PostgreSQL)', () => {
         'focus-streak:7',
         'focus-streak:30',
         'focus-streak:100',
+        // A5.4: Focus Together.
+        'focus-together:first',
+        'focus-buddy',
       ]);
       expect(list[0]).toEqual({
         id: 'first-session',
