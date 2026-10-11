@@ -829,13 +829,15 @@ model Block {
 /// A5.1: per-category visibility. No row means the defaults in `src/social/visibility.ts`;
 /// the first change writes every category, so the database holds no second set of defaults.
 model PrivacySettings {
-  userId      String       @id @map("user_id") @db.Uuid
-  profile     PrivacyLevel
-  forest      PrivacyLevel
-  statistics  PrivacyLevel
-  badges      PrivacyLevel
-  currentTree PrivacyLevel @map("current_tree")
-  updatedAt   DateTime     @updatedAt @map("updated_at")
+  userId       String       @id @map("user_id") @db.Uuid
+  profile      PrivacyLevel
+  forest       PrivacyLevel
+  statistics   PrivacyLevel
+  badges       PrivacyLevel
+  currentTree  PrivacyLevel @map("current_tree")
+  /// A5.8: whether the user appears on leaderboards. Opt-in: off by default (docs/02).
+  leaderboards Boolean      @default(false)
+  updatedAt    DateTime     @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -1127,12 +1129,15 @@ model Event {
   /// Entry condition: counted sessions before joining (0 = open to everyone).
   entryMinSessions Int           @default(0) @map("entry_min_sessions")
   sortOrder        Int           @default(0) @map("sort_order")
+  /// A5.8: whether the event has its own leaderboard (docs/06 Event: optional).
+  leaderboard      Boolean       @default(false)
 
   missions       EventMission[]
   milestones     EventMilestone[]
   participations EventParticipation[]
   grants         EventMilestoneGrant[]
   communityTree  CommunityTree?
+  teams          EventTeam[]
 
   @@map("events")
 }
@@ -1181,9 +1186,12 @@ model EventParticipation {
   userId   String   @map("user_id") @db.Uuid
   eventId  String   @map("event_id")
   joinedAt DateTime @map("joined_at")
+  /// A5.8: the participant's team, on events with teams (the smallest team on joining).
+  teamId   String?  @map("team_id")
 
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  event Event @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event Event      @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  team  EventTeam? @relation(fields: [eventId, teamId], references: [eventId, id], onDelete: Restrict)
 
   @@id([userId, eventId])
   @@map("event_participations")
@@ -1205,6 +1213,20 @@ model EventMilestoneGrant {
 
   @@id([userId, eventId, milestoneId])
   @@map("event_milestone_grants")
+}
+
+/// A5.8 A team of an event, for team ranking (spec §16.3). Content, like the event.
+model EventTeam {
+  eventId   String @map("event_id")
+  id        String
+  name      String
+  sortOrder Int    @default(0) @map("sort_order")
+
+  event          Event                @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  participations EventParticipation[]
+
+  @@id([eventId, id])
+  @@map("event_teams")
 }
 
 /// A5.7 Community Tree stages (spec §12), in growing order.

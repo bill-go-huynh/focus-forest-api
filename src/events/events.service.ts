@@ -103,7 +103,12 @@ export class EventsService {
         }
       }
       await tx.eventParticipation.create({
-        data: { userId, eventId, joinedAt: this.clock.now() },
+        data: {
+          userId,
+          eventId,
+          joinedAt: this.clock.now(),
+          teamId: await smallestTeam(tx, eventId),
+        },
       });
       // Focus already done in the window grows the shared tree too, as it counts for missions.
       await this.community.contribute(tx, userId, event);
@@ -401,6 +406,23 @@ export class EventsService {
     }
     return { days, togetherSessions: Number(together[0]?.count ?? 0), longestStreak };
   }
+}
+
+/**
+ * A5.8 The team a new participant joins: the one with the fewest members (ties by sort order,
+ * then id), so teams stay balanced. Null for an event without teams.
+ */
+async function smallestTeam(tx: Prisma.TransactionClient, eventId: string): Promise<string | null> {
+  const teams = await tx.eventTeam.findMany({
+    where: { eventId },
+    orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+    include: { _count: { select: { participations: true } } },
+  });
+  let best: (typeof teams)[number] | null = null;
+  for (const team of teams) {
+    if (!best || team._count.participations < best._count.participations) best = team;
+  }
+  return best?.id ?? null;
 }
 
 function withoutDate(history: ActivityHistory, date: LocalDate): ActivityHistory {

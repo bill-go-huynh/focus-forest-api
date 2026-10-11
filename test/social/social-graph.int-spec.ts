@@ -354,6 +354,7 @@ describe('social graph and privacy (A5.1, HTTP + PostgreSQL)', () => {
         statistics: 'private',
         badges: 'friends',
         currentTree: 'friends',
+        leaderboards: false,
       });
       const changed = await t
         .http()
@@ -367,6 +368,7 @@ describe('social graph and privacy (A5.1, HTTP + PostgreSQL)', () => {
         statistics: 'friends',
         badges: 'friends',
         currentTree: 'friends',
+        leaderboards: false,
       });
       expect((await t.http().get('/me/privacy').set(ada.auth).expect(200)).body).toEqual(
         changed.body,

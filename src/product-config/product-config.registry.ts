@@ -1,4 +1,5 @@
 import { templateProblem, type ChallengeTemplate } from '../challenges/challenge-rules.js';
+import { weightsProblem } from '../leaderboards/leaderboard-rules.js';
 import {
   boolean,
   increasingList,
@@ -191,6 +192,28 @@ export const productConfigRegistry = {
     description:
       'Challenge templates: who takes part (personal, friend, group), what is measured in the window (focused minutes, counted sessions, or days with at least dailyMinutes), whether every participant must reach the target or everyone adds up to it, the window in local days, and the size',
     type: challengeTemplates(),
+  },
+
+  // Phase 5 (A5.8): leaderboards. A fair score, never raw hours alone (spec §16.4).
+  'leaderboard.scoreWeights': {
+    description:
+      'Weights of the leaderboard score: days kept (active, rest, or recovered), days the daily goal was met, active days, and focus time capped per day',
+    type: shape(
+      {
+        consistency: integer({ min: 0, max: 100 }),
+        goals: integer({ min: 0, max: 100 }),
+        activeDays: integer({ min: 0, max: 100 }),
+        focusTime: integer({ min: 0, max: 100 }),
+      },
+      {
+        expected: 'weights where focus time is never the only one above zero',
+        holds: (value) => weightsProblem(value) === null,
+      },
+    ),
+  },
+  'leaderboard.dailyFocusCapMinutes': {
+    description: 'Most focus minutes one day adds to the leaderboard focus-time part',
+    type: integer({ min: 15, max: 1440 }),
   },
 } as const satisfies ConfigRegistry;
 

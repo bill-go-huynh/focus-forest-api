@@ -109,12 +109,19 @@ export const CHALLENGE_CONFIG_VALUES = {
   ],
 } as const;
 
+/** Phase 5 leaderboard fair score (configuration version 7, A5.8). */
+export const LEADERBOARD_CONFIG_VALUES = {
+  'leaderboard.scoreWeights': { consistency: 30, goals: 30, activeDays: 20, focusTime: 20 },
+  'leaderboard.dailyFocusCapMinutes': 120,
+} as const;
+
 export const CURRENT_CONFIG_VALUES = {
   ...SESSION_CONFIG_VALUES,
   ...TREE_CONFIG_VALUES,
   ...CONSISTENCY_CONFIG_VALUES,
   ...FOREST_CONFIG_VALUES,
   ...CHALLENGE_CONFIG_VALUES,
+  ...LEADERBOARD_CONFIG_VALUES,
 };
 
 /** A complete set of values: the current ones with some replaced. */

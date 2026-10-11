@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
+import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { RelationshipResponse, UserCardResponse } from './dto/social.dto.js';
 import {
@@ -26,6 +27,15 @@ export interface Viewing {
     bio: string | null;
     createdAt: Date;
   };
+}
+
+/** A5.8 Someone who may appear on a leaderboard, and whether the viewer and they block each other. */
+export interface BoardCandidate {
+  id: string;
+  username: string | null;
+  displayName: string | null;
+  avatarUrl: string | null;
+  blocked: boolean;
 }
 
 interface ViewRow {
@@ -115,6 +125,51 @@ export class VisibilityService {
         PRIVACY_CATEGORIES.map((category) => [category, this.can(viewing, category)]),
       ) as UserCardResponse['visible'],
     };
+  }
+
+  /**
+   * A5.8 The people a leaderboard may show: opted in (`leaderboards`, off by default) and active.
+   * Friends: the viewer and their mutual follows; event: its participants; global: everyone.
+   * `blocked` marks a block either way: never shown as a row (teams still count them as members,
+   * so a team's score is the same for every viewer).
+   */
+  async boardCandidates(
+    viewerId: string,
+    scope: 'friends' | 'global' | 'event',
+    eventId: string | null,
+  ): Promise<BoardCandidate[]> {
+    const inScope =
+      scope === 'friends'
+        ? Prisma.sql`AND (u.id = ${viewerId}::uuid OR (
+            EXISTS (SELECT 1 FROM follows WHERE follower_id = ${viewerId}::uuid AND followee_id = u.id)
+            AND EXISTS (SELECT 1 FROM follows WHERE follower_id = u.id AND followee_id = ${viewerId}::uuid)))`
+        : scope === 'event'
+          ? Prisma.sql`AND EXISTS (SELECT 1 FROM event_participations
+                                   WHERE user_id = u.id AND event_id = ${eventId})`
+          : Prisma.empty;
+    const rows = await this.prisma.$queryRaw<
+      {
+        id: string;
+        username: string | null;
+        display_name: string | null;
+        avatar_url: string | null;
+        blocked: boolean;
+      }[]
+    >`
+      SELECT u.id::text, u.username, u.display_name, u.avatar_url,
+             EXISTS (SELECT 1 FROM blocks
+                     WHERE (blocker_id = ${viewerId}::uuid AND blocked_id = u.id)
+                        OR (blocker_id = u.id AND blocked_id = ${viewerId}::uuid)) AS blocked
+      FROM users u
+      JOIN privacy_settings ps ON ps.user_id = u.id AND ps.leaderboards
+      WHERE u.status = 'active' ${inScope}`;
+    return rows.map((row) => ({
+      id: row.id,
+      username: row.username,
+      displayName: row.display_name,
+      avatarUrl: row.avatar_url,
+      blocked: row.blocked,
+    }));
   }
 
   /** How the viewer and each listed user follow each other, in two statements. */

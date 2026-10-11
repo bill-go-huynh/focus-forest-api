@@ -326,6 +326,12 @@
         21,
         28
       ],
+      "leaderboard.scoreWeights": {
+        "goals": 30,
+        "focusTime": 20,
+        "activeDays": 20,
+        "consistency": 30
+      },
       "vitality.goalConsistency": {
         "windowDays": 4,
         "metDaysRequired": 3
@@ -338,7 +344,8 @@
         10,
         25,
         40
-      ]
+      ],
+      "leaderboard.dailyFocusCapMinutes": 120
     }
   },
   "checkpoint": {

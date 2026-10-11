@@ -22,10 +22,9 @@ import {
   type UserCardResponse,
   type UserSummaryResponse,
 } from './dto/social.dto.js';
-import { PrivacyService } from './privacy.service.js';
+import { PrivacyService, type PrivacyAnswer } from './privacy.service.js';
 import { ReactionsService } from './reactions.service.js';
 import { SocialGraphService } from './social-graph.service.js';
-import type { PrivacySettingsValues } from './visibility.js';
 
 const userId = new ParseUUIDPipe();
 
@@ -144,7 +143,7 @@ export class PrivacyController {
   constructor(private readonly privacy: PrivacyService) {}
 
   @Get()
-  get(@CurrentUser() user: AuthenticatedUser): Promise<PrivacySettingsValues> {
+  get(@CurrentUser() user: AuthenticatedUser): Promise<PrivacyAnswer> {
     return this.privacy.get(user.userId);
   }
 
@@ -152,7 +151,7 @@ export class PrivacyController {
   update(
     @CurrentUser() user: AuthenticatedUser,
     @Body() changes: UpdatePrivacyDto,
-  ): Promise<PrivacySettingsValues> {
+  ): Promise<PrivacyAnswer> {
     return this.privacy.update(user.userId, changes);
   }
 }

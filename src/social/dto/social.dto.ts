@@ -1,4 +1,4 @@
-import { IsIn, IsOptional, IsString, MaxLength, ValidateIf } from 'class-validator';
+import { IsBoolean, IsIn, IsOptional, IsString, MaxLength, ValidateIf } from 'class-validator';
 
 import type { ReactionKindId } from '../reaction-target.js';
 import { PRIVACY_LEVELS, type PrivacyLevel, type PrivacyCategory } from '../visibility.js';
@@ -98,6 +98,11 @@ export class UpdatePrivacyDto implements Partial<Record<PrivacyCategory, Privacy
   @ValidateIf(isSent('currentTree'))
   @IsIn(PRIVACY_LEVELS, { message: `currentTree ${LEVEL_MESSAGE}` })
   currentTree?: PrivacyLevel;
+
+  /** A5.8: appear on leaderboards (opt-in). */
+  @ValidateIf(isSent('leaderboards'))
+  @IsBoolean({ message: 'leaderboards must be true or false.' })
+  leaderboards?: boolean;
 }
 
 /** A5.2: `?target=forest|tree:YYYY-MM|badge:<id>`, checked by `parseReactionTarget`. */

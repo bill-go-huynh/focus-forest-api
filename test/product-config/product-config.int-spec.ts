@@ -8,6 +8,7 @@ import { ProductConfigService } from '../../src/product-config/product-config.se
 import { PrismaService } from '../../src/prisma/prisma.service.js';
 import { createTestPrismaClient, migrateFreshTestDatabase } from '../database/test-database.js';
 import {
+  CHALLENGE_CONFIG_VALUES,
   CONSISTENCY_CONFIG_VALUES,
   CURRENT_CONFIG_VALUES,
   FOREST_CONFIG_VALUES,
@@ -37,7 +38,7 @@ describe('product configuration (PostgreSQL)', () => {
     await close();
   });
 
-  it('keeps every earlier version and activates the Phase 5 challenge templates as version 6', async () => {
+  it('keeps every earlier version and activates the Phase 5 leaderboard score as version 7', async () => {
     await migrateFreshTestDatabase();
     const seeded = createTestPrismaClient();
     try {
@@ -82,10 +83,22 @@ describe('product configuration (PostgreSQL)', () => {
       });
       expect(forest.note).toMatch(/phase 3/i);
 
-      const config = await productionService.active();
-      expect(config.version).toBe(6);
-      const stored = await seeded.productConfigVersion.findUniqueOrThrow({
+      const challenges = await seeded.productConfigVersion.findUniqueOrThrow({
         where: { version: 6 },
+      });
+      expect(challenges.values).toEqual({
+        ...SESSION_CONFIG_VALUES,
+        ...TREE_CONFIG_VALUES,
+        ...CONSISTENCY_CONFIG_VALUES,
+        ...FOREST_CONFIG_VALUES,
+        ...CHALLENGE_CONFIG_VALUES,
+      });
+      expect(challenges.note).toMatch(/challenge/i);
+
+      const config = await productionService.active();
+      expect(config.version).toBe(7);
+      const stored = await seeded.productConfigVersion.findUniqueOrThrow({
+        where: { version: 7 },
       });
       expect(stored.values).toEqual(CURRENT_CONFIG_VALUES);
       expect(stored.note).toMatch(/phase 5/i);
