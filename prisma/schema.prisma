@@ -53,25 +53,27 @@ enum UserStatus {
 
 /// A person using Focus Forest (docs/06_DOMAIN_MODEL.md → User).
 model User {
-  id           String     @id @default(uuid(7)) @db.Uuid
+  id           String      @id @default(uuid(7)) @db.Uuid
   /// Stored trimmed and lowercased, so uniqueness ignores case.
-  email        String     @unique
+  email        String      @unique
   /// scrypt hash with its parameters. Never the password itself.
-  passwordHash String     @map("password_hash")
-  status       UserStatus @default(active)
+  passwordHash String      @map("password_hash")
+  status       UserStatus  @default(active)
   /// Set in onboarding. Null until then.
-  displayName  String?    @map("display_name")
+  displayName  String?     @map("display_name")
   /// A5.1: the unique, searchable `@username`. Lowercase `[a-z0-9_]{3,20}` (CHECK). Null until chosen.
-  username     String?    @unique
+  username     String?     @unique
   bio          String?
   /// Not writable yet: uploads arrive with object storage (docs/08 §5). Until
   /// then clients show an initials-based avatar when this is null.
-  avatarUrl    String?    @map("avatar_url")
+  avatarUrl    String?     @map("avatar_url")
   /// IANA time zone reported by the client. Null until first reported.
   timezone     String?
+  /// A5.9: the hemisphere the user chose for seasonal themes; null derives it from the time zone.
+  hemisphere   Hemisphere?
   /// Also the user's join date.
-  createdAt    DateTime   @default(now()) @map("created_at")
-  updatedAt    DateTime   @updatedAt @map("updated_at")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
 
   refreshTokens           RefreshToken[]
   preferences             UserPreferences?
@@ -616,6 +618,7 @@ model BadgeDefinition {
   owners              UserBadge[]
   milestones          EventMilestone[]
   communityMilestones CommunityMilestone[]
+  seasonalRewards     SeasonalReward[]
 
   @@map("badge_definitions")
 }
@@ -688,6 +691,7 @@ model CosmeticDefinition {
   equipped            UserEquipment[]
   milestones          EventMilestone[]
   communityMilestones CommunityMilestone[]
+  seasonalRewards     SeasonalReward[]
 
   @@unique([id, type])
   @@map("cosmetic_definitions")
@@ -1227,6 +1231,52 @@ model EventTeam {
 
   @@id([eventId, id])
   @@map("event_teams")
+}
+
+/// A5.9 Hemispheres for seasonal themes (docs/03 §10).
+enum Hemisphere {
+  north
+  south
+
+  @@map("hemisphere")
+}
+
+/// A5.9 A seasonal theme (spec §17.1, docs/06 SeasonalTheme): content for one hemisphere (or both)
+/// and a window. It changes environment and atmosphere layers, never a tree's earned structure.
+model SeasonalTheme {
+  id            String        @id
+  name          String
+  description   String
+  /// The art set of the environment and atmosphere layers.
+  environmentId String        @map("environment_id")
+  /// Null: both hemispheres.
+  hemisphere    Hemisphere?
+  status        ContentStatus
+  startsAt      DateTime      @map("starts_at")
+  endsAt        DateTime      @map("ends_at")
+  sortOrder     Int           @default(0) @map("sort_order")
+
+  rewards SeasonalReward[]
+
+  @@map("seasonal_themes")
+}
+
+/// A5.9 A theme's limited collection (spec §17.3): one badge or cosmetic, earned with this many
+/// active days in the theme's window, owned forever.
+model SeasonalReward {
+  themeId            String  @map("theme_id")
+  id                 String
+  badgeId            String? @map("badge_id")
+  cosmeticId         String? @map("cosmetic_id")
+  requiredActiveDays Int     @map("required_active_days")
+  sortOrder          Int     @default(0) @map("sort_order")
+
+  theme    SeasonalTheme       @relation(fields: [themeId], references: [id], onDelete: Cascade)
+  badge    BadgeDefinition?    @relation(fields: [badgeId], references: [id], onDelete: Restrict)
+  cosmetic CosmeticDefinition? @relation(fields: [cosmeticId], references: [id], onDelete: Restrict)
+
+  @@id([themeId, id])
+  @@map("seasonal_rewards")
 }
 
 /// A5.7 Community Tree stages (spec §12), in growing order.

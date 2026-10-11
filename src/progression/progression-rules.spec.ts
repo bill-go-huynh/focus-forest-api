@@ -51,11 +51,8 @@ describe('acquirableAt: whether content can be acquired now (never whether it st
     });
   });
 
-  it('never opens season content before its system exists', () => {
-    expect(acquirableAt(definition({ source: 'season' }), at)).toEqual({
-      acquirable: false,
-      reason: 'source_not_available',
-    });
+  it('opens season content from A5.9, within its window', () => {
+    expect(acquirableAt(definition({ source: 'season' }), at)).toEqual({ acquirable: true });
   });
 
   it('opens event content from A5.6, within its window', () => {

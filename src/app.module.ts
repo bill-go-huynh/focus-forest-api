@@ -9,6 +9,7 @@ import { validateEnv } from './config/env.validation.js';
 import { ConsistencyModule } from './consistency/consistency.module.js';
 import { EventsModule } from './events/events.module.js';
 import { LeaderboardsModule } from './leaderboards/leaderboards.module.js';
+import { SeasonsModule } from './seasons/seasons.module.js';
 import { ForestModule } from './forest/forest.module.js';
 import { HealthController } from './health/health.controller.js';
 import { HomeModule } from './home/home.module.js';
@@ -49,6 +50,7 @@ import { VisitsModule } from './visits/visits.module.js';
     ChallengesModule,
     EventsModule,
     LeaderboardsModule,
+    SeasonsModule,
     AnalyticsModule,
     AdminModule,
   ],

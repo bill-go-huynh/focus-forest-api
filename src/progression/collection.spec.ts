@@ -53,7 +53,6 @@ describe('collection visibility: owned forever, otherwise only what can be obtai
         availableFrom: new Date('2026-01-01T00:00:00.000Z'),
         availableUntil: new Date('2026-02-01T00:00:00.000Z'),
       }),
-      item({ source: 'season' }),
     ]) {
       expect(isVisible(hidden, { owned: false, reachable: true }, now)).toBe(false);
     }
@@ -63,6 +62,13 @@ describe('collection visibility: owned forever, otherwise only what can be obtai
       false,
     );
     expect(isVisible(item({ source: 'event' }), { owned: true, reachable: false }, now)).toBe(true);
+    // A5.9: season content too.
+    expect(isVisible(item({ source: 'season' }), { owned: false, reachable: false }, now)).toBe(
+      false,
+    );
+    expect(isVisible(item({ source: 'season' }), { owned: true, reachable: false }, now)).toBe(
+      true,
+    );
   });
 });
 

@@ -11,6 +11,7 @@ import { Prisma, type FocusSession } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ProductConfigService } from '../product-config/product-config.service.js';
 import { parseEventResult, type SessionEventResult } from '../events/events.dto.js';
+import { SeasonsService } from '../seasons/seasons.service.js';
 import { EventsService } from '../events/events.service.js';
 import { AchievementsService } from '../progression/achievements.service.js';
 import type { SessionProgressionDto } from '../progression/badge.dto.js';
@@ -80,6 +81,7 @@ export class SessionsService {
     private readonly closure: MonthClosureService,
     private readonly achievements: AchievementsService,
     private readonly events: EventsService,
+    private readonly seasons: SeasonsService,
     private readonly clock: Clock,
   ) {}
 
@@ -164,14 +166,21 @@ export class SessionsService {
           : await this.trees.applySession(tx, userId, row);
         // Then achievements, from the same stored truth: a grant commits with its session, or
         // neither does (the app keeps the session and submits it again).
-        const progression = await this.achievements.evaluateSession(tx, userId, row);
+        const achieved = await this.achievements.evaluateSession(tx, userId, row);
+        // Then the seasonal collections it completed (A5.9), reported with the same result.
+        const seasonal = await this.seasons.evaluateSession(tx, userId, row);
+        const progression = {
+          ...achieved,
+          newlyEarnedBadgeIds: [...achieved.newlyEarnedBadgeIds, ...seasonal.badgeIds],
+          newlyUnlockedCosmeticIds: [...achieved.newlyUnlockedCosmeticIds, ...seasonal.cosmeticIds],
+        };
         // Then the joined events' missions, from the same stored truth (A5.6).
         const events = await this.events.evaluateSession(tx, userId, row);
         const stored = await tx.focusSession.update({
           where: { userId_id: { userId, id } },
           data: {
             growthResult: growth as unknown as Prisma.InputJsonValue,
-            progressionResult: progression as unknown as Prisma.InputJsonValue,
+            progressionResult: progression,
             eventResult: events as unknown as Prisma.InputJsonValue,
           },
         });

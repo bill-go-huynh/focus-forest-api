@@ -18,7 +18,12 @@ export const CONTENT_SOURCES = ['system', 'achievement', 'event', 'season'] as c
 export type ContentSource = (typeof CONTENT_SOURCES)[number];
 
 /** Sources whose system exists: events from A5.6; seasons still wait for their module. */
-export const ACQUIRABLE_SOURCES: readonly ContentSource[] = ['system', 'achievement', 'event'];
+export const ACQUIRABLE_SOURCES: readonly ContentSource[] = [
+  'system',
+  'achievement',
+  'event',
+  'season',
+];
 
 export const CONTENT_AVAILABILITIES = ['permanent', 'limited'] as const;
 export type ContentAvailability = (typeof CONTENT_AVAILABILITIES)[number];

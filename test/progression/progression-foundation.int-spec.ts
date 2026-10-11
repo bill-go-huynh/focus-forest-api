@@ -467,8 +467,8 @@ describe('A4.1 progression foundation (HTTP + PostgreSQL)', () => {
       ]);
     });
 
-    // Events exist from A5.6; seasons wait for theirs.
-    it('never opens season cosmetics before their system exists', async () => {
+    // Events exist from A5.6, seasons from A5.9: both are acquirable within their windows.
+    it('opens season cosmetics within their window from A5.9', async () => {
       await t.prisma.cosmeticDefinition.create({
         data: {
           id: 'harvest-lantern',
@@ -487,7 +487,12 @@ describe('A4.1 progression foundation (HTTP + PostgreSQL)', () => {
       const ada = await t.signUp('ada@example.com');
       await expect(
         ownership.grantCosmetic(ada.userId, 'harvest-lantern', at),
-      ).rejects.toMatchObject({ reason: 'source_not_available' });
+      ).resolves.toMatchObject({
+        granted: true,
+      });
+      await expect(
+        ownership.grantCosmetic(ada.userId, 'harvest-lantern', new Date('2026-11-01')),
+      ).resolves.toMatchObject({ granted: false });
     });
   });
 
