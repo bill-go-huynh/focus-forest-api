@@ -15,14 +15,14 @@ import { isCounted } from '../focus-stats/focus-stats.js';
 import type { FocusSession, Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { toBadgeDto, toCosmeticDto } from '../progression/badge.dto.js';
-import {
-  ContentNotAcquirableError,
-  ProgressionOwnershipService,
-} from '../progression/progression-ownership.service.js';
+import { ProgressionOwnershipService } from '../progression/progression-ownership.service.js';
 import { localDateOf } from '../sessions/attribution/calendar.js';
 import { MonthlyTreesService } from '../trees/monthly-trees.service.js';
+import type { CommunityStage, CommunityTreeDto } from './community-tree.dto.js';
+import { CommunityTreeService } from './community-tree.service.js';
 import { eventPhase, missionValue, reachedMilestones, type MissionInput } from './event-rules.js';
 import type { EventCardDto, EventDto, SessionEventResult } from './events.dto.js';
+import { grantIfAcquirable } from './grant-reward.js';
 
 type Client = PrismaService | Prisma.TransactionClient;
 
@@ -49,6 +49,7 @@ export class EventsService {
     private readonly ownership: ProgressionOwnershipService,
     private readonly trees: MonthlyTreesService,
     private readonly streak: StreakService,
+    private readonly community: CommunityTreeService,
     private readonly clock: Clock,
   ) {}
 
@@ -72,10 +73,14 @@ export class EventsService {
 
   async join(userId: string, eventId: string): Promise<EventDto> {
     const event = await this.visible(userId, eventId);
-    const joined = await this.prisma.eventParticipation.findUnique({
-      where: { userId_eventId: { userId, eventId } },
-    });
-    if (!joined) {
+    await this.prisma.$transaction(async (tx) => {
+      // The user's lock, as a session submission takes it: a session submitted while joining is
+      // added to the Community Tree exactly once, by this backfill or by its submission (A5.7).
+      await tx.$queryRaw`SELECT 1 FROM users WHERE id = ${userId}::uuid FOR UPDATE`;
+      const joined = await tx.eventParticipation.findUnique({
+        where: { userId_eventId: { userId, eventId } },
+      });
+      if (joined) return;
       if (eventPhase(event, this.clock.now()) === 'ended') {
         throw new ConflictException({
           statusCode: 409,
@@ -85,7 +90,7 @@ export class EventsService {
         });
       }
       if (event.entryMinSessions > 0) {
-        const counted = await this.prisma.focusSession.count({
+        const counted = await tx.focusSession.count({
           where: { userId, status: { not: 'discarded' } },
         });
         if (counted < event.entryMinSessions) {
@@ -97,11 +102,12 @@ export class EventsService {
           });
         }
       }
-      await this.prisma.eventParticipation.createMany({
-        data: [{ userId, eventId, joinedAt: this.clock.now() }],
-        skipDuplicates: true,
+      await tx.eventParticipation.create({
+        data: { userId, eventId, joinedAt: this.clock.now() },
       });
-    }
+      // Focus already done in the window grows the shared tree too, as it counts for missions.
+      await this.community.contribute(tx, userId, event);
+    });
     return this.view(userId, event);
   }
 
@@ -135,6 +141,10 @@ export class EventsService {
         year: session.year,
         month: session.month,
       });
+      // A5.7: the session's minutes on the shared tree (tree rows lock in this event order), then
+      // the shared rewards of every milestone reached so far.
+      const community = await this.community.contribute(tx, userId, event);
+      if (community) await this.community.reconcile(tx, userId, event.id);
       results.push({
         eventId: event.id,
         missions: event.missions.map((mission, i) => ({
@@ -147,6 +157,7 @@ export class EventsService {
           .filter((mission, i) => after[i]! >= mission.target && before[i]! < mission.target)
           .map((mission) => mission.id),
         newlyReachedMilestoneIds: reached,
+        community,
       });
     }
     return results;
@@ -184,8 +195,26 @@ export class EventsService {
     };
   }
 
+  /** A5.7 The event's Community Tree; a participant receives the shared rewards reached. */
+  async communityTree(userId: string, eventId: string): Promise<CommunityTreeDto> {
+    const event = await this.visible(userId, eventId);
+    return this.community.view(userId, eventId, event.participations.length > 0);
+  }
+
+  async communityCelebrated(
+    userId: string,
+    eventId: string,
+    stages: CommunityStage[],
+  ): Promise<void> {
+    await this.visible(userId, eventId);
+    await this.community.celebrated(userId, eventId, stages);
+  }
+
   /** Active events, and retired ones the user joined. Planned events do not exist yet. */
-  private async visible(userId: string, eventId: string): Promise<LoadedEvent> {
+  private async visible(
+    userId: string,
+    eventId: string,
+  ): Promise<LoadedEvent & { participations: unknown[] }> {
     const event = await this.prisma.event.findUnique({
       where: { id: eventId },
       include: { ...WITH_CONTENT, participations: { where: { userId } } },
@@ -210,6 +239,7 @@ export class EventsService {
       (await this.prisma.eventParticipation.count({ where: { userId, eventId: event.id } })) > 0;
     const values = joined ? await this.values(this.prisma, userId, event) : null;
     if (values) await this.reconcile(this.prisma, userId, event, values);
+    if (joined) await this.community.reconcile(this.prisma, userId, event.id);
     const granted = joined
       ? new Set(
           (
@@ -229,6 +259,7 @@ export class EventsService {
       startsAt: event.startsAt.toISOString(),
       endsAt: event.endsAt.toISOString(),
       joined,
+      communityTree: await this.community.summary(event.id),
       missions: event.missions.map((mission, i) => ({
         id: mission.id,
         name: mission.name,
@@ -283,10 +314,18 @@ export class EventsService {
     const createdIds = new Set(created.map((row) => row.milestoneId));
     for (const milestone of event.milestones.filter((m) => createdIds.has(m.id))) {
       // Rewards are acquired while their content is available; owned forever after.
-      if (milestone.badge)
-        await this.grantIfAcquirable('badge', userId, milestone.badge.id, now, client);
+      if (milestone.badge) {
+        await grantIfAcquirable(this.ownership, 'badge', userId, milestone.badge.id, now, client);
+      }
       if (milestone.cosmetic) {
-        await this.grantIfAcquirable('cosmetic', userId, milestone.cosmetic.id, now, client);
+        await grantIfAcquirable(
+          this.ownership,
+          'cosmetic',
+          userId,
+          milestone.cosmetic.id,
+          now,
+          client,
+        );
       }
     }
     const waiting = await client.eventMilestoneGrant.findMany({
@@ -309,22 +348,6 @@ export class EventsService {
       }
     }
     return event.milestones.filter((m) => createdIds.has(m.id)).map((m) => m.id);
-  }
-
-  private async grantIfAcquirable(
-    kind: 'badge' | 'cosmetic',
-    userId: string,
-    id: string,
-    at: Date,
-    client: Client,
-  ): Promise<void> {
-    try {
-      if (kind === 'badge') await this.ownership.grantBadge(userId, id, at, client);
-      else await this.ownership.grantCosmetic(userId, id, at, client);
-    } catch (error) {
-      // No longer acquirable (its window ended): the milestone stays reached, without it.
-      if (!(error instanceof ContentNotAcquirableError)) throw error;
-    }
   }
 
   /** Each mission's value, in mission order; `without` leaves one session out (the "before"). */

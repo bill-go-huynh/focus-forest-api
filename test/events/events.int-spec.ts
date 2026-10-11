@@ -251,6 +251,8 @@ describe('Events (A5.6, HTTP + PostgreSQL)', () => {
           ],
           newlyCompletedMissionIds: ['five-hours'],
           newlyReachedMilestoneIds: ['first-leaf'],
+          // A5.7: this event has no Community Tree.
+          community: null,
         },
       ]);
       // The replay answers the same, stored with the session.

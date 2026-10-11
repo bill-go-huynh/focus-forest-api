@@ -106,6 +106,8 @@ model User {
   challengeInvitesSent    ChallengeParticipant[]    @relation("challengeInviter")
   eventParticipations     EventParticipation[]
   eventMilestoneGrants    EventMilestoneGrant[]
+  communityContributions  CommunityContribution[]
+  communityRewardGrants   CommunityRewardGrant[]
 
   @@map("users")
 }
@@ -610,9 +612,10 @@ model BadgeDefinition {
   sortOrder      Int                 @default(0) @map("sort_order")
   createdAt      DateTime            @default(now()) @map("created_at")
 
-  achievement AchievementDefinition?
-  owners      UserBadge[]
-  milestones  EventMilestone[]
+  achievement         AchievementDefinition?
+  owners              UserBadge[]
+  milestones          EventMilestone[]
+  communityMilestones CommunityMilestone[]
 
   @@map("badge_definitions")
 }
@@ -680,10 +683,11 @@ model CosmeticDefinition {
   sortOrder      Int                 @default(0) @map("sort_order")
   createdAt      DateTime            @default(now()) @map("created_at")
 
-  achievement AchievementDefinition? @relation(fields: [achievementId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  owners      UserCosmetic[]
-  equipped    UserEquipment[]
-  milestones  EventMilestone[]
+  achievement         AchievementDefinition? @relation(fields: [achievementId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  owners              UserCosmetic[]
+  equipped            UserEquipment[]
+  milestones          EventMilestone[]
+  communityMilestones CommunityMilestone[]
 
   @@unique([id, type])
   @@map("cosmetic_definitions")
@@ -1128,6 +1132,7 @@ model Event {
   milestones     EventMilestone[]
   participations EventParticipation[]
   grants         EventMilestoneGrant[]
+  communityTree  CommunityTree?
 
   @@map("events")
 }
@@ -1200,6 +1205,83 @@ model EventMilestoneGrant {
 
   @@id([userId, eventId, milestoneId])
   @@map("event_milestone_grants")
+}
+
+/// A5.7 Community Tree stages (spec §12), in growing order.
+enum CommunityStage {
+  seedling
+  growing_tree
+  bloom
+  final_form
+
+  @@map("community_stage")
+}
+
+/// A5.7 The shared tree of an event (spec §12, docs/06 CommunityTree). It grows from the total
+/// focus minutes of the event's participants and never loses progress: a trigger refuses a lower
+/// total. The row is the one lock every contribution takes.
+model CommunityTree {
+  eventId      String @id @map("event_id")
+  name         String
+  artworkId    String @map("artwork_id")
+  /// The sum of the contribution ledger, kept with it in one transaction.
+  totalMinutes BigInt @default(0) @map("total_minutes")
+
+  event         Event                   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  milestones    CommunityMilestone[]
+  contributions CommunityContribution[]
+
+  @@map("community_trees")
+}
+
+/// A community milestone and its shared reward. `reachedAt` is set once and never changes.
+model CommunityMilestone {
+  eventId          String         @map("event_id")
+  stage            CommunityStage
+  thresholdMinutes BigInt         @map("threshold_minutes")
+  badgeId          String?        @map("badge_id")
+  cosmeticId       String?        @map("cosmetic_id")
+  reachedAt        DateTime?      @map("reached_at")
+
+  tree     CommunityTree          @relation(fields: [eventId], references: [eventId], onDelete: Cascade)
+  badge    BadgeDefinition?       @relation(fields: [badgeId], references: [id], onDelete: Restrict)
+  cosmetic CosmeticDefinition?    @relation(fields: [cosmeticId], references: [id], onDelete: Restrict)
+  grants   CommunityRewardGrant[]
+
+  @@id([eventId, stage])
+  @@map("community_milestones")
+}
+
+/// The append-only contribution ledger: one row per counted session of a participant that started
+/// in the window. Deleting the account keeps the minutes anonymously (`userId` becomes null).
+model CommunityContribution {
+  id            BigInt   @id @default(autoincrement())
+  eventId       String   @map("event_id")
+  userId        String?  @map("user_id") @db.Uuid
+  sessionId     String   @map("session_id") @db.Uuid
+  minutes       Int
+  contributedAt DateTime @map("contributed_at")
+
+  tree CommunityTree @relation(fields: [eventId], references: [eventId], onDelete: Restrict)
+  user User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([eventId, userId, sessionId])
+  @@map("community_contributions")
+}
+
+/// A participant's share of a reached milestone: granted once, celebrated once (docs/04).
+model CommunityRewardGrant {
+  userId       String         @map("user_id") @db.Uuid
+  eventId      String         @map("event_id")
+  stage        CommunityStage
+  grantedAt    DateTime       @map("granted_at")
+  celebratedAt DateTime?      @map("celebrated_at")
+
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  milestone CommunityMilestone @relation(fields: [eventId, stage], references: [eventId, stage], onDelete: Restrict)
+
+  @@id([userId, eventId, stage])
+  @@map("community_reward_grants")
 }
 
 enum AdminRole {
