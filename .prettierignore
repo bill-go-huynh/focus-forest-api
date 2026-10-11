@@ -15,3 +15,6 @@ test/x4/progression-contract.json
 
 # Core Loop Checkpoint contracts (CR.X): byte-identical with the mobile and admin copies.
 test/cr/*.json
+
+# X5 community contract capture: generated, byte-identical with the mobile copy.
+test/x5/community-contract.json
