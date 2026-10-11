@@ -12,6 +12,7 @@ import {
   CONSISTENCY_CONFIG_VALUES,
   CURRENT_CONFIG_VALUES,
   FOREST_CONFIG_VALUES,
+  LEADERBOARD_CONFIG_VALUES,
   SESSION_CONFIG_VALUES,
   TREE_CONFIG_VALUES,
 } from '../support/product-config-values.js';
@@ -95,13 +96,26 @@ describe('product configuration (PostgreSQL)', () => {
       });
       expect(challenges.note).toMatch(/challenge/i);
 
-      const config = await productionService.active();
-      expect(config.version).toBe(7);
-      const stored = await seeded.productConfigVersion.findUniqueOrThrow({
+      const leaderboards = await seeded.productConfigVersion.findUniqueOrThrow({
         where: { version: 7 },
       });
+      expect(leaderboards.values).toEqual({
+        ...SESSION_CONFIG_VALUES,
+        ...TREE_CONFIG_VALUES,
+        ...CONSISTENCY_CONFIG_VALUES,
+        ...FOREST_CONFIG_VALUES,
+        ...CHALLENGE_CONFIG_VALUES,
+        ...LEADERBOARD_CONFIG_VALUES,
+      });
+      expect(leaderboards.note).toMatch(/phase 5/i);
+
+      const config = await productionService.active();
+      expect(config.version).toBe(8);
+      const stored = await seeded.productConfigVersion.findUniqueOrThrow({
+        where: { version: 8 },
+      });
       expect(stored.values).toEqual(CURRENT_CONFIG_VALUES);
-      expect(stored.note).toMatch(/phase 5/i);
+      expect(stored.note).toMatch(/phase 6/i);
       for (const key of Object.keys(
         CURRENT_CONFIG_VALUES,
       ) as (keyof typeof CURRENT_CONFIG_VALUES)[]) {

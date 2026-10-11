@@ -68,6 +68,25 @@ export class EnvironmentVariables {
   @IsOptional()
   @IsString()
   CORS_ORIGINS?: string;
+
+  /**
+   * A6.1: `expo` delivers push notifications through Expo's push service. Without it nothing is
+   * delivered, and each attempt is recorded as failed (`PushDisabled`).
+   */
+  @IsEnum(['none', 'expo'])
+  PUSH_PROVIDER: 'none' | 'expo' = 'none';
+
+  /** Expo access token, when the Expo project requires signed push requests. */
+  @IsOptional()
+  @IsString()
+  EXPO_ACCESS_TOKEN?: string;
+
+  /** How often the background worker runs due jobs and notifications; 0 turns it off. */
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(3600)
+  JOBS_POLL_SECONDS: number = 15;
 }
 
 export function validateEnv(config: Record<string, unknown>): EnvironmentVariables {

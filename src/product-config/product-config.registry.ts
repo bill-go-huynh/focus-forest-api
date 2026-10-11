@@ -215,6 +215,26 @@ export const productConfigRegistry = {
     description: 'Most focus minutes one day adds to the leaderboard focus-time part',
     type: integer({ min: 15, max: 1440 }),
   },
+
+  // Phase 6 (A6.1): notification delivery (docs/02 Notifications, owner decisions 2026-10-11).
+  'notifications.maxUnrequestedPerDay': {
+    description:
+      'Informational notifications (events, social, badges, recaps) sent per local day at most; reminders the user set are not counted',
+    type: integer({ min: 0, max: 10 }),
+  },
+  'notifications.informationalHours': {
+    description:
+      'Local hours [start, end) in which informational notifications are sent; outside them they wait',
+    type: shape(
+      { start: integer({ min: 0, max: 23 }), end: integer({ min: 1, max: 24 }) },
+      { expected: 'start before end', holds: (hours) => hours.start < hours.end },
+    ),
+  },
+  'notifications.focusLeaseGraceMinutes': {
+    description:
+      'Minutes after a focus lease ends during which notifications still wait, to cover pauses',
+    type: integer({ min: 0, max: 240 }),
+  },
 } as const satisfies ConfigRegistry;
 
 export type ProductConfigRegistry = typeof productConfigRegistry;

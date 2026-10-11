@@ -345,7 +345,13 @@
         25,
         40
       ],
-      "leaderboard.dailyFocusCapMinutes": 120
+      "leaderboard.dailyFocusCapMinutes": 120,
+      "notifications.informationalHours": {
+        "end": 21,
+        "start": 9
+      },
+      "notifications.maxUnrequestedPerDay": 2,
+      "notifications.focusLeaseGraceMinutes": 30
     }
   },
   "checkpoint": {

@@ -78,6 +78,9 @@ model User {
   refreshTokens           RefreshToken[]
   preferences             UserPreferences?
   notificationPreferences NotificationPreference[]
+  pushDevices             PushDevice[]
+  focusLease              FocusLease?
+  notifications           NotificationOutbox[]
   topics                  Topic[]
   monthContexts           MonthAttributionContext[]
   focusSessions           FocusSession[]
@@ -191,6 +194,106 @@ model NotificationPreference {
 
   @@id([userId, category])
   @@map("notification_preferences")
+}
+
+/// A6.1 The platforms a push device can be.
+enum DevicePlatform {
+  ios
+  android
+
+  @@map("device_platform")
+}
+
+/// A6.1 A device that receives push notifications (docs/07: device registration). An Expo push
+/// token belongs to whoever last signed in on that device.
+model PushDevice {
+  token        String         @id
+  userId       String         @map("user_id") @db.Uuid
+  platform     DevicePlatform
+  appVersion   String?        @map("app_version")
+  registeredAt DateTime       @map("registered_at")
+  lastSeenAt   DateTime       @map("last_seen_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_devices")
+}
+
+/// A6.1 The person is focusing until `endsAt` (plus a grace for pauses): no notification is
+/// delivered meanwhile (docs/02). Set by the app when focus starts, cleared when it ends.
+model FocusLease {
+  userId    String   @id @map("user_id") @db.Uuid
+  startedAt DateTime @map("started_at")
+  endsAt    DateTime @map("ends_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("focus_leases")
+}
+
+/// A6.1 A background job (docs/08 §6: a Postgres-backed queue). Claimed with SKIP LOCKED, so
+/// several API instances never run one twice; retried with backoff, then given up.
+model Job {
+  id          BigInt    @id @default(autoincrement())
+  kind        String
+  payload     Json
+  runAt       DateTime  @map("run_at")
+  /// Scheduling the same thing twice is a no-op.
+  dedupeKey   String?   @unique @map("dedupe_key")
+  attempts    Int       @default(0)
+  lockedUntil DateTime? @map("locked_until")
+  lastError   String?   @map("last_error")
+  completedAt DateTime? @map("completed_at")
+  failedAt    DateTime? @map("failed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([runAt])
+  @@map("jobs")
+}
+
+/// A6.1 Where a notification stands.
+enum NotificationStatus {
+  pending
+  sent
+  skipped
+  failed
+
+  @@map("notification_status")
+}
+
+/// A6.1 Every notification, whatever produced it, and what became of it (sent, or skipped with
+/// the reason). Rows are kept, so support can see why something was not sent.
+model NotificationOutbox {
+  id           BigInt               @id @default(autoincrement())
+  userId       String               @map("user_id") @db.Uuid
+  category     NotificationCategory
+  /// One notification per user and key (an event's start, a day's reminder).
+  dedupeKey    String               @map("dedupe_key")
+  /// What it is about (an event id, a room id), for the relevance check.
+  subject      String?
+  title        String
+  body         String
+  /// An app path (`notification-links.ts`).
+  link         String
+  /// A reminder the person set: kept at its time, not counted against the daily limit.
+  requested    Boolean
+  notBefore    DateTime             @map("not_before")
+  expiresAt    DateTime             @map("expires_at")
+  createdAt    DateTime             @map("created_at")
+  status       NotificationStatus   @default(pending)
+  /// Held back by focus: due again as soon as the focus lease is cleared.
+  heldForFocus Boolean              @default(false) @map("held_for_focus")
+  reason       String?
+  sentAt       DateTime?            @map("sent_at")
+  lockedUntil  DateTime?            @map("locked_until")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dedupeKey])
+  @@index([status, notBefore])
+  @@index([userId, status, sentAt])
+  @@map("notification_outbox")
 }
 
 enum TopicStatus {

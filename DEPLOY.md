@@ -19,6 +19,9 @@ This guide prepares the API for the Core Loop Checkpoint (CR.7). It works on any
 | `CORS_ORIGINS` | for the admin | The admin web app's origin, e.g. `https://admin.example.com` |
 | `PORT` | no | Default 3000 |
 | `ACCESS_TOKEN_TTL_SECONDS`, `REFRESH_TOKEN_TTL_DAYS`, `ADMIN_TOKEN_TTL_SECONDS` | no | Defaults 900, 30, and 1800 |
+| `PUSH_PROVIDER` | for push | `expo` delivers push notifications through Expo. The default `none` delivers nothing and records each attempt as failed (`PushDisabled`) |
+| `EXPO_ACCESS_TOKEN` | no | Set when the Expo project requires signed push requests |
+| `JOBS_POLL_SECONDS` | no | How often the API runs due background jobs and notifications. Default 15; `0` turns the worker off |
 
 Generate a secret with:
 

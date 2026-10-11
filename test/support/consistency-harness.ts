@@ -11,6 +11,7 @@ import { Clock, FixedClock } from '../../src/common/clock.js';
 import { addDays, type LocalDate } from '../../src/common/local-date.js';
 import type { FocusSessionStatus } from '../../src/generated/prisma/client.js';
 import { PasswordHasher } from '../../src/identity/password-hasher.js';
+import { PushTransport, RecordingPushTransport } from '../../src/notifications/push-transport.js';
 import { PrismaService } from '../../src/prisma/prisma.service.js';
 import { ProductConfigService } from '../../src/product-config/product-config.service.js';
 import { listenOnLoopback } from './loopback-http.js';
@@ -30,6 +31,8 @@ export class ConsistencyHarness {
   readonly clock: FixedClock;
   /** With `countQueries`: the statements the app sent. */
   readonly queries = new QueryCounter();
+  /** Every push the app sent (A6.1): nothing reaches Expo from a test. */
+  readonly push = new RecordingPushTransport();
   /** Signed-up users, so their access tokens can be renewed when the clock moves. */
   private readonly users: { email: string; auth: Record<string, string> }[] = [];
 
@@ -45,7 +48,9 @@ export class ConsistencyHarness {
       .overrideProvider(PasswordHasher)
       .useValue(new PasswordHasher({ cost: 2 ** 10 }))
       .overrideProvider(Clock)
-      .useValue(this.clock);
+      .useValue(this.clock)
+      .overrideProvider(PushTransport)
+      .useValue(this.push);
     if (this.options.countQueries) {
       const url = process.env['DATABASE_URL'] ?? '';
       builder = builder
