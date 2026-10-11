@@ -3,13 +3,13 @@
     "accessToken": "admin-token",
     "accessTokenExpiresAt": "2026-09-03T12:30:00.000Z",
     "admin": {
-      "id": "00000000-0000-4000-8000-0000000ad001",
+      "id": "00000000-0000-4000-8000-0000000ad002",
       "email": "ops@example.com",
       "role": "admin"
     }
   },
   "me": {
-    "id": "00000000-0000-4000-8000-0000000ad001",
+    "id": "00000000-0000-4000-8000-0000000ad002",
     "email": "ops@example.com",
     "role": "admin"
   },
@@ -388,7 +388,7 @@
       {
         "id": "00000000-0000-4000-8000-00000000e000",
         "admin": {
-          "id": "00000000-0000-4000-8000-0000000ad001",
+          "id": "00000000-0000-4000-8000-0000000ad002",
           "email": "ops@example.com"
         },
         "action": "user.reactivate",
@@ -401,7 +401,7 @@
       {
         "id": "00000000-0000-4000-8000-00000000e001",
         "admin": {
-          "id": "00000000-0000-4000-8000-0000000ad001",
+          "id": "00000000-0000-4000-8000-0000000ad002",
           "email": "ops@example.com"
         },
         "action": "user.suspend",
@@ -442,7 +442,7 @@
       {
         "id": "00000000-0000-4000-8000-00000000e004",
         "admin": {
-          "id": "00000000-0000-4000-8000-0000000ad001",
+          "id": "00000000-0000-4000-8000-0000000ad002",
           "email": "ops@example.com"
         },
         "action": "admin.sign_in",
@@ -454,5 +454,258 @@
       }
     ],
     "nextCursor": null
+  },
+  "reports": {
+    "items": [
+      {
+        "id": "00000000-0000-4000-8000-00000000f001",
+        "category": "bio",
+        "status": "open",
+        "details": "Rude words in the bio.",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "reporter": {
+          "id": "00000000-0000-4000-8000-0000000000dd",
+          "email": "rex@example.com",
+          "username": "rex",
+          "displayName": null
+        },
+        "target": {
+          "id": "00000000-0000-4000-8000-0000000000cc",
+          "email": "tester@example.com",
+          "username": "tess",
+          "displayName": "Tess",
+          "status": "active",
+          "openReports": 2
+        }
+      },
+      {
+        "id": "00000000-0000-4000-8000-00000000f002",
+        "category": "username",
+        "status": "open",
+        "details": null,
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "reporter": {
+          "id": "00000000-0000-4000-8000-0000000000dd",
+          "email": "rex@example.com",
+          "username": "rex",
+          "displayName": null
+        },
+        "target": {
+          "id": "00000000-0000-4000-8000-0000000000cc",
+          "email": "tester@example.com",
+          "username": "tess",
+          "displayName": "Tess",
+          "status": "active",
+          "openReports": 2
+        }
+      }
+    ],
+    "nextCursor": null
+  },
+  "report": {
+    "id": "00000000-0000-4000-8000-00000000f001",
+    "category": "bio",
+    "status": "open",
+    "details": "Rude words in the bio.",
+    "createdAt": "2026-01-01T00:00:00.000Z",
+    "reporter": {
+      "id": "00000000-0000-4000-8000-0000000000dd",
+      "email": "rex@example.com",
+      "username": "rex",
+      "displayName": null
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-0000000000cc",
+      "email": "tester@example.com",
+      "username": "tess",
+      "displayName": "Tess",
+      "status": "active",
+      "openReports": 2
+    },
+    "targetProfile": {
+      "username": "tess",
+      "displayName": "Tess",
+      "bio": null,
+      "avatarUrl": null
+    },
+    "blocks": {
+      "reporterBlocksTarget": false,
+      "targetBlocksReporter": false
+    },
+    "targetHistory": {
+      "reports": 2,
+      "warnings": 0,
+      "status": "active"
+    },
+    "reviewedBy": null,
+    "resolution": null
+  },
+  "reviewed": {
+    "id": "00000000-0000-4000-8000-00000000f001",
+    "category": "bio",
+    "status": "in_review",
+    "details": "Rude words in the bio.",
+    "createdAt": "2026-01-01T00:00:00.000Z",
+    "reporter": {
+      "id": "00000000-0000-4000-8000-0000000000dd",
+      "email": "rex@example.com",
+      "username": "rex",
+      "displayName": null
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-0000000000cc",
+      "email": "tester@example.com",
+      "username": "tess",
+      "displayName": "Tess",
+      "status": "active",
+      "openReports": 2
+    },
+    "targetProfile": {
+      "username": "tess",
+      "displayName": "Tess",
+      "bio": null,
+      "avatarUrl": null
+    },
+    "blocks": {
+      "reporterBlocksTarget": false,
+      "targetBlocksReporter": false
+    },
+    "targetHistory": {
+      "reports": 2,
+      "warnings": 0,
+      "status": "active"
+    },
+    "reviewedBy": "mod@example.com",
+    "resolution": null
+  },
+  "warningMessageRequired": {
+    "statusCode": 422,
+    "error": "Unprocessable Entity",
+    "message": "A warning needs a message for the user.",
+    "code": "warning_message_required"
+  },
+  "resolved": {
+    "id": "00000000-0000-4000-8000-00000000f001",
+    "category": "bio",
+    "status": "resolved",
+    "details": "Rude words in the bio.",
+    "createdAt": "2026-01-01T00:00:00.000Z",
+    "reporter": {
+      "id": "00000000-0000-4000-8000-0000000000dd",
+      "email": "rex@example.com",
+      "username": "rex",
+      "displayName": null
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-0000000000cc",
+      "email": "tester@example.com",
+      "username": "tess",
+      "displayName": "Tess",
+      "status": "active",
+      "openReports": 1
+    },
+    "targetProfile": {
+      "username": "tess",
+      "displayName": "Tess",
+      "bio": null,
+      "avatarUrl": null
+    },
+    "blocks": {
+      "reporterBlocksTarget": false,
+      "targetBlocksReporter": false
+    },
+    "targetHistory": {
+      "reports": 2,
+      "warnings": 1,
+      "status": "active"
+    },
+    "reviewedBy": "mod@example.com",
+    "resolution": {
+      "action": "warn",
+      "reason": "Bio breaks the rules",
+      "resolvedBy": "mod@example.com",
+      "resolvedAt": "2026-09-03T12:01:07.000Z"
+    }
+  },
+  "reportClosed": {
+    "statusCode": 409,
+    "error": "Conflict",
+    "message": "This report is already resolved or dismissed.",
+    "code": "report_closed"
+  },
+  "dismissed": {
+    "id": "00000000-0000-4000-8000-00000000f002",
+    "category": "username",
+    "status": "dismissed",
+    "details": null,
+    "createdAt": "2026-01-01T00:00:00.000Z",
+    "reporter": {
+      "id": "00000000-0000-4000-8000-0000000000dd",
+      "email": "rex@example.com",
+      "username": "rex",
+      "displayName": null
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-0000000000cc",
+      "email": "tester@example.com",
+      "username": "tess",
+      "displayName": "Tess",
+      "status": "active",
+      "openReports": 0
+    },
+    "targetProfile": {
+      "username": "tess",
+      "displayName": "Tess",
+      "bio": null,
+      "avatarUrl": null
+    },
+    "blocks": {
+      "reporterBlocksTarget": false,
+      "targetBlocksReporter": false
+    },
+    "targetHistory": {
+      "reports": 2,
+      "warnings": 1,
+      "status": "active"
+    },
+    "reviewedBy": null,
+    "resolution": {
+      "action": null,
+      "reason": "The username is fine",
+      "resolvedBy": "mod@example.com",
+      "resolvedAt": "2026-09-03T12:01:09.000Z"
+    }
+  },
+  "rooms": {
+    "items": [
+      {
+        "id": "00000000-0000-4000-8000-00000000a001",
+        "name": "Morning study",
+        "topic": null,
+        "visibility": "public",
+        "phase": "lobby",
+        "participants": 1,
+        "host": {
+          "id": "00000000-0000-4000-8000-0000000000dd",
+          "email": "rex@example.com",
+          "username": "rex"
+        },
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ]
+  },
+  "roomClosed": {
+    "id": "00000000-0000-4000-8000-00000000a001",
+    "name": "Morning study",
+    "topic": null,
+    "visibility": "public",
+    "phase": "closed",
+    "participants": 1,
+    "host": {
+      "id": "00000000-0000-4000-8000-0000000000dd",
+      "email": "rex@example.com",
+      "username": "rex"
+    },
+    "createdAt": "2026-01-01T00:00:00.000Z"
   }
 }

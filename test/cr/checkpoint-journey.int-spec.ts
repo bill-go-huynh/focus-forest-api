@@ -258,10 +258,82 @@ describe('Core Loop Checkpoint integration (CR.X, HTTP + PostgreSQL)', () => {
     const audit = (await read('/admin/audit-log')) as { items: { id: string }[] };
     c['auditLog'] = audit;
 
+    // D5.1 moderation and rooms, read by a moderator (after the audit log, which stays as it was).
+    await createAdmin(t.prisma, hasher, {
+      email: 'mod@example.com',
+      role: 'moderator',
+      password: PASSWORD,
+    });
+    const mod = await signIn('mod@example.com');
+    await t.http().patch('/me/profile').set(tester.auth).send({ username: 'tess' }).expect(200);
+    const rex = await t.signUp('rex@example.com', 'UTC', '2026-09-01T08:00:00.000Z');
+    await t.http().patch('/me/profile').set(rex.auth).send({ username: 'rex' }).expect(200);
+    const file = async (category: string, details: string | null) =>
+      (
+        (
+          await t
+            .http()
+            .post('/me/reports')
+            .set(rex.auth)
+            .send({ userId: tester.userId, category, details })
+            .expect(201)
+        ).body as { id: string }
+      ).id;
+    const bioReport = await file('bio', 'Rude words in the bio.');
+    const nameReport = await file('username', null);
+    c['reports'] = await read('/admin/reports', mod.accessToken);
+    c['report'] = await read(`/admin/reports/${bioReport}`, mod.accessToken);
+    c['reviewed'] = await post(`/admin/reports/${bioReport}/review`, {}, mod.accessToken);
+    c['warningMessageRequired'] = await post(
+      `/admin/reports/${bioReport}/resolve`,
+      { action: 'warn', reason: 'Bio breaks the rules' },
+      mod.accessToken,
+      422,
+    );
+    c['resolved'] = await post(
+      `/admin/reports/${bioReport}/resolve`,
+      { action: 'warn', reason: 'Bio breaks the rules', message: 'Please keep your bio kind.' },
+      mod.accessToken,
+    );
+    c['reportClosed'] = await post(
+      `/admin/reports/${bioReport}/dismiss`,
+      { reason: 'Already handled' },
+      mod.accessToken,
+      409,
+    );
+    c['dismissed'] = await post(
+      `/admin/reports/${nameReport}/dismiss`,
+      { reason: 'The username is fine' },
+      mod.accessToken,
+    );
+    const room = (
+      await t
+        .http()
+        .post('/rooms')
+        .set(rex.auth)
+        .send({
+          name: 'Morning study',
+          durationMinutes: 25,
+          maxParticipants: 4,
+          visibility: 'public',
+        })
+        .expect(201)
+    ).body as { id: string };
+    c['rooms'] = await read('/admin/rooms', mod.accessToken);
+    c['roomClosed'] = await post(
+      `/admin/rooms/${room.id}/close`,
+      { reason: 'Spam room name' },
+      mod.accessToken,
+    );
+
     const users = await t.prisma.adminUser.findMany({ orderBy: { email: 'asc' } });
     const replace = new Map<string, string>([
       [tester.userId, '00000000-0000-4000-8000-0000000000cc'],
       [tester.topicId, '00000000-0000-4000-8000-00000000c001'],
+      [rex.userId, '00000000-0000-4000-8000-0000000000dd'],
+      [bioReport, '00000000-0000-4000-8000-00000000f001'],
+      [nameReport, '00000000-0000-4000-8000-00000000f002'],
+      [room.id, '00000000-0000-4000-8000-00000000a001'],
       ...users.map((u, i): [string, string] => [
         u.id,
         `00000000-0000-4000-8000-0000000ad${String(i).padStart(3, '0')}`,
