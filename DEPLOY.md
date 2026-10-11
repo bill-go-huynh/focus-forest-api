@@ -58,6 +58,16 @@ docker run --rm -e DATABASE_URL=… -e ADMIN_PASSWORD='…' focus-forest-api-mig
 
 The password needs 12 or more characters. Pass it only through the environment, never as an argument. Create `support` admins the same way.
 
+## Content
+
+Events, Community Trees, and seasonal themes are dated content, so no migration inserts them. Apply the launch content once, and again after a release that adds to it:
+
+```sh
+docker run --rm -e DATABASE_URL=… focus-forest-api-migrate npm run content:seed
+```
+
+It only adds what is missing and says what it added and kept. Content already in the database is never changed, so edits made since stay as they are. A pack with problems is refused before anything is written.
+
 ## Backups
 
 - Take daily automatic backups with point-in-time recovery if the host offers it.
