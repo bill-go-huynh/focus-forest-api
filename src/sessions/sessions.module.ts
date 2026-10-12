@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { EventsModule } from '../events/events.module.js';
+import { JobsModule } from '../jobs/jobs.module.js';
 import { SeasonsModule } from '../seasons/seasons.module.js';
 import { ProductConfigModule } from '../product-config/product-config.module.js';
 import { ProgressionModule } from '../progression/progression.module.js';
@@ -19,6 +20,7 @@ import { SessionsService } from './sessions.service.js';
     ProgressionModule,
     EventsModule,
     SeasonsModule,
+    JobsModule,
   ],
   controllers: [SessionRulesController, SessionsController],
   providers: [SessionsService],

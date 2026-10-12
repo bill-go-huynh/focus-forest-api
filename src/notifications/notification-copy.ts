@@ -9,15 +9,11 @@ export type NotificationCopyInput =
   | { category: 'scheduledFocusReminder' }
   | { category: 'streakReminder'; streakDays: number }
   | { category: 'eventStart'; eventName: string }
-  | { category: 'eventEndingSoon'; eventName: string; endsInHours: number }
-  | { category: 'friendInvite'; friendName: string; challengeName: string }
+  | { category: 'eventEndingSoon'; eventName: string }
+  | { category: 'friendInvite'; friendName: string }
   | { category: 'focusRoomInvite'; friendName: string; roomName: string }
-  | {
-      category: 'challengeUpdate';
-      kind: 'completed' | 'joined';
-      challengeName: string;
-      friendName?: string;
-    }
+  | { category: 'challengeUpdate'; kind: 'completed' }
+  | { category: 'challengeUpdate'; kind: 'joined'; friendName: string }
   | { category: 'badgeUnlocked'; badgeName: string }
   | { category: 'monthlyRecapReady'; year: number; month: number };
 
@@ -72,12 +68,12 @@ export function notificationCopy(input: NotificationCopyInput): NotificationCopy
     case 'eventEndingSoon':
       return {
         title: `${short(input.eventName)} ends soon`,
-        body: `It wraps up in about ${input.endsInHours} hours. Thank you for taking part.`,
+        body: 'It wraps up soon. Thank you for taking part.',
       };
     case 'friendInvite':
       return {
-        title: `${short(input.friendName, 20)} invited you`,
-        body: `Join "${short(input.challengeName, 40)}" together, if you'd like.`,
+        title: `${short(input.friendName, 20)} invited you to a challenge`,
+        body: "Take a look together, if you'd like.",
       };
     case 'focusRoomInvite':
       return {
@@ -86,13 +82,10 @@ export function notificationCopy(input: NotificationCopyInput): NotificationCopy
       };
     case 'challengeUpdate':
       return input.kind === 'completed'
-        ? {
-            title: `${short(input.challengeName, 30)} is complete`,
-            body: 'You reached it together. Nicely done.',
-          }
+        ? { title: 'Your challenge is complete', body: 'You reached it together. Nicely done.' }
         : {
-            title: `${short(input.friendName ?? 'A friend', 20)} joined in`,
-            body: `You're working toward "${short(input.challengeName, 40)}" together now.`,
+            title: `${short(input.friendName, 20)} joined your challenge`,
+            body: "You're working toward it together now.",
           };
     case 'badgeUnlocked':
       return {
@@ -125,4 +118,9 @@ export function guiltProblems(text: string): string[] {
   return GUILT.filter((pattern) => pattern.test(text)).map(
     (pattern) => `"${text}" matches ${String(pattern)}`,
   );
+}
+
+/** How a person is named in someone else's notification. */
+export function nameOf(person: { displayName: string | null; username: string | null }): string {
+  return person.displayName ?? person.username ?? 'A friend';
 }

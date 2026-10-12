@@ -122,6 +122,11 @@ export const NOTIFICATION_CONFIG_VALUES = {
   'notifications.focusLeaseGraceMinutes': 30,
 } as const;
 
+/** Phase 6 live notifications (configuration version 9, A6.3). */
+export const LIVE_NOTIFICATION_CONFIG_VALUES = {
+  'notifications.eventEndingSoonHours': 48,
+} as const;
+
 export const CURRENT_CONFIG_VALUES = {
   ...SESSION_CONFIG_VALUES,
   ...TREE_CONFIG_VALUES,
@@ -130,6 +135,7 @@ export const CURRENT_CONFIG_VALUES = {
   ...CHALLENGE_CONFIG_VALUES,
   ...LEADERBOARD_CONFIG_VALUES,
   ...NOTIFICATION_CONFIG_VALUES,
+  ...LIVE_NOTIFICATION_CONFIG_VALUES,
 };
 
 /** A complete set of values: the current ones with some replaced. */

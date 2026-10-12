@@ -41,6 +41,7 @@ interface ClaimedJob {
 @Injectable()
 export class JobsService {
   private readonly handlers = new Map<string, JobHandler>();
+  private readonly recurring = new Map<string, number>();
 
   constructor(private readonly prisma: PrismaService) {}
 
@@ -48,6 +49,35 @@ export class JobsService {
   register(kind: string, handler: JobHandler): void {
     if (this.handlers.has(kind)) throw new Error(`A handler for ${kind} is already registered.`);
     this.handlers.set(kind, handler);
+  }
+
+  /**
+   * A job that runs once per period, on slots aligned to it (every quarter hour: :00, :15, …).
+   * Each run handles its slot, then schedules the next one; the worker starts each chain.
+   */
+  registerRecurring(kind: string, periodMs: number, run: (slot: Date) => Promise<unknown>): void {
+    this.recurring.set(kind, periodMs);
+    this.register(kind, async (payload) => {
+      const slot = new Date((payload as { slot: string }).slot);
+      await run(slot);
+      await this.scheduleSlot(kind, new Date(slot.getTime() + periodMs));
+    });
+  }
+
+  /** Schedules each recurring job's slot holding `now` (on startup; idempotent). */
+  async startRecurring(now: Date): Promise<void> {
+    for (const [kind, periodMs] of this.recurring) {
+      await this.scheduleSlot(kind, new Date(Math.floor(now.getTime() / periodMs) * periodMs));
+    }
+  }
+
+  private scheduleSlot(kind: string, slot: Date): Promise<boolean> {
+    return this.enqueue(this.prisma, {
+      kind,
+      runAt: slot,
+      payload: { slot: slot.toISOString() },
+      dedupeKey: `${kind}:${slot.toISOString()}`,
+    });
   }
 
   /** Schedules a job, inside the caller's transaction when given one. False if the key exists. */

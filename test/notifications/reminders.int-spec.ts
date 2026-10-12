@@ -247,10 +247,14 @@ describe('reminders (A6.2)', () => {
 
   it('plans every quarter hour through a job that schedules the next one', async () => {
     await person({ scheduledFocusReminder: '15:10' });
-    await reminders.start(at('2026-11-02T08:02:00Z'));
-    await reminders.start(at('2026-11-02T08:02:00Z'));
+    await jobs.startRecurring(at('2026-11-02T08:02:00Z'));
+    await jobs.startRecurring(at('2026-11-02T08:02:00Z'));
     expect(
-      (await t.prisma.job.findMany()).map((job) => [job.kind, job.runAt, job.dedupeKey]),
+      (await t.prisma.job.findMany({ where: { kind: 'reminders.plan' } })).map((job) => [
+        job.kind,
+        job.runAt,
+        job.dedupeKey,
+      ]),
     ).toEqual([
       ['reminders.plan', at('2026-11-02T08:00:00Z'), 'reminders.plan:2026-11-02T08:00:00.000Z'],
     ]);
@@ -260,7 +264,9 @@ describe('reminders (A6.2)', () => {
     // 15:10 local is 08:10 UTC, inside the 08:00 quarter.
     expect(await t.prisma.notificationOutbox.count()).toBe(1);
     expect(
-      (await t.prisma.job.findMany({ where: { completedAt: null } })).map((job) => job.runAt),
+      (await t.prisma.job.findMany({ where: { kind: 'reminders.plan', completedAt: null } })).map(
+        (job) => job.runAt,
+      ),
     ).toEqual([at('2026-11-02T08:15:00Z')]);
   });
 

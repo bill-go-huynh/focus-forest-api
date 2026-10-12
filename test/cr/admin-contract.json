@@ -350,6 +350,7 @@
         "end": 21,
         "start": 9
       },
+      "notifications.eventEndingSoonHours": 48,
       "notifications.maxUnrequestedPerDay": 2,
       "notifications.focusLeaseGraceMinutes": 30
     }

@@ -1,8 +1,5 @@
-import { Injectable, type OnApplicationBootstrap, type OnModuleInit } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Injectable, type OnModuleInit } from '@nestjs/common';
 
-import { Clock } from '../common/clock.js';
-import { type EnvironmentVariables, NodeEnv } from '../config/env.validation.js';
 import { GoalsService } from '../consistency/goals.service.js';
 import { StreakService } from '../consistency/streak.service.js';
 import {
@@ -39,11 +36,9 @@ const dedupeKeyOf = (category: string, date: string, time: string) =>
   `reminder:${category}:${date}:${time}`;
 
 @Injectable()
-export class RemindersService implements OnModuleInit, OnApplicationBootstrap {
+export class RemindersService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly env: ConfigService<EnvironmentVariables, true>,
-    private readonly clock: Clock,
     private readonly jobs: JobsService,
     private readonly notifications: NotificationsService,
     private readonly goals: GoalsService,
@@ -51,26 +46,12 @@ export class RemindersService implements OnModuleInit, OnApplicationBootstrap {
   ) {}
 
   onModuleInit(): void {
-    this.jobs.register(PLAN_JOB, async (payload) => {
-      const slot = new Date((payload as { slot: string }).slot);
-      await this.plan(slot);
-      await this.schedule(new Date(slot.getTime() + SLOT_MS));
-    });
+    this.jobs.registerRecurring(PLAN_JOB, SLOT_MS, (slot) => this.plan(slot));
     for (const category of TIMED_NOTIFICATION_CATEGORIES) {
       this.notifications.registerRelevance(category, (notification) =>
         this.stillRelevant(category, notification.userId, notification.subject),
       );
     }
-  }
-
-  async onApplicationBootstrap(): Promise<void> {
-    if (this.env.get('NODE_ENV', { infer: true }) === NodeEnv.Test) return;
-    await this.start(this.clock.now());
-  }
-
-  /** Makes sure the quarter hour holding `now` is planned (on startup; idempotent). */
-  async start(now: Date): Promise<void> {
-    await this.schedule(new Date(Math.floor(now.getTime() / SLOT_MS) * SLOT_MS));
   }
 
   /** Enqueues every reminder whose local time falls in the quarter hour starting at `slot`. */
@@ -112,15 +93,6 @@ export class RemindersService implements OnModuleInit, OnApplicationBootstrap {
       if (added) planned += 1;
     }
     return planned;
-  }
-
-  private schedule(slot: Date): Promise<boolean> {
-    return this.jobs.enqueue(this.prisma, {
-      kind: PLAN_JOB,
-      runAt: slot,
-      payload: { slot: slot.toISOString() },
-      dedupeKey: `${PLAN_JOB}:${slot.toISOString()}`,
-    });
   }
 
   /** The reminder's text, or null when there is nothing kind to say (no streak to keep). */

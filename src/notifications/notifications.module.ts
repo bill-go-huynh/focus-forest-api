@@ -11,12 +11,13 @@ import { DevicesService } from './devices.service.js';
 import { ExpoPushTransport } from './expo-push-transport.js';
 import { DevicesController, FocusLeaseController } from './notifications.controller.js';
 import { NotificationsService } from './notifications.service.js';
+import { RecapNoticesService } from './recap-notices.service.js';
 import { RemindersService } from './reminders.service.js';
 import { DisabledPushTransport, PushTransport } from './push-transport.js';
 
 /**
  * Notifications: devices, the focus lease, the outbox and its dispatcher, the worker (A6.1), and
- * the reminders (A6.2).
+ * the reminders (A6.2), and the recap notice (A6.3).
  */
 @Module({
   imports: [IdentityModule, JobsModule, ProductConfigModule, ConsistencyModule],
@@ -25,6 +26,7 @@ import { DisabledPushTransport, PushTransport } from './push-transport.js';
     DevicesService,
     NotificationsService,
     RemindersService,
+    RecapNoticesService,
     BackgroundWorker,
     {
       provide: PushTransport,

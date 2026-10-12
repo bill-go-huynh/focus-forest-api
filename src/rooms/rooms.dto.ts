@@ -1,5 +1,8 @@
 import { Transform } from 'class-transformer';
 import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsArray,
   IsIn,
   IsInt,
   IsOptional,
@@ -133,4 +136,25 @@ export interface AdminRoomDto {
   participants: number;
   host: { id: string; email: string; username: string | null } | null;
   createdAt: string;
+}
+
+/** `POST /rooms/:id/invites` (A6.3): friends to invite into a gathering room. */
+export class InviteToRoomDto {
+  @IsArray({ message: 'userIds must be a list.' })
+  @ArrayMinSize(1, { message: 'Invite at least one friend.' })
+  @ArrayMaxSize(10, { message: 'Invite at most 10 friends at once.' })
+  @IsUUID('all', { each: true, message: 'Each user id must be a UUID.' })
+  userIds!: string[];
+}
+
+/** `GET /me/room-invites`: a room someone invited the viewer into, while it gathers. */
+export interface RoomInviteDto {
+  room: RoomDto;
+  from: {
+    id: string;
+    username: string | null;
+    displayName: string | null;
+    avatarUrl: string | null;
+  };
+  invitedAt: string;
 }

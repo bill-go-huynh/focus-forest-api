@@ -28,9 +28,11 @@ export class BackgroundWorker implements OnApplicationBootstrap, OnApplicationSh
     private readonly notifications: NotificationsService,
   ) {}
 
-  onApplicationBootstrap(): void {
+  async onApplicationBootstrap(): Promise<void> {
     const seconds = this.config.get('JOBS_POLL_SECONDS', { infer: true });
     if (this.config.get('NODE_ENV', { infer: true }) === NodeEnv.Test || seconds === 0) return;
+    // Every module registered its recurring jobs on init; start each chain (idempotent).
+    await this.jobs.startRecurring(this.clock.now());
     this.timer = setInterval(() => void this.poll(), seconds * 1000);
     this.timer.unref();
   }

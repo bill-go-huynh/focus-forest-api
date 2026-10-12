@@ -235,6 +235,12 @@ export const productConfigRegistry = {
       'Minutes after a focus lease ends during which notifications still wait, to cover pauses',
     type: integer({ min: 0, max: 240 }),
   },
+
+  // Phase 6 (A6.3): live notifications.
+  'notifications.eventEndingSoonHours': {
+    description: 'Hours before an event ends when its participants are told it ends soon',
+    type: integer({ min: 1, max: 336 }),
+  },
 } as const satisfies ConfigRegistry;
 
 export type ProductConfigRegistry = typeof productConfigRegistry;

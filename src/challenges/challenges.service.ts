@@ -1,6 +1,7 @@
 import {
   ConflictException,
   Injectable,
+  type OnModuleInit,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
@@ -10,6 +11,10 @@ import type { LocalDate } from '../common/local-date.js';
 import { localDateFromDb } from '../consistency/db.js';
 import { UserTodayService } from '../consistency/user-today.service.js';
 import type { Challenge, Prisma } from '../generated/prisma/client.js';
+import { JobsService } from '../jobs/jobs.service.js';
+import { nameOf } from '../notifications/notification-copy.js';
+import { notificationLinks } from '../notifications/notification-links.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ProductConfigService } from '../product-config/product-config.service.js';
 import {
@@ -24,6 +29,9 @@ import type { ChallengeDto, ChallengeListsDto, PersonDto } from './challenges.dt
 
 type Tx = Prisma.TransactionClient;
 const FINISHED_SHOWN = 20;
+const DAY_MS = 86_400_000;
+/** Sessions submit it (A6.3): a session may have completed a challenge nobody is looking at. */
+export const EVALUATE_JOB = 'challenges.evaluate';
 
 /**
  * A5.5 Challenges (spec §15, docs/02, docs/06 Challenge). A challenge copies its template's terms
@@ -33,13 +41,53 @@ const FINISHED_SHOWN = 20;
  * place, without a trace or a penalty; a challenge not reached simply ends.
  */
 @Injectable()
-export class ChallengesService {
+export class ChallengesService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ProductConfigService,
     private readonly userToday: UserTodayService,
     private readonly clock: Clock,
+    private readonly jobs: JobsService,
+    private readonly notifications: NotificationsService,
   ) {}
+
+  onModuleInit(): void {
+    this.jobs.register(EVALUATE_JOB, (payload) =>
+      this.evaluateFor((payload as { userId: string }).userId),
+    );
+    // An invitation is worth sending while it stands and the challenge has not finished.
+    this.notifications.registerRelevance('friendInvite', async ({ userId, subject }) => {
+      const place = await this.prisma.challengeParticipant.findUnique({
+        where: { challengeId_userId: { challengeId: subject ?? '', userId } },
+        include: { challenge: true },
+      });
+      if (place?.status !== 'invited') return false;
+      const today = await this.userToday.today(userId);
+      const phase = challengePhase(
+        today,
+        windowOf(place.challenge),
+        place.challenge.completedAt !== null,
+      );
+      return phase === 'upcoming' || phase === 'active';
+    });
+  }
+
+  /**
+   * After a counted session (A6.3): settles the completion of the person's joined challenges
+   * that are still running, so the others hear of it without opening the app.
+   */
+  async evaluateFor(userId: string): Promise<void> {
+    const places = await this.prisma.challengeParticipant.findMany({
+      where: { userId, status: 'joined', challenge: { completedAt: null } },
+      include: { challenge: true },
+    });
+    if (places.length === 0) return;
+    const today = await this.userToday.today(userId);
+    for (const place of places) {
+      const phase = challengePhase(today, windowOf(place.challenge), false);
+      if (phase === 'active') await this.view(place.challenge, userId, today);
+    }
+  }
 
   async templates(): Promise<{ items: ChallengeTemplate[] }> {
     return { items: [...(await this.config.active()).get('challenge.templates')] };
@@ -123,6 +171,23 @@ export class ChallengesService {
         where: { challengeId_userId: { challengeId, userId } },
         data: { status: 'joined', joinedAt: now },
       });
+      if (place.invitedById) {
+        const joiner = await tx.user.findUniqueOrThrow({
+          where: { id: userId },
+          select: { displayName: true, username: true },
+        });
+        await this.notifications.enqueue(tx, {
+          userId: place.invitedById,
+          category: 'challengeUpdate',
+          dedupeKey: `challenge-joined:${challengeId}:${userId}`,
+          subject: challengeId,
+          copy: { category: 'challengeUpdate', kind: 'joined', friendName: nameOf(joiner) },
+          link: notificationLinks.challenge(challengeId),
+          requested: false,
+          notBefore: now,
+          expiresAt: endOf(challenge),
+        });
+      }
     });
     return this.one(userId, challengeId);
   }
@@ -222,6 +287,24 @@ export class ChallengesService {
       })),
       skipDuplicates: true,
     });
+    if (fresh.length === 0) return;
+    const inviter = await tx.user.findUniqueOrThrow({
+      where: { id: inviterId },
+      select: { displayName: true, username: true },
+    });
+    for (const userId of fresh) {
+      await this.notifications.enqueue(tx, {
+        userId,
+        category: 'friendInvite',
+        dedupeKey: `challenge-invite:${challenge.id}`,
+        subject: challenge.id,
+        copy: { category: 'friendInvite', friendName: nameOf(inviter) },
+        link: notificationLinks.challenge(challenge.id),
+        requested: false,
+        notBefore: now,
+        expiresAt: endOf(challenge),
+      });
+    }
   }
 
   private async view(
@@ -252,10 +335,28 @@ export class ChallengesService {
     let completedAt = challenge.completedAt;
     if (!completedAt && challengeReached(challenge.goal, challenge.target, values)) {
       completedAt = this.clock.now();
-      // Stored once, the first time it is seen reached; never moved or removed afterwards.
-      await this.prisma.challenge.updateMany({
-        where: { id: challenge.id, completedAt: null },
-        data: { completedAt },
+      // Stored once, the first time it is seen reached; never moved or removed afterwards. Who
+      // stores it tells the others (A6.3); the viewer sees it right here.
+      const now = completedAt;
+      await this.prisma.$transaction(async (tx) => {
+        const stored = await tx.challenge.updateMany({
+          where: { id: challenge.id, completedAt: null },
+          data: { completedAt: now },
+        });
+        if (stored.count === 0) return;
+        for (const p of joined.filter((place) => place.userId !== viewerId)) {
+          await this.notifications.enqueue(tx, {
+            userId: p.userId,
+            category: 'challengeUpdate',
+            dedupeKey: `challenge-completed:${challenge.id}`,
+            subject: challenge.id,
+            copy: { category: 'challengeUpdate', kind: 'completed' },
+            link: notificationLinks.challenge(challenge.id),
+            requested: false,
+            notBefore: now,
+            expiresAt: new Date(now.getTime() + 3 * DAY_MS),
+          });
+        }
       });
       completedAt =
         (await this.prisma.challenge.findUniqueOrThrow({ where: { id: challenge.id } }))
@@ -393,4 +494,16 @@ function challengeNotFound(): NotFoundException {
     message: 'This challenge does not exist.',
     code: 'challenge_not_found',
   });
+}
+
+function windowOf(challenge: Challenge): { startDate: LocalDate; endDate: LocalDate } {
+  return {
+    startDate: localDateFromDb(challenge.startDate),
+    endDate: localDateFromDb(challenge.endDate),
+  };
+}
+
+/** A day after the challenge's last date: past it in every time zone. */
+function endOf(challenge: Challenge): Date {
+  return new Date(challenge.endDate.getTime() + 2 * DAY_MS);
 }

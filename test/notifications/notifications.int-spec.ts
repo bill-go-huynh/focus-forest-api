@@ -60,7 +60,7 @@ describe('notification foundation (A6.1)', () => {
   async function person(email = 'ana@example.com', timeZone = 'UTC') {
     const user = await t.signUp(email, timeZone);
     await device(user, `ExponentPushToken[${email.split('@')[0]}]`).expect(200);
-    await turnOn(user, 'eventStart', 'challengeUpdate');
+    await turnOn(user, 'badgeUnlocked', 'challengeUpdate');
     await t
       .http()
       .patch('/me/preferences')
@@ -72,11 +72,11 @@ describe('notification foundation (A6.1)', () => {
 
   const notice = (user: User, change: Partial<NewNotification> = {}): NewNotification => ({
     userId: user.userId,
-    category: 'eventStart',
-    dedupeKey: `event-start:${randomUUID()}`,
-    subject: 'autumn-study-2026',
-    copy: { category: 'eventStart', eventName: 'Autumn Study Event' },
-    link: '/together/events/autumn-study-2026',
+    category: 'badgeUnlocked',
+    dedupeKey: `badge:${randomUUID()}`,
+    subject: null,
+    copy: { category: 'badgeUnlocked', badgeName: 'Study Oak Seedling' },
+    link: '/profile/achievements',
     requested: false,
     notBefore: at('2026-11-02T10:00:00Z'),
     expiresAt: at('2026-11-03T10:00:00Z'),
@@ -197,9 +197,9 @@ describe('notification foundation (A6.1)', () => {
         expect.arrayContaining(
           ['ExponentPushToken[ana]', 'ExponentPushToken[second]'].map((to) => ({
             to,
-            title: 'Autumn Study Event has begun',
+            title: 'A new badge: Study Oak Seedling',
             body: expect.any(String) as string,
-            data: { link: '/together/events/autumn-study-2026', category: 'eventStart' },
+            data: { link: '/profile/achievements', category: 'badgeUnlocked' },
           })),
         ),
       );
@@ -220,7 +220,7 @@ describe('notification foundation (A6.1)', () => {
 
     it('stores one notification per dedupe key', async () => {
       const ana = await person();
-      const once = notice(ana, { dedupeKey: 'event-start:autumn-study-2026' });
+      const once = notice(ana, { dedupeKey: 'badge:study-oak-seedling' });
       expect(await notifications.enqueue(t.prisma, once)).toBe(true);
       expect(await notifications.enqueue(t.prisma, once)).toBe(false);
       expect(await t.prisma.notificationOutbox.count()).toBe(1);
@@ -236,7 +236,7 @@ describe('notification foundation (A6.1)', () => {
     it('refuses copy written for another category', async () => {
       const ana = await person();
       await expect(
-        notifications.enqueue(t.prisma, notice(ana, { category: 'challengeUpdate' })),
+        notifications.enqueue(t.prisma, notice(ana, { category: 'eventStart' })),
       ).rejects.toThrow(/copy/);
     });
 
@@ -261,7 +261,7 @@ describe('notification foundation (A6.1)', () => {
       const quiet = await t.signUp('quiet@example.com');
       await device(quiet).expect(200);
       const noDevice = await t.signUp('nodevice@example.com');
-      await turnOn(noDevice, 'eventStart');
+      await turnOn(noDevice, 'badgeUnlocked');
       const suspended = await person('sus@example.com');
       await t.prisma.user.update({
         where: { id: suspended.userId },
@@ -277,7 +277,7 @@ describe('notification foundation (A6.1)', () => {
         t.prisma,
         notice(ana, {
           category: 'challengeUpdate',
-          copy: { category: 'challengeUpdate', kind: 'completed', challengeName: 'Ten hours each' },
+          copy: { category: 'challengeUpdate', kind: 'completed' },
           link: '/',
         }),
       );
@@ -399,7 +399,7 @@ describe('notification foundation (A6.1)', () => {
       await notifications.dispatchDue(at('2026-11-03T02:00:00Z'));
       expect(t.push.messages.map((m) => m.data.category)).toEqual([
         'scheduledFocusReminder',
-        'eventStart',
+        'badgeUnlocked',
       ]);
     });
 

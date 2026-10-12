@@ -12,6 +12,10 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { ProductConfigService } from '../product-config/product-config.service.js';
 import { parseEventResult, type SessionEventResult } from '../events/events.dto.js';
 import { SeasonsService } from '../seasons/seasons.service.js';
+import { JobsService } from '../jobs/jobs.service.js';
+
+/** Handled by `ChallengesService` (A6.3); sessions only schedule it. */
+const CHALLENGES_EVALUATE_JOB = 'challenges.evaluate';
 import { EventsService } from '../events/events.service.js';
 import { AchievementsService } from '../progression/achievements.service.js';
 import type { SessionProgressionDto } from '../progression/badge.dto.js';
@@ -83,6 +87,7 @@ export class SessionsService {
     private readonly events: EventsService,
     private readonly seasons: SeasonsService,
     private readonly clock: Clock,
+    private readonly jobs: JobsService,
   ) {}
 
   /**
@@ -176,6 +181,16 @@ export class SessionsService {
         };
         // Then the joined events' missions, from the same stored truth (A5.6).
         const events = await this.events.evaluateSession(tx, userId, row);
+        // A counted session may complete a challenge nobody is looking at: the challenges module
+        // settles it after the commit and tells the others (A6.3).
+        if (isCounted(row.status)) {
+          await this.jobs.enqueue(tx, {
+            kind: CHALLENGES_EVALUATE_JOB,
+            runAt: this.clock.now(),
+            payload: { userId },
+            dedupeKey: `${CHALLENGES_EVALUATE_JOB}:${id}`,
+          });
+        }
         const stored = await tx.focusSession.update({
           where: { userId_id: { userId, id } },
           data: {

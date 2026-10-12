@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { Clock } from '../common/clock.js';
 import type { Prisma } from '../generated/prisma/client.js';
+import { JobsService } from '../jobs/jobs.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { toBadgeDto, toCosmeticDto } from '../progression/badge.dto.js';
 import { ProgressionOwnershipService } from '../progression/progression-ownership.service.js';
@@ -15,6 +16,8 @@ import {
 import { grantIfAcquirable } from './grant-reward.js';
 
 type Client = PrismaService | Prisma.TransactionClient;
+
+export const COMMUNITY_REACHED_JOB = 'community.reached';
 
 const WITH_MILESTONES = {
   milestones: {
@@ -36,6 +39,7 @@ export class CommunityTreeService {
     private readonly prisma: PrismaService,
     private readonly ownership: ProgressionOwnershipService,
     private readonly clock: Clock,
+    private readonly jobs: JobsService,
   ) {}
 
   /**
@@ -73,6 +77,18 @@ export class CommunityTreeService {
       UPDATE community_milestones SET reached_at = ${now}
       WHERE event_id = ${event.id} AND reached_at IS NULL AND threshold_minutes <= ${total}
       RETURNING stage::text AS stage`;
+    if (reached.length > 0) {
+      // The other participants hear of it after the commit (A6.3, `EventNoticesService`).
+      await this.jobs.enqueue(tx, {
+        kind: COMMUNITY_REACHED_JOB,
+        runAt: now,
+        payload: {
+          eventId: event.id,
+          stages: reached.map((row) => row.stage),
+          contributorId: userId,
+        },
+      });
+    }
     return {
       minutes,
       totalMinutes: total,

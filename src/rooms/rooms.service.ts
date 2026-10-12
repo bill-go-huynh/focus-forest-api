@@ -5,6 +5,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  type OnModuleInit,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
@@ -15,6 +16,9 @@ import { isCounted } from '../focus-stats/focus-stats.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ProductConfigService } from '../product-config/product-config.service.js';
+import { notificationLinks } from '../notifications/notification-links.js';
+import { nameOf } from '../notifications/notification-copy.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 import { AchievementsService } from '../progression/achievements.service.js';
 import {
   canComplete,
@@ -32,6 +36,7 @@ import type {
   PlaceState,
   RoomCompletionDto,
   RoomDto,
+  RoomInviteDto,
 } from './rooms.dto.js';
 
 type Tx = Prisma.TransactionClient;
@@ -72,7 +77,7 @@ export class RoomEvents extends EventEmitter {
  * participant's focus is their own session, linked here once completed.
  */
 @Injectable()
-export class RoomsService {
+export class RoomsService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ProductConfigService,
@@ -80,7 +85,19 @@ export class RoomsService {
     private readonly audit: AdminAuditService,
     private readonly events: RoomEvents,
     private readonly clock: Clock,
+    private readonly notifications: NotificationsService,
   ) {}
+
+  onModuleInit(): void {
+    // A room invitation is worth sending while it stands and the room still gathers.
+    this.notifications.registerRelevance('focusRoomInvite', async ({ userId, subject, now }) => {
+      const invite = await this.prisma.roomInvite.findUnique({
+        where: { roomId_inviteeId: { roomId: subject ?? '', inviteeId: userId } },
+        include: { room: true },
+      });
+      return invite !== null && roomPhase(invite.room, now, await this.maxPause()) === 'lobby';
+    });
+  }
 
   async create(userId: string, input: CreateRoomDto): Promise<RoomDto> {
     // A six-character code from 32 symbols: a clash is rare, and simply retried.
@@ -119,7 +136,88 @@ export class RoomsService {
     return this.join(userId, room.id, { byCode: true });
   }
 
-  /** Joining by id is for public rooms; a private room is joined with its code. */
+  /**
+   * Invites friends into the room while it gathers (A6.3, spec §18 Focus room invite). Only
+   * someone in the room invites, and only mutual friends who are active (a block removes the
+   * follows both ways, so friends are never blocked); people already in the room are skipped.
+   * Each new invitee is notified.
+   */
+  async invite(userId: string, roomId: string, userIds: readonly string[]): Promise<RoomDto> {
+    await this.prisma.$transaction(async (tx) => {
+      const room = await lockRoom(tx, roomId);
+      const mine = room && room.participants.find((p) => p.userId === userId && !p.leftAt);
+      if (!room || !mine) throw roomNotFound();
+      const now = this.clock.now();
+      const phase = roomPhase(room, now, await this.maxPause());
+      if (phase === 'closed' || phase === 'ended') throw roomNotFound();
+      if (phase !== 'lobby') throw conflict('room_started', 'This room has already started.');
+
+      const ids = [...new Set(userIds)].filter((id) => id !== userId);
+      const friends = ids.length
+        ? await tx.$queryRaw<{ id: string }[]>`
+            SELECT u.id FROM users u
+            WHERE u.id = ANY(${ids}::uuid[]) AND u.status = 'active'
+              AND EXISTS (SELECT 1 FROM follows WHERE follower_id = ${userId}::uuid AND followee_id = u.id)
+              AND EXISTS (SELECT 1 FROM follows WHERE follower_id = u.id AND followee_id = ${userId}::uuid)`
+        : [];
+      if (friends.length !== ids.length) {
+        throw unprocessable('not_a_friend', 'You can invite only your friends.');
+      }
+      const inRoom = new Set(room.participants.filter((p) => !p.leftAt).map((p) => p.userId));
+      const already = new Set(
+        (
+          await tx.roomInvite.findMany({
+            where: { roomId, inviteeId: { in: ids } },
+            select: { inviteeId: true },
+          })
+        ).map((invite) => invite.inviteeId),
+      );
+      const fresh = ids.filter((id) => !inRoom.has(id) && !already.has(id));
+      await tx.roomInvite.createMany({
+        data: fresh.map((inviteeId) => ({ roomId, inviteeId, inviterId: userId, createdAt: now })),
+      });
+      for (const inviteeId of fresh) {
+        await this.notifications.enqueue(tx, {
+          userId: inviteeId,
+          category: 'focusRoomInvite',
+          dedupeKey: `room-invite:${roomId}`,
+          subject: roomId,
+          copy: { category: 'focusRoomInvite', friendName: nameOf(mine.user), roomName: room.name },
+          link: notificationLinks.room(roomId),
+          requested: false,
+          notBefore: now,
+          expiresAt: new Date(room.createdAt.getTime() + ROOM_LOBBY_TTL_MS),
+        });
+      }
+    });
+    return this.viewOrThrow(roomId, userId);
+  }
+
+  /** The rooms the viewer was invited into that still gather, newest invitation first. */
+  async invitations(userId: string): Promise<{ items: RoomInviteDto[] }> {
+    const invites = await this.prisma.roomInvite.findMany({
+      where: { inviteeId: userId },
+      include: {
+        inviter: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+      },
+      orderBy: [{ createdAt: 'desc' }, { roomId: 'asc' }],
+    });
+    const items: RoomInviteDto[] = [];
+    for (const invite of invites) {
+      const room = await this.viewFor(invite.roomId, userId);
+      // Only a gathering room is shown to someone not in it; joining removes the invitation.
+      if (!room) continue;
+      items.push({ room, from: invite.inviter, invitedAt: invite.createdAt.toISOString() });
+    }
+    return { items };
+  }
+
+  /** Declines an invitation (idempotent). */
+  async declineInvite(userId: string, roomId: string): Promise<void> {
+    await this.prisma.roomInvite.deleteMany({ where: { roomId, inviteeId: userId } });
+  }
+
+  /** Joining by id is for public rooms, and for rooms the person was invited into. */
   joinPublic(userId: string, roomId: string): Promise<RoomDto> {
     return this.join(userId, roomId, { byCode: false });
   }
@@ -251,7 +349,10 @@ export class RoomsService {
     const place = presentPlace(room, viewerId);
     if (place) return this.render(room, viewerId, maxPause);
     const phase = roomPhase(room, this.clock.now(), maxPause);
-    if (room.visibility !== 'public' || phase !== 'lobby') return null;
+    if (phase !== 'lobby') return null;
+    if (room.visibility !== 'public' && !(await this.invited(this.prisma, roomId, viewerId))) {
+      return null;
+    }
     if (await this.blockedWithAnyone(viewerId, room)) return null;
     return this.render(room, viewerId, maxPause);
   }
@@ -358,7 +459,13 @@ export class RoomsService {
       if (!room) throw roomNotFound();
       const now = this.clock.now();
       const phase = roomPhase(room, now, await this.maxPause());
-      if (!options.byCode && room.visibility !== 'public') throw roomNotFound();
+      if (
+        !options.byCode &&
+        room.visibility !== 'public' &&
+        !(await this.invited(tx, roomId, userId))
+      ) {
+        throw roomNotFound();
+      }
       const mine = room.participants.find((p) => p.userId === userId);
       if (mine && !mine.leftAt) return;
       if (phase === 'closed' || phase === 'ended') throw roomNotFound();
@@ -372,6 +479,7 @@ export class RoomsService {
         create: { roomId, userId, joinedAt: now },
         update: { joinedAt: now, leftAt: null, readyAt: null },
       });
+      await tx.roomInvite.deleteMany({ where: { roomId, inviteeId: userId } });
     });
     this.events.changed(roomId);
     return this.viewOrThrow(roomId, userId);
@@ -423,6 +531,10 @@ export class RoomsService {
       data: { status: 'in_session', startsAt: new Date(now.getTime() + ROOM_COUNTDOWN_MS) },
     });
     return true;
+  }
+
+  private async invited(client: Client, roomId: string, userId: string): Promise<boolean> {
+    return (await client.roomInvite.count({ where: { roomId, inviteeId: userId } })) > 0;
   }
 
   private async refuseActivePlace(tx: Tx, userId: string): Promise<void> {

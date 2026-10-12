@@ -106,6 +106,8 @@ model User {
   reportsAbout            Report[]                  @relation("reportTarget")
   warnings                UserWarning[]
   roomPlaces              RoomParticipant[]
+  roomInvitesReceived     RoomInvite[]              @relation("roomInvitee")
+  roomInvitesSent         RoomInvite[]              @relation("roomInviter")
   challengePlaces         ChallengeParticipant[]    @relation("challengePlace")
   challengesCreated       Challenge[]
   challengeInvitesSent    ChallengeParticipant[]    @relation("challengeInviter")
@@ -194,6 +196,23 @@ model NotificationPreference {
 
   @@id([userId, category])
   @@map("notification_preferences")
+}
+
+/// A6.3 A friend invited into a gathering room (spec §18 Focus room invite). It lets the invitee
+/// see and join the room by id, private rooms included, until the room starts.
+model RoomInvite {
+  roomId    String   @map("room_id") @db.Uuid
+  inviteeId String   @map("invitee_id") @db.Uuid
+  inviterId String   @map("inviter_id") @db.Uuid
+  createdAt DateTime @map("created_at")
+
+  room    FocusRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  invitee User      @relation("roomInvitee", fields: [inviteeId], references: [id], onDelete: Cascade)
+  inviter User      @relation("roomInviter", fields: [inviterId], references: [id], onDelete: Cascade)
+
+  @@id([roomId, inviteeId])
+  @@index([inviteeId])
+  @@map("room_invites")
 }
 
 /// A6.1 The platforms a push device can be.
@@ -1109,6 +1128,7 @@ model FocusRoom {
   closedAt        DateTime?      @map("closed_at")
 
   participants RoomParticipant[]
+  invites      RoomInvite[]
 
   @@index([status, visibility, createdAt])
   @@map("focus_rooms")

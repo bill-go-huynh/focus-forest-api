@@ -21,10 +21,12 @@ import {
   CloseRoomDto,
   CompleteRoomDto,
   CreateRoomDto,
+  InviteToRoomDto,
   JoinRoomDto,
   type AdminRoomDto,
   type RoomCompletionDto,
   type RoomDto,
+  type RoomInviteDto,
 } from './rooms.dto.js';
 import { RoomsService } from './rooms.service.js';
 
@@ -91,6 +93,16 @@ export class RoomsController {
   }
 
   /** Links the person's own completed session to the room, after they submitted it. */
+  @Post(':id/invites')
+  @HttpCode(200)
+  invite(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', uuid) id: string,
+    @Body() body: InviteToRoomDto,
+  ): Promise<RoomDto> {
+    return this.rooms.invite(user.userId, id, body.userIds);
+  }
+
   @Post(':id/complete')
   @HttpCode(200)
   complete(
@@ -99,6 +111,26 @@ export class RoomsController {
     @Body() body: CompleteRoomDto,
   ): Promise<RoomCompletionDto> {
     return this.rooms.complete(user.userId, id, body.sessionId);
+  }
+}
+
+/** Room invitations the viewer received (A6.3). */
+@Controller('me/room-invites')
+export class RoomInvitesController {
+  constructor(private readonly rooms: RoomsService) {}
+
+  @Get()
+  list(@CurrentUser() user: AuthenticatedUser): Promise<{ items: RoomInviteDto[] }> {
+    return this.rooms.invitations(user.userId);
+  }
+
+  @Delete(':roomId')
+  @HttpCode(204)
+  decline(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('roomId', uuid) roomId: string,
+  ): Promise<void> {
+    return this.rooms.declineInvite(user.userId, roomId);
   }
 }
 
