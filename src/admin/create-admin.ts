@@ -4,7 +4,7 @@ import type { AdminRole } from '../generated/prisma/client.js';
 import type { PasswordHasher } from '../identity/password-hasher.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
 
-const ROLES: readonly AdminRole[] = ['admin', 'support', 'moderator'];
+const ROLES: readonly AdminRole[] = ['admin', 'support', 'moderator', 'content'];
 
 export interface NewAdmin {
   email: string;

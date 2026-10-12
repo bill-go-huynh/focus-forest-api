@@ -3,6 +3,7 @@ import { Body, Get, HttpCode, Post } from '@nestjs/common';
 import { AdminAuthService } from './admin-auth.service.js';
 import {
   AdminController,
+  AdminRoles,
   AdminPublic,
   CurrentAdmin,
   type AuthenticatedAdmin,
@@ -26,6 +27,7 @@ export class AdminAuthController {
 
   /** The signed-in admin, to show who is signed in and what their role allows. */
   @Get('me')
+  @AdminRoles('admin', 'support', 'moderator', 'content')
   me(@CurrentAdmin() admin: AuthenticatedAdmin): AdminIdentity {
     return { id: admin.adminId, email: admin.email, role: admin.role };
   }

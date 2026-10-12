@@ -6,7 +6,7 @@ import { Clock } from '../common/clock.js';
 import { isLocalDate } from '../common/local-date.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ProductConfigService } from '../product-config/product-config.service.js';
-import { AdminController } from './admin-route.decorator.js';
+import { AdminController, AdminRoles } from './admin-route.decorator.js';
 import { CohortQueryDto } from './dto/admin-users.dto.js';
 
 export interface AdminDashboard {
@@ -45,6 +45,7 @@ export class AdminOverviewController {
   ) {}
 
   @Get('dashboard')
+  @AdminRoles('admin', 'support', 'moderator', 'content')
   async dashboard(): Promise<AdminDashboard> {
     const now = this.clock.now();
     const today = new Date(`${now.toISOString().slice(0, 10)}T00:00:00.000Z`);

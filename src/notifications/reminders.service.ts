@@ -65,6 +65,8 @@ export class RemindersService implements OnModuleInit {
         user: { status: 'active', timezone: { not: null } },
       },
       select: { userId: true, category: true, time: true, user: { select: { timezone: true } } },
+      // A stable order: each person's reminders in spec order.
+      orderBy: [{ userId: 'asc' }, { category: 'asc' }],
     });
 
     let planned = 0;

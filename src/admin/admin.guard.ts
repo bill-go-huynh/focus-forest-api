@@ -15,6 +15,12 @@ import { ADMIN_PUBLIC, ADMIN_ROLES, type AdminRequest } from './admin-route.deco
 import { ADMIN_TOKENS, type AdminTokens } from './admin-tokens.js';
 
 /**
+ * The roles a route allows when it names none: the early admin's. Content staff (A6.4) reach
+ * only the routes that name them, so a new route never opens to them by default.
+ */
+const EARLY_ROLES: readonly AdminRole[] = ['admin', 'support', 'moderator'];
+
+/**
  * Every admin route requires an active admin's token, and the route's roles when it names them.
  * The role and status are read from the database on each request, never trusted from the token,
  * so disabling an admin or changing a role takes effect at once.
@@ -54,7 +60,7 @@ export class AdminGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ]);
-    if (roles && !roles.includes(admin.role)) {
+    if (!(roles ?? EARLY_ROLES).includes(admin.role)) {
       throw new ForbiddenException({
         statusCode: 403,
         error: 'Forbidden',

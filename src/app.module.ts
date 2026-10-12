@@ -7,6 +7,7 @@ import { ChallengesModule } from './challenges/challenges.module.js';
 import { ClockModule } from './common/clock.js';
 import { validateEnv } from './config/env.validation.js';
 import { ConsistencyModule } from './consistency/consistency.module.js';
+import { ContentModule } from './content/content.module.js';
 import { EventsModule } from './events/events.module.js';
 import { LeaderboardsModule } from './leaderboards/leaderboards.module.js';
 import { SeasonsModule } from './seasons/seasons.module.js';
@@ -55,6 +56,7 @@ import { VisitsModule } from './visits/visits.module.js';
     NotificationsModule,
     AnalyticsModule,
     AdminModule,
+    ContentModule,
   ],
   controllers: [HealthController],
 })

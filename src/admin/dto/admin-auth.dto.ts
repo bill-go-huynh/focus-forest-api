@@ -19,7 +19,7 @@ export class AdminSignInDto {
 export interface AdminIdentity {
   id: string;
   email: string;
-  role: 'admin' | 'support' | 'moderator';
+  role: 'admin' | 'support' | 'moderator' | 'content';
 }
 
 export interface AdminSignInResponse {

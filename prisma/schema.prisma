@@ -1484,6 +1484,8 @@ enum AdminRole {
   support
   /// A5.3: reports and moderation (docs/09).
   moderator
+  /// A6.4: content definitions and live content (docs/09), and only those.
+  content
 
   @@map("admin_role")
 }
