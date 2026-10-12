@@ -107,10 +107,33 @@ function duplicates(ids: readonly string[]): string[] {
   return ids.filter((id, i) => ids.indexOf(id) !== i);
 }
 
-/** Every reason the database or the product would refuse this pack; empty when it is valid. */
-export function contentPackProblems(pack: ContentPack): string[] {
+/** A badge's terms as rewards need them; null windows are open-ended (permanent content). */
+export interface BadgeTerms {
+  source: string;
+  availableFrom: string | null;
+  availableUntil: string | null;
+}
+
+/** Whether two themes would hold at once for the same people (a both-hemisphere theme overlaps each). */
+export function themesOverlap(a: PackTheme, b: PackTheme): boolean {
+  const samePeople =
+    a.hemisphere === null || b.hemisphere === null || a.hemisphere === b.hemisphere;
+  return samePeople && time(a.startsAt) < time(b.endsAt) && time(b.startsAt) < time(a.endsAt);
+}
+
+/**
+ * Every reason the database or the product would refuse this pack; empty when it is valid.
+ * `known` adds badges that already exist (the admin's checks, A6.5); the pack's own come first.
+ */
+export function contentPackProblems(
+  pack: ContentPack,
+  known: ReadonlyMap<string, BadgeTerms> = new Map(),
+): string[] {
   const problems: string[] = [];
-  const badges = new Map(pack.badges.map((badge) => [badge.id, badge]));
+  const badges = new Map<string, BadgeTerms>([
+    ...known,
+    ...pack.badges.map((b) => [b.id, b] as const),
+  ]);
 
   const ids = (kind: string, list: readonly string[], pattern = SLUG) => {
     for (const id of list)
@@ -128,7 +151,7 @@ export function contentPackProblems(pack: ContentPack): string[] {
   ) => {
     const badge = badges.get(badgeId);
     if (!badge) {
-      problems.push(`${content.id} rewards the badge ${badgeId}, which the pack does not define.`);
+      problems.push(`${content.id} rewards the badge ${badgeId}, which does not exist.`);
       return;
     }
     if (badge.source !== source) {
@@ -136,10 +159,9 @@ export function contentPackProblems(pack: ContentPack): string[] {
         `The badge ${badgeId} rewards ${source} content but its source is ${badge.source}.`,
       );
     }
-    if (
-      time(badge.availableFrom) > time(content.startsAt) ||
-      time(badge.availableUntil) < time(content.endsAt) + GRACE_DAYS * DAY
-    ) {
+    const from = badge.availableFrom === null ? -Infinity : time(badge.availableFrom);
+    const until = badge.availableUntil === null ? Infinity : time(badge.availableUntil);
+    if (from > time(content.startsAt) || until < time(content.endsAt) + GRACE_DAYS * DAY) {
       problems.push(
         `The badge ${badgeId} must be acquirable from ${content.id}'s start through a grace of ${GRACE_DAYS} days after its end.`,
       );
@@ -253,13 +275,7 @@ export function contentPackProblems(pack: ContentPack): string[] {
   // One theme at a time for each person: the API shows the first, so a second would never show.
   pack.themes.forEach((theme, i) => {
     for (const other of pack.themes.slice(0, i)) {
-      const samePeople =
-        theme.hemisphere === null ||
-        other.hemisphere === null ||
-        theme.hemisphere === other.hemisphere;
-      const overlap =
-        time(theme.startsAt) < time(other.endsAt) && time(other.startsAt) < time(theme.endsAt);
-      if (samePeople && overlap) problems.push(`The theme ${theme.id} overlaps ${other.id}.`);
+      if (themesOverlap(theme, other)) problems.push(`The theme ${theme.id} overlaps ${other.id}.`);
     }
   });
 

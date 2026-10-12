@@ -81,6 +81,7 @@ model User {
   pushDevices             PushDevice[]
   focusLease              FocusLease?
   notifications           NotificationOutbox[]
+  leaderboardExclusion    LeaderboardExclusion?
   topics                  Topic[]
   monthContexts           MonthAttributionContext[]
   focusSessions           FocusSession[]
@@ -213,6 +214,20 @@ model RoomInvite {
   @@id([roomId, inviteeId])
   @@index([inviteeId])
   @@map("room_invites")
+}
+
+/// A6.5 An account kept off every leaderboard and team score (docs/09: exclude abusive accounts),
+/// by staff, with a reason. Removing the row restores it.
+model LeaderboardExclusion {
+  userId    String   @id @map("user_id") @db.Uuid
+  adminId   String   @map("admin_id") @db.Uuid
+  reason    String
+  createdAt DateTime @map("created_at")
+
+  user  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  admin AdminUser @relation(fields: [adminId], references: [id], onDelete: Restrict)
+
+  @@map("leaderboard_exclusions")
 }
 
 /// A6.1 The platforms a push device can be.
@@ -1509,9 +1524,10 @@ model AdminUser {
   createdAt    DateTime    @default(now()) @map("created_at")
   lastSignInAt DateTime?   @map("last_sign_in_at")
 
-  auditEntries    AdminAuditLog[]
-  reportsReviewed Report[]        @relation("reviewer")
-  reportsResolved Report[]        @relation("resolver")
+  auditEntries          AdminAuditLog[]
+  reportsReviewed       Report[]               @relation("reviewer")
+  reportsResolved       Report[]               @relation("resolver")
+  leaderboardExclusions LeaderboardExclusion[]
 
   @@map("admin_users")
 }

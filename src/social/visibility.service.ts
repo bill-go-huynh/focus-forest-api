@@ -131,10 +131,11 @@ export class VisibilityService {
    * A5.8 The people a leaderboard may show: opted in (`leaderboards`, off by default) and active.
    * Friends: the viewer and their mutual follows; event: its participants; global: everyone.
    * `blocked` marks a block either way: never shown as a row (teams still count them as members,
-   * so a team's score is the same for every viewer).
+   * so a team's score is the same for every viewer). Accounts staff excluded (A6.5) are never
+   * candidates. Staff look without a viewer (`null`): no friends board, nobody blocked.
    */
   async boardCandidates(
-    viewerId: string,
+    viewerId: string | null,
     scope: 'friends' | 'global' | 'event',
     eventId: string | null,
   ): Promise<BoardCandidate[]> {
@@ -162,7 +163,9 @@ export class VisibilityService {
                         OR (blocker_id = u.id AND blocked_id = ${viewerId}::uuid)) AS blocked
       FROM users u
       JOIN privacy_settings ps ON ps.user_id = u.id AND ps.leaderboards
-      WHERE u.status = 'active' ${inScope}`;
+      WHERE u.status = 'active'
+        AND NOT EXISTS (SELECT 1 FROM leaderboard_exclusions x WHERE x.user_id = u.id)
+        ${inScope}`;
     return rows.map((row) => ({
       id: row.id,
       username: row.username,

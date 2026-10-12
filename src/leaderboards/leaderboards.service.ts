@@ -19,6 +19,14 @@ import type {
   LeaderboardScope,
 } from './leaderboards.dto.js';
 
+/** A board as staff see it (A6.5): rows without `you`, and no viewer's own row. */
+export interface StaffBoardDto {
+  scope: 'global' | 'event';
+  period: LeaderboardDto['period'];
+  rows: Omit<LeaderboardRowDto, 'you'>[];
+  teams: LeaderboardDto['teams'];
+}
+
 /** At most this many rows; the viewer's own row is always answered on its own. */
 export const LEADERBOARD_ROWS = 50;
 
@@ -99,6 +107,75 @@ export class LeaderboardsService {
       rows: rows.slice(0, LEADERBOARD_ROWS),
       you: rows.find((row) => row.you) ?? null,
       teams: event ? await this.teams(event.id, candidates, scores) : null,
+    };
+  }
+
+  /**
+   * A6.5: a global or event board as staff see it (docs/09: view leaderboards). There is no
+   * viewer: nobody is hidden by a block, and local dates are UTC dates.
+   */
+  async staffBoard(query: {
+    scope: 'global' | 'event';
+    period: 'weekly' | 'monthly';
+    eventId?: string;
+  }): Promise<StaffBoardDto> {
+    let window: Window;
+    let eventId: string | null = null;
+    if (query.scope === 'event') {
+      const event = await this.prisma.event.findUnique({ where: { id: query.eventId ?? '' } });
+      if (!event?.leaderboard) {
+        throw new NotFoundException({
+          statusCode: 404,
+          error: 'Not Found',
+          message: 'This leaderboard does not exist.',
+          code: 'leaderboard_not_found',
+        });
+      }
+      eventId = event.id;
+      window = {
+        kind: 'event',
+        period: {
+          startDate: localDateOf(event.startsAt, 'UTC'),
+          endDate: localDateOf(new Date(event.endsAt.getTime() - 1), 'UTC'),
+        },
+        startedIn: { startsAt: event.startsAt, endsAt: event.endsAt },
+      };
+    } else {
+      const today = localDateOf(this.clock.now(), 'UTC');
+      window = {
+        kind: query.period,
+        period: query.period === 'weekly' ? weekPeriod(today) : monthPeriod(today),
+        startedIn: null,
+      };
+    }
+    const candidates = await this.visibility.boardCandidates(null, query.scope, eventId);
+    const scores = await this.scores(
+      candidates.map((c) => c.id),
+      window,
+    );
+    const ranked = rankRows(
+      candidates
+        .map((c) => ({
+          ...c,
+          name: c.displayName ?? c.username ?? '',
+          score: scores.get(c.id) ?? 0,
+        }))
+        .filter((c) => c.score > 0),
+    );
+    return {
+      scope: query.scope,
+      period: { kind: window.kind, ...window.period },
+      rows: ranked.slice(0, LEADERBOARD_ROWS).map((row) => ({
+        rank: row.rank,
+        person: {
+          id: row.id,
+          username: row.username,
+          displayName: row.displayName,
+          avatarUrl: row.avatarUrl,
+        },
+        score: row.score,
+      })),
+      teams: eventId ? await this.teams(eventId, candidates, scores) : null,
     };
   }
 

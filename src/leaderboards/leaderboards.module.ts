@@ -6,10 +6,11 @@ import { SocialModule } from '../social/social.module.js';
 import { LeaderboardsController } from './leaderboards.controller.js';
 import { LeaderboardsService } from './leaderboards.service.js';
 
-/** A5.8 Leaderboards: derived on read; nothing imports it. */
+/** A5.8 Leaderboards: derived on read. The admin's live operations read boards too (A6.5). */
 @Module({
   imports: [ConsistencyModule, ProductConfigModule, SocialModule],
   controllers: [LeaderboardsController],
   providers: [LeaderboardsService],
+  exports: [LeaderboardsService],
 })
 export class LeaderboardsModule {}
