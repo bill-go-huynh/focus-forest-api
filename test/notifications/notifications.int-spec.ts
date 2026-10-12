@@ -60,7 +60,13 @@ describe('notification foundation (A6.1)', () => {
   async function person(email = 'ana@example.com', timeZone = 'UTC') {
     const user = await t.signUp(email, timeZone);
     await device(user, `ExponentPushToken[${email.split('@')[0]}]`).expect(200);
-    await turnOn(user, 'eventStart', 'challengeUpdate', 'scheduledFocusReminder');
+    await turnOn(user, 'eventStart', 'challengeUpdate');
+    await t
+      .http()
+      .patch('/me/preferences')
+      .set(user.auth)
+      .send({ notifications: { scheduledFocusReminder: { enabled: true, time: '10:00' } } })
+      .expect(200);
     return user;
   }
 
@@ -375,6 +381,8 @@ describe('notification foundation (A6.1)', () => {
         t.prisma,
         notice(ana, {
           category: 'scheduledFocusReminder',
+          dedupeKey: 'reminder:scheduledFocusReminder:2026-11-02:10:00',
+          subject: '2026-11-02 10:00',
           copy: { category: 'scheduledFocusReminder' },
           link: '/',
           requested: true,
@@ -402,6 +410,8 @@ describe('notification foundation (A6.1)', () => {
         t.prisma,
         notice(ana, {
           category: 'scheduledFocusReminder',
+          dedupeKey: 'reminder:scheduledFocusReminder:2026-11-02:10:00',
+          subject: '2026-11-02 10:00',
           copy: { category: 'scheduledFocusReminder' },
           link: '/',
           requested: true,

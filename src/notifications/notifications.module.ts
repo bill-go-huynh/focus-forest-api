@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import type { EnvironmentVariables } from '../config/env.validation.js';
+import { ConsistencyModule } from '../consistency/consistency.module.js';
 import { IdentityModule } from '../identity/identity.module.js';
 import { JobsModule } from '../jobs/jobs.module.js';
 import { ProductConfigModule } from '../product-config/product-config.module.js';
@@ -10,15 +11,20 @@ import { DevicesService } from './devices.service.js';
 import { ExpoPushTransport } from './expo-push-transport.js';
 import { DevicesController, FocusLeaseController } from './notifications.controller.js';
 import { NotificationsService } from './notifications.service.js';
+import { RemindersService } from './reminders.service.js';
 import { DisabledPushTransport, PushTransport } from './push-transport.js';
 
-/** A6.1 Notifications: devices, the focus lease, the outbox and its dispatcher, the worker. */
+/**
+ * Notifications: devices, the focus lease, the outbox and its dispatcher, the worker (A6.1), and
+ * the reminders (A6.2).
+ */
 @Module({
-  imports: [IdentityModule, JobsModule, ProductConfigModule],
+  imports: [IdentityModule, JobsModule, ProductConfigModule, ConsistencyModule],
   controllers: [DevicesController, FocusLeaseController],
   providers: [
     DevicesService,
     NotificationsService,
+    RemindersService,
     BackgroundWorker,
     {
       provide: PushTransport,
