@@ -15,6 +15,7 @@ import {
   LEADERBOARD_CONFIG_VALUES,
   LIVE_NOTIFICATION_CONFIG_VALUES,
   NOTIFICATION_CONFIG_VALUES,
+  RATE_LIMIT_CONFIG_VALUES,
   SESSION_CONFIG_VALUES,
   TREE_CONFIG_VALUES,
 } from '../support/product-config-values.js';
@@ -41,7 +42,7 @@ describe('product configuration (PostgreSQL)', () => {
     await close();
   });
 
-  it('keeps every earlier version and activates the latest (version 10, Phase 7 rate limits)', async () => {
+  it('keeps every earlier version and activates the latest (version 11, Phase 7 integrity flags)', async () => {
     await migrateFreshTestDatabase();
     const seeded = createTestPrismaClient();
     try {
@@ -139,13 +140,29 @@ describe('product configuration (PostgreSQL)', () => {
       });
       expect(liveNotifications.note).toMatch(/phase 6/i);
 
-      const config = await productionService.active();
-      expect(config.version).toBe(10);
-      const stored = await seeded.productConfigVersion.findUniqueOrThrow({
+      const rateLimits = await seeded.productConfigVersion.findUniqueOrThrow({
         where: { version: 10 },
       });
+      expect(rateLimits.values).toEqual({
+        ...SESSION_CONFIG_VALUES,
+        ...TREE_CONFIG_VALUES,
+        ...CONSISTENCY_CONFIG_VALUES,
+        ...FOREST_CONFIG_VALUES,
+        ...CHALLENGE_CONFIG_VALUES,
+        ...LEADERBOARD_CONFIG_VALUES,
+        ...NOTIFICATION_CONFIG_VALUES,
+        ...LIVE_NOTIFICATION_CONFIG_VALUES,
+        ...RATE_LIMIT_CONFIG_VALUES,
+      });
+      expect(rateLimits.note).toMatch(/rate limits/i);
+
+      const config = await productionService.active();
+      expect(config.version).toBe(11);
+      const stored = await seeded.productConfigVersion.findUniqueOrThrow({
+        where: { version: 11 },
+      });
       expect(stored.values).toEqual(CURRENT_CONFIG_VALUES);
-      expect(stored.note).toMatch(/phase 7/i);
+      expect(stored.note).toMatch(/integrity/i);
       for (const key of Object.keys(
         CURRENT_CONFIG_VALUES,
       ) as (keyof typeof CURRENT_CONFIG_VALUES)[]) {

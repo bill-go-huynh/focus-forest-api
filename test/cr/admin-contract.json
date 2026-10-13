@@ -188,6 +188,10 @@
         "healthyWithinDays": 1,
         "thrivingActiveRunDays": 2
       },
+      "integrity.spike": {
+        "ratio": 5,
+        "minMinutes": 600
+      },
       "rateLimit.search": {
         "limit": 1000000,
         "windowSeconds": 60
@@ -354,6 +358,7 @@
         1200,
         1800
       ],
+      "integrity.lookbackDays": 28,
       "session.maxPauseMinutes": 30,
       "session.minValidMinutes": 5,
       "goal.dailyDefaultMinutes": 30,
@@ -389,6 +394,8 @@
         25,
         40
       ],
+      "integrity.lateSubmissionHours": 72,
+      "integrity.maxDailyFocusMinutes": 960,
       "leaderboard.dailyFocusCapMinutes": 120,
       "notifications.informationalHours": {
         "end": 21,

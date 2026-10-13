@@ -82,6 +82,7 @@ model User {
   focusLease              FocusLease?
   notifications           NotificationOutbox[]
   leaderboardExclusion    LeaderboardExclusion?
+  integrityDismissals     IntegrityDismissal[]
   topics                  Topic[]
   monthContexts           MonthAttributionContext[]
   focusSessions           FocusSession[]
@@ -1528,6 +1529,7 @@ model AdminUser {
   reportsReviewed       Report[]               @relation("reviewer")
   reportsResolved       Report[]               @relation("resolver")
   leaderboardExclusions LeaderboardExclusion[]
+  integrityDismissals   IntegrityDismissal[]
 
   @@map("admin_users")
 }
@@ -1560,4 +1562,20 @@ model RateLimitWindow {
   @@id([bucket, windowStart])
   @@index([windowStart])
   @@map("rate_limit_windows")
+}
+
+/// A7.3 A leaderboard integrity flag staff looked at and dismissed, by its evidence key (a flag
+/// for the same evidence never returns). Goes with the account.
+model IntegrityDismissal {
+  userId    String   @map("user_id") @db.Uuid
+  flagKey   String   @map("flag_key")
+  adminId   String   @map("admin_id") @db.Uuid
+  reason    String
+  createdAt DateTime @map("created_at")
+
+  user  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  admin AdminUser @relation(fields: [adminId], references: [id], onDelete: Restrict)
+
+  @@id([userId, flagKey])
+  @@map("integrity_dismissals")
 }

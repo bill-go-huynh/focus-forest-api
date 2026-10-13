@@ -294,6 +294,28 @@ export const productConfigRegistry = {
     description: 'Analytics batches a person sends, in a fixed window',
     type: rateLimit,
   },
+
+  // Phase 7 (A7.3): leaderboard integrity flags, for staff to look at (never automatic).
+  'integrity.lookbackDays': {
+    description: 'Days of stored sessions the integrity flags look at',
+    type: integer({ min: 7, max: 90 }),
+  },
+  'integrity.maxDailyFocusMinutes': {
+    description: 'Focus in one local day beyond which the day is flagged',
+    type: integer({ min: 60, max: 1440 }),
+  },
+  'integrity.lateSubmissionHours': {
+    description: 'Hours after its end beyond which a stored session is flagged as late',
+    type: integer({ min: 1, max: 720 }),
+  },
+  'integrity.spike': {
+    description:
+      'A week is flagged when its focus reaches minMinutes and ratio times the four weeks before, on average',
+    type: shape({
+      ratio: integer({ min: 2, max: 50 }),
+      minMinutes: integer({ min: 60, max: 10_080 }),
+    }),
+  },
 } as const satisfies ConfigRegistry;
 
 export type ProductConfigRegistry = typeof productConfigRegistry;
