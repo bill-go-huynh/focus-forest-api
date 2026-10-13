@@ -21,6 +21,12 @@ export class ProductConfigRepository {
     return row ? toStored(row) : null;
   }
 
+  /** Every version, newest first (A6.6: the admin's version list). */
+  async listVersions(): Promise<StoredConfigVersion[]> {
+    const rows = await this.prisma.productConfigVersion.findMany({ orderBy: { version: 'desc' } });
+    return rows.map(toStored);
+  }
+
   async findActiveVersion(): Promise<StoredConfigVersion | null> {
     // findFirst, not findUnique: Prisma batches concurrent findUnique calls into one `IN` query,
     // which the Boolean key does not support (found in A5.4).

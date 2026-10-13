@@ -39,6 +39,15 @@ function decodeCursor(cursor: string): { createdAt: Date; id: string } {
   return { createdAt, id };
 }
 
+export interface AuditFilters {
+  adminId?: string;
+  action?: string;
+  targetType?: string;
+  targetId?: string;
+  from?: string;
+  to?: string;
+}
+
 export interface AuditEntry {
   adminId: string;
   /** A stable action name, such as `user.suspend` or `session.note_reveal`. */
@@ -61,18 +70,26 @@ export class AdminAuditService {
     private readonly clock: Clock,
   ) {}
 
-  /** Newest first; `cursor` is the previous page's `nextCursor`. */
-  async list(cursor: string | null): Promise<AuditPage> {
+  /** Newest first; `cursor` is the previous page's `nextCursor`, for the same filters. */
+  async list(cursor: string | null, filters: AuditFilters = {}): Promise<AuditPage> {
     const after = cursor ? decodeCursor(cursor) : null;
+    const where: Prisma.AdminAuditLogWhereInput[] = [];
+    if (after) {
+      where.push({
+        OR: [
+          { createdAt: { lt: after.createdAt } },
+          { createdAt: after.createdAt, id: { lt: after.id } },
+        ],
+      });
+    }
+    if (filters.adminId) where.push({ adminId: filters.adminId });
+    if (filters.action) where.push({ action: filters.action });
+    if (filters.targetType) where.push({ targetType: filters.targetType });
+    if (filters.targetId) where.push({ targetId: filters.targetId });
+    if (filters.from) where.push({ createdAt: { gte: new Date(filters.from) } });
+    if (filters.to) where.push({ createdAt: { lt: new Date(filters.to) } });
     const rows = await this.prisma.adminAuditLog.findMany({
-      where: after
-        ? {
-            OR: [
-              { createdAt: { lt: after.createdAt } },
-              { createdAt: after.createdAt, id: { lt: after.id } },
-            ],
-          }
-        : {},
+      where: { AND: where },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: PAGE_SIZE + 1,
       include: { admin: { select: { id: true, email: true } } },

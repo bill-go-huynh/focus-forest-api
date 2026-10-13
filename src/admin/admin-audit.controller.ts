@@ -9,9 +9,10 @@ import { AuditQueryDto } from './dto/admin-audit.dto.js';
 export class AdminAuditController {
   constructor(private readonly audit: AdminAuditService) {}
 
-  /** Newest first, 50 per page (docs/09 → Audit log). Admins only. */
+  /** Newest first, 50 per page, filtered (docs/09 → Audit log: by admin, action, target). */
   @Get()
   list(@Query() query: AuditQueryDto): Promise<AuditPage> {
-    return this.audit.list(query.cursor ?? null);
+    const { cursor, ...filters } = query;
+    return this.audit.list(cursor ?? null, filters);
   }
 }

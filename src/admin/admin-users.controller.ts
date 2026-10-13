@@ -13,6 +13,7 @@ import {
   type AdminUserRow,
   type Page,
 } from './admin-users.service.js';
+import { AdminSupportService, type NotificationDiagnostics } from './admin-support.service.js';
 import { DeleteUserDto, PageDto, ReasonDto, UserSearchDto } from './dto/admin-users.dto.js';
 
 const uuid = new ParseUUIDPipe({ version: undefined });
@@ -20,7 +21,10 @@ const uuid = new ParseUUIDPipe({ version: undefined });
 /** Users (docs/09 → Users, Support actions, Session diagnostics). */
 @AdminController('users')
 export class AdminUsersController {
-  constructor(private readonly users: AdminUsersService) {}
+  constructor(
+    private readonly users: AdminUsersService,
+    private readonly support: AdminSupportService,
+  ) {}
 
   @Get()
   search(@Query() query: UserSearchDto): Promise<Page<AdminUserRow>> {
@@ -81,5 +85,23 @@ export class AdminUsersController {
     @Body() body: DeleteUserDto,
   ): Promise<void> {
     await this.users.delete(admin.adminId, id, body.reason, body.confirmEmail);
+  }
+
+  /** A6.6: a compensation grant after an incident (docs/09), always logged. Admins only. */
+  @Post(':id/grants')
+  @AdminRoles('admin')
+  grant(
+    @CurrentAdmin() admin: AuthenticatedAdmin,
+    @Param('id', uuid) id: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return this.support.grant(admin.adminId, id, body);
+  }
+
+  /** A6.6: devices, choices, focus, and what each recent notification became. */
+  @Get(':id/notifications')
+  @AdminRoles('admin', 'support')
+  notifications(@Param('id', uuid) id: string): Promise<NotificationDiagnostics> {
+    return this.support.notifications(id);
   }
 }

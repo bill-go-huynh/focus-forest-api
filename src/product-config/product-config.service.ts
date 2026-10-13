@@ -33,6 +33,16 @@ export class ProductConfigService<R extends ConfigRegistry = ProductConfigRegist
     return this.toConfig(await this.findOrThrow(version));
   }
 
+  /** Every stored version as stored, newest first (A6.6: the admin lists and diffs them). */
+  versions(): Promise<StoredConfigVersion[]> {
+    return this.repository.listVersions();
+  }
+
+  /** One stored version as stored, or null (A6.6). */
+  stored(version: number): Promise<StoredConfigVersion | null> {
+    return this.repository.findVersion(version);
+  }
+
   /** Stores a new version. It must define every registry key, with valid values. */
   async createVersion(
     values: Readonly<Record<string, unknown>>,

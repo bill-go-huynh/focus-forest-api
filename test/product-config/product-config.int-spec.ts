@@ -40,7 +40,7 @@ describe('product configuration (PostgreSQL)', () => {
     await close();
   });
 
-  it('keeps every earlier version and activates the Phase 5 leaderboard score as version 7', async () => {
+  it('keeps every earlier version and activates the latest (version 9, Phase 6 notifications)', async () => {
     await migrateFreshTestDatabase();
     const seeded = createTestPrismaClient();
     try {
@@ -140,7 +140,8 @@ describe('product configuration (PostgreSQL)', () => {
     } finally {
       await seeded.$disconnect();
     }
-  });
+    // Rebuilding the database runs every migration: slower as they accumulate.
+  }, 120_000);
 
   it('stores versions with increasing numbers and reads their values back', async () => {
     const v1 = await service.createVersion({ 'test.minutes': 5 }, 'first');

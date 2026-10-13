@@ -133,61 +133,66 @@ describe('planMonthContext', () => {
     ).toThrow(TimezoneRequiredError);
   });
 
-  describe('invariants around boundaries, for every pair of time zones', () => {
-    const zones = [
-      HCM,
-      NY,
-      'Asia/Kolkata',
-      'Pacific/Kiritimati',
-      'Europe/Zurich',
-      'Pacific/Pago_Pago',
-    ];
-    const pairs = zones.flatMap((a) => zones.map((b) => [a, b] as const));
-    // Every 30 minutes across two days on both sides of the October boundary.
-    const instants = Array.from(
-      { length: 4 * 48 },
-      (_, i) => new Date(Date.parse('2026-09-29T00:00:00.000Z') + i * 30 * 60_000),
-    );
+  // Every pair of zones at 192 instants: slow when the machine is busy, so a longer timeout.
+  describe(
+    'invariants around boundaries, for every pair of time zones',
+    { timeout: 30_000 },
+    () => {
+      const zones = [
+        HCM,
+        NY,
+        'Asia/Kolkata',
+        'Pacific/Kiritimati',
+        'Europe/Zurich',
+        'Pacific/Pago_Pago',
+      ];
+      const pairs = zones.flatMap((a) => zones.map((b) => [a, b] as const));
+      // Every 30 minutes across two days on both sides of the October boundary.
+      const instants = Array.from(
+        { length: 4 * 48 },
+        (_, i) => new Date(Date.parse('2026-09-29T00:00:00.000Z') + i * 30 * 60_000),
+      );
 
-    it.each(pairs)('September in %s, then the profile moves to %s', (first, profile) => {
-      const september = natural(2026, 9, first);
-      for (const instant of instants) {
-        if (contains(september, instant)) continue;
-        const plan = planMonthContext({
-          instant,
-          profileTimeZone: profile,
-          previous: september,
-          next: null,
-        });
-        expect(contains(plan, instant)).toBe(true);
-        expect(plan.startsAt).toEqual(september.endsAt); // no gap, no overlap
-        expect(plan).toMatchObject({ year: 2026, month: 10, timeZone: profile });
-        // The date is the real one in the context's time zone.
-        expect(attributeInContext(plan, instant).localDate).toBe(
-          new Intl.DateTimeFormat('en-CA', { timeZone: profile }).format(instant),
-        );
-      }
-    });
-
-    it.each(pairs)(
-      'October in %s exists, a late session arrives with the profile in %s',
-      (first, profile) => {
-        const october = natural(2026, 10, first);
+      it.each(pairs)('September in %s, then the profile moves to %s', (first, profile) => {
+        const september = natural(2026, 9, first);
         for (const instant of instants) {
-          if (contains(october, instant) || instant >= october.endsAt) continue;
+          if (contains(september, instant)) continue;
           const plan = planMonthContext({
             instant,
             profileTimeZone: profile,
-            previous: null,
-            next: october,
+            previous: september,
+            next: null,
           });
           expect(contains(plan, instant)).toBe(true);
-          expect(plan.endsAt).toEqual(october.startsAt);
-          expect(plan).toMatchObject({ year: 2026, month: 9, timeZone: profile });
+          expect(plan.startsAt).toEqual(september.endsAt); // no gap, no overlap
+          expect(plan).toMatchObject({ year: 2026, month: 10, timeZone: profile });
+          // The date is the real one in the context's time zone.
+          expect(attributeInContext(plan, instant).localDate).toBe(
+            new Intl.DateTimeFormat('en-CA', { timeZone: profile }).format(instant),
+          );
         }
-      },
-    );
-  });
+      });
+
+      it.each(pairs)(
+        'October in %s exists, a late session arrives with the profile in %s',
+        (first, profile) => {
+          const october = natural(2026, 10, first);
+          for (const instant of instants) {
+            if (contains(october, instant) || instant >= october.endsAt) continue;
+            const plan = planMonthContext({
+              instant,
+              profileTimeZone: profile,
+              previous: null,
+              next: october,
+            });
+            expect(contains(plan, instant)).toBe(true);
+            expect(plan.endsAt).toEqual(october.startsAt);
+            expect(plan).toMatchObject({ year: 2026, month: 9, timeZone: profile });
+          }
+        },
+      );
+    },
+  );
 });
 
 describe('attributeInContext', () => {

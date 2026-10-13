@@ -293,6 +293,35 @@ export class ProgressionOwnershipService {
     return (await STORES.species.owned(client, userId, speciesId)) !== null;
   }
 
+  /**
+   * A compensation grant (A6.6; docs/09: "compensation grants after incidents, always logged",
+   * by the caller). It ignores the availability window, since it gives what an incident kept
+   * from someone, but never system content (everyone owns it) or content not out yet (planned).
+   * Granted once; an item already owned is answered as it was.
+   */
+  async compensate(
+    kind: ContentKind,
+    userId: string,
+    id: string,
+    at: Date,
+    client: Client = this.prisma,
+  ): Promise<Grant> {
+    const store = STORES[kind];
+    const definition = await store.definition(client, id);
+    if (!definition) throw new ContentNotFoundError(kind, id);
+    if (definition.source === 'system' || definition.status === 'planned') {
+      throw new ContentNotAcquirableError(
+        kind,
+        id,
+        definition.source === 'system' ? 'source_not_available' : 'not_active',
+      );
+    }
+    const earlier = await store.owned(client, userId, id);
+    if (earlier) return { granted: false, at: earlier };
+    if ((await store.insert(client, userId, id, at)) === 1) return { granted: true, at };
+    return { granted: false, at: (await store.owned(client, userId, id)) ?? at };
+  }
+
   private async grant(
     kind: ContentKind,
     userId: string,

@@ -6,13 +6,17 @@ import type { EnvironmentVariables } from '../config/env.validation.js';
 import { AnalyticsModule } from '../analytics/analytics.module.js';
 import { ConsistencyModule } from '../consistency/consistency.module.js';
 import { IdentityModule } from '../identity/identity.module.js';
+import { ProgressionModule } from '../progression/progression.module.js';
 import { ProductConfigModule } from '../product-config/product-config.module.js';
 import { AdminAuditController } from './admin-audit.controller.js';
 import { AdminAuditService } from './admin-audit.service.js';
 import { AdminAuthController } from './admin-auth.controller.js';
 import { AdminAuthService } from './admin-auth.service.js';
+import { AdminConfigController } from './admin-config.controller.js';
+import { AdminConfigService } from './admin-config.service.js';
 import { AdminOverviewController } from './admin-overview.controller.js';
 import { AdminUsersController } from './admin-users.controller.js';
+import { AdminSupportService } from './admin-support.service.js';
 import { AdminUsersService } from './admin-users.service.js';
 import { ADMIN_TOKENS, AdminTokens } from './admin-tokens.js';
 import { AdminGuard } from './admin.guard.js';
@@ -22,17 +26,26 @@ import { AdminGuard } from './admin.guard.js';
  * ADMIN_JWT_SECRET the admin is off: every admin route answers 503 `admin_disabled`.
  */
 @Module({
-  imports: [IdentityModule, ConsistencyModule, ProductConfigModule, AnalyticsModule],
+  imports: [
+    IdentityModule,
+    ConsistencyModule,
+    ProductConfigModule,
+    AnalyticsModule,
+    ProgressionModule,
+  ],
   controllers: [
     AdminAuthController,
     AdminAuditController,
     AdminUsersController,
     AdminOverviewController,
+    AdminConfigController,
   ],
   providers: [
     AdminAuthService,
     AdminAuditService,
     AdminUsersService,
+    AdminSupportService,
+    AdminConfigService,
     AdminGuard,
     {
       provide: ADMIN_TOKENS,
