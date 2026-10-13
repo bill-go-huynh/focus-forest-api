@@ -245,6 +245,61 @@ describe('reminders (A6.2)', () => {
     expect(sent().map(([to]) => to)).toHaveLength(3);
   });
 
+  it('follows a change of time zone, never sending twice the same day', async () => {
+    // Ana flies from Ho Chi Minh City (UTC+7) to Berlin (UTC+1) before her 15:00 reminder.
+    const ana = await person({ scheduledFocusReminder: '15:00' });
+    const move = (timezone: string) =>
+      t.http().patch('/me/profile').set(ana.auth).send({ timezone }).expect(200);
+    await t.setNow('2026-11-02T07:30:00.000Z');
+    await move('Europe/Berlin');
+    // 15:00 in Ho Chi Minh City would be 08:00 UTC: nothing then.
+    await runSlot('2026-11-02T08:00:00.000Z');
+    expect(sent()).toEqual([]);
+    // 15:00 in Berlin is 14:00 UTC.
+    await runSlot('2026-11-02T14:00:00.000Z');
+    expect(sent()).toHaveLength(1);
+
+    // The next day she flies home after it was sent (14:30 UTC, 21:30 in Ho Chi Minh City): the
+    // day after, it comes at 15:00 there again.
+    await runSlot('2026-11-03T14:00:00.000Z');
+    expect(sent()).toHaveLength(2);
+    await t.setNow('2026-11-03T14:30:00.000Z');
+    await move('Asia/Ho_Chi_Minh');
+    await runSlot('2026-11-04T08:00:00.000Z');
+    expect(sent()).toHaveLength(3);
+    expect(
+      (await t.prisma.notificationOutbox.findMany({ orderBy: { notBefore: 'asc' } })).map((row) => [
+        row.dedupeKey,
+        row.status,
+      ]),
+    ).toEqual([
+      ['reminder:scheduledFocusReminder:2026-11-02:15:00', 'sent'],
+      ['reminder:scheduledFocusReminder:2026-11-03:15:00', 'sent'],
+      ['reminder:scheduledFocusReminder:2026-11-04:15:00', 'sent'],
+    ]);
+  });
+
+  it('never sends a reminder twice when a move repeats its local time the same day', async () => {
+    // Sent at 15:00 in Berlin (14:00 UTC); she then moves to New York (UTC−5), where 15:00 that
+    // same date is 20:00 UTC.
+    const bea = await person(
+      { scheduledFocusReminder: '15:00' },
+      'bea@example.com',
+      'Europe/Berlin',
+    );
+    await runSlot('2026-11-02T14:00:00.000Z');
+    expect(sent()).toHaveLength(1);
+    await t.setNow('2026-11-02T15:00:00.000Z');
+    await t
+      .http()
+      .patch('/me/profile')
+      .set(bea.auth)
+      .send({ timezone: 'America/New_York' })
+      .expect(200);
+    await runSlot('2026-11-02T20:00:00.000Z');
+    expect(sent()).toHaveLength(1);
+  });
+
   it('plans every quarter hour through a job that schedules the next one', async () => {
     await person({ scheduledFocusReminder: '15:10' });
     await jobs.startRecurring(at('2026-11-02T08:02:00Z'));
