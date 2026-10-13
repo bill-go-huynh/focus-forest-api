@@ -1,0 +1,211 @@
+{
+  "deviceRegistered": {
+    "token": "ExponentPushToken[mai]",
+    "platform": "ios",
+    "registeredAt": "2026-11-02T08:45:00.000Z"
+  },
+  "preferences": {
+    "theme": "system",
+    "sound": true,
+    "haptics": true,
+    "reducedMotion": false,
+    "shareUsageData": true,
+    "notifications": {
+      "dailyGoalReminder": {
+        "enabled": true,
+        "time": "20:00"
+      },
+      "scheduledFocusReminder": {
+        "enabled": false,
+        "time": null
+      },
+      "streakReminder": {
+        "enabled": false,
+        "time": null
+      },
+      "eventStart": {
+        "enabled": true
+      },
+      "eventEndingSoon": {
+        "enabled": false
+      },
+      "friendInvite": {
+        "enabled": true
+      },
+      "focusRoomInvite": {
+        "enabled": true
+      },
+      "challengeUpdate": {
+        "enabled": false
+      },
+      "badgeUnlocked": {
+        "enabled": false
+      },
+      "monthlyRecapReady": {
+        "enabled": false
+      }
+    }
+  },
+  "challengeCreated": {
+    "id": "00000000-0000-4000-8000-0000000006c1",
+    "template": {
+      "id": "steady-week-together",
+      "kind": "friend",
+      "measure": "active_days",
+      "goal": "each",
+      "target": 7,
+      "dailyMinutes": 15,
+      "days": 7
+    },
+    "startDate": "2026-11-02",
+    "endDate": "2026-11-08",
+    "phase": "active",
+    "completedAt": null,
+    "progress": {
+      "value": 0,
+      "target": 7
+    },
+    "participants": [
+      {
+        "user": {
+          "id": "00000000-0000-4000-8000-0000000006a2",
+          "username": "lukas",
+          "displayName": null,
+          "avatarUrl": null
+        },
+        "value": 0,
+        "reached": false
+      }
+    ],
+    "invited": [
+      {
+        "id": "00000000-0000-4000-8000-0000000006a1",
+        "username": "mai",
+        "displayName": null,
+        "avatarUrl": null
+      }
+    ],
+    "you": {
+      "status": "joined"
+    }
+  },
+  "leaseSet": {
+    "endsAt": "2026-11-02T13:25:00.000Z"
+  },
+  "roomInvited": {
+    "id": "00000000-0000-4000-8000-0000000006b1",
+    "code": "CODE01",
+    "name": "Evening study",
+    "topic": null,
+    "durationMinutes": 25,
+    "maxParticipants": 4,
+    "visibility": "private",
+    "phase": "lobby",
+    "startsAt": null,
+    "endsAt": null,
+    "participants": [
+      {
+        "user": {
+          "id": "00000000-0000-4000-8000-0000000006a3",
+          "username": "linh",
+          "displayName": null,
+          "avatarUrl": null
+        },
+        "host": true,
+        "state": "waiting"
+      }
+    ],
+    "you": {
+      "host": true,
+      "state": "waiting"
+    }
+  },
+  "roomInvites": {
+    "items": [
+      {
+        "room": {
+          "id": "00000000-0000-4000-8000-0000000006b1",
+          "code": null,
+          "name": "Evening study",
+          "topic": null,
+          "durationMinutes": 25,
+          "maxParticipants": 4,
+          "visibility": "private",
+          "phase": "lobby",
+          "startsAt": null,
+          "endsAt": null,
+          "participants": [
+            {
+              "user": {
+                "id": "00000000-0000-4000-8000-0000000006a3",
+                "username": "linh",
+                "displayName": null,
+                "avatarUrl": null
+              },
+              "host": true,
+              "state": "waiting"
+            }
+          ],
+          "you": null
+        },
+        "from": {
+          "id": "00000000-0000-4000-8000-0000000006a3",
+          "username": "linh",
+          "displayName": null,
+          "avatarUrl": null
+        },
+        "invitedAt": "2026-11-02T10:40:00.000Z"
+      }
+    ]
+  },
+  "pushes": [
+    {
+      "title": "November Focus has begun",
+      "body": "Join whenever you like. Your usual focus counts toward its missions.",
+      "data": {
+        "link": "/together/events/november-focus",
+        "category": "eventStart"
+      }
+    },
+    {
+      "title": "November Focus has begun",
+      "body": "Join whenever you like. Your usual focus counts toward its missions.",
+      "data": {
+        "link": "/together/events/november-focus",
+        "category": "eventStart"
+      }
+    },
+    {
+      "title": "lukas invited you to a challenge",
+      "body": "Take a look together, if you'd like.",
+      "data": {
+        "link": "/together/challenges/00000000-0000-4000-8000-0000000006c1",
+        "category": "friendInvite"
+      }
+    },
+    {
+      "title": "A little focus today?",
+      "body": "Your daily goal is 30 minutes. Your tree is ready when you are.",
+      "data": {
+        "link": "/",
+        "category": "dailyGoalReminder"
+      }
+    },
+    {
+      "title": "mai invited you to a challenge",
+      "body": "Take a look together, if you'd like.",
+      "data": {
+        "link": "/together/challenges/00000000-0000-4000-8000-0000000006c2",
+        "category": "friendInvite"
+      }
+    },
+    {
+      "title": "A little focus today?",
+      "body": "Your daily goal is 30 minutes. Your tree is ready when you are.",
+      "data": {
+        "link": "/",
+        "category": "dailyGoalReminder"
+      }
+    }
+  ]
+}

@@ -1,0 +1,701 @@
+{
+  "catalog": {
+    "items": [
+      {
+        "id": "first-session",
+        "category": "focus",
+        "rarity": "common",
+        "source": "achievement",
+        "availability": "permanent",
+        "availableFrom": null,
+        "availableUntil": null,
+        "status": "active",
+        "name": "First Session",
+        "description": "Your first counted focus session.",
+        "artworkId": "first-session",
+        "sortOrder": 10,
+        "owners": 1
+      },
+      {
+        "id": "focus-hours:10",
+        "category": "focus",
+        "rarity": "common",
+        "source": "achievement",
+        "availability": "permanent",
+        "availableFrom": null,
+        "availableUntil": null,
+        "status": "active",
+        "name": "10 Hours",
+        "description": "10 hours of counted focus.",
+        "artworkId": "focus-hours-10",
+        "sortOrder": 20,
+        "owners": 0
+      },
+      {
+        "id": "focus-hours:50",
+        "category": "focus",
+        "rarity": "common",
+        "source": "achievement",
+        "availability": "permanent",
+        "availableFrom": null,
+        "availableUntil": null,
+        "status": "active",
+        "name": "50 Hours",
+        "description": "50 hours of counted focus.",
+        "artworkId": "focus-hours-50",
+        "sortOrder": 30,
+        "owners": 0
+      },
+      {
+        "id": "focus-hours:100",
+        "category": "focus",
+        "rarity": "rare",
+        "source": "achievement",
+        "availability": "permanent",
+        "availableFrom": null,
+        "availableUntil": null,
+        "status": "active",
+        "name": "100 Hours",
+        "description": "100 hours of counted focus.",
+        "artworkId": "focus-hours-100",
+        "sortOrder": 40,
+        "owners": 0
+      },
+      {
+        "id": "focus-hours:500",
+        "category": "focus",
+        "rarity": "legendary",
+        "source": "achievement",
+        "availability": "permanent",
+        "availableFrom": null,
+        "availableUntil": null,
+        "status": "active",
+        "name": "500 Hours",
+        "description": "500 hours of counted focus.",
+        "artworkId": "focus-hours-500",
+        "sortOrder": 50,
+        "owners": 0
+      },
+      {
+        "id": "focus-streak:3",
+        "category": "consistency",
+        "rarity": "common",
+        "source": "achievement",
+        "availability": "permanent",
+        "availableFrom": null,
+        "availableUntil": null,
+        "status": "active",
+        "name": "3-Day Streak",
+        "description": "Focused 3 days in a row.",
+        "artworkId": "focus-streak-3",
+        "sortOrder": 60,
+        "owners": 0
+      },
+      {
+        "id": "focus-streak:7",
+        "category": "consistency",
+        "rarity": "common",
+        "source": "achievement",
+        "availability": "permanent",
+        "availableFrom": null,
+        "availableUntil": null,
+        "status": "active",
+        "name": "7-Day Streak",
+        "description": "Focused 7 days in a row.",
+        "artworkId": "focus-streak-7",
+        "sortOrder": 70,
+        "owners": 0
+      },
+      {
+        "id": "focus-streak:30",
+        "category": "consistency",
+        "rarity": "rare",
+        "source": "achievement",
+        "availability": "permanent",
+        "availableFrom": null,
+        "availableUntil": null,
+        "status": "active",
+        "name": "30-Day Streak",
+        "description": "Focused 30 days in a row.",
+        "artworkId": "focus-streak-30",
+        "sortOrder": 80,
+        "owners": 0
+      },
+      {
+        "id": "focus-streak:100",
+        "category": "consistency",
+        "rarity": "legendary",
+        "source": "achievement",
+        "availability": "permanent",
+        "availableFrom": null,
+        "availableUntil": null,
+        "status": "active",
+        "name": "100-Day Streak",
+        "description": "Focused 100 days in a row.",
+        "artworkId": "focus-streak-100",
+        "sortOrder": 90,
+        "owners": 0
+      },
+      {
+        "id": "focus-together:first",
+        "category": "social",
+        "rarity": "common",
+        "source": "achievement",
+        "availability": "permanent",
+        "availableFrom": null,
+        "availableUntil": null,
+        "status": "active",
+        "name": "First Focus Together",
+        "description": "Your first session focused together with others.",
+        "artworkId": "focus-together-first",
+        "sortOrder": 100,
+        "owners": 0
+      },
+      {
+        "id": "focus-buddy",
+        "category": "social",
+        "rarity": "common",
+        "source": "achievement",
+        "availability": "permanent",
+        "availableFrom": null,
+        "availableUntil": null,
+        "status": "active",
+        "name": "Focus Buddy",
+        "description": "Focused together with a friend.",
+        "artworkId": "focus-buddy",
+        "sortOrder": 110,
+        "owners": 0
+      },
+      {
+        "id": "community-contributor",
+        "category": "social",
+        "rarity": "rare",
+        "source": "achievement",
+        "availability": "permanent",
+        "availableFrom": null,
+        "availableUntil": null,
+        "status": "planned",
+        "name": "Community Contributor",
+        "description": "Helped a Community Tree grow.",
+        "artworkId": "community-contributor",
+        "sortOrder": 120,
+        "owners": 0
+      },
+      {
+        "id": "november-sprint:oak",
+        "category": "event",
+        "rarity": "common",
+        "source": "event",
+        "availability": "limited",
+        "availableFrom": "2026-11-01T00:00:00.000Z",
+        "availableUntil": "2026-12-31T00:00:00.000Z",
+        "status": "active",
+        "name": "november-sprint:oak",
+        "description": "The november-sprint:oak badge.",
+        "artworkId": "november-sprint-oak",
+        "sortOrder": 300,
+        "owners": 0
+      },
+      {
+        "id": "november-sprint:steady",
+        "category": "event",
+        "rarity": "common",
+        "source": "event",
+        "availability": "limited",
+        "availableFrom": "2026-11-01T00:00:00.000Z",
+        "availableUntil": "2026-12-31T00:00:00.000Z",
+        "status": "active",
+        "name": "november-sprint:steady",
+        "description": "The november-sprint:steady badge.",
+        "artworkId": "november-sprint-steady",
+        "sortOrder": 300,
+        "owners": 0
+      },
+      {
+        "id": "october-marathon",
+        "category": "event",
+        "rarity": "common",
+        "source": "event",
+        "availability": "limited",
+        "availableFrom": "2026-10-01T00:00:00.000Z",
+        "availableUntil": "2026-10-31T00:00:00.000Z",
+        "status": "retired",
+        "name": "october-marathon",
+        "description": "The october-marathon badge.",
+        "artworkId": "october-marathon",
+        "sortOrder": 300,
+        "owners": 0
+      },
+      {
+        "id": "season:winter-x6",
+        "category": "rare",
+        "rarity": "common",
+        "source": "season",
+        "availability": "limited",
+        "availableFrom": "2026-12-01T00:00:00.000Z",
+        "availableUntil": "2027-04-01T00:00:00.000Z",
+        "status": "active",
+        "name": "season:winter-x6",
+        "description": "The season:winter-x6 badge.",
+        "artworkId": "season-winter-x6",
+        "sortOrder": 300,
+        "owners": 0
+      }
+    ]
+  },
+  "themes": {
+    "items": [
+      {
+        "id": "winter-x6",
+        "name": "Winter",
+        "description": "Snow settles softly.",
+        "environmentId": "winter",
+        "hemisphere": "north",
+        "startsAt": "2026-12-01T00:00:00.000Z",
+        "endsAt": "2027-03-01T00:00:00.000Z",
+        "rewards": [
+          {
+            "id": "first-snow",
+            "badgeId": "season:winter-x6",
+            "requiredActiveDays": 1
+          }
+        ],
+        "status": "active",
+        "started": false
+      }
+    ]
+  },
+  "eventLocked": {
+    "statusCode": 422,
+    "error": "Unprocessable Entity",
+    "message": "missions is locked: people have taken part.",
+    "code": "invalid_content",
+    "problems": [
+      "missions is locked: people have taken part."
+    ]
+  },
+  "event": {
+    "id": "november-sprint",
+    "name": "The November Sprint",
+    "description": "Steady focus through November.",
+    "artworkId": "november-sprint",
+    "status": "active",
+    "startsAt": "2026-11-01T00:00:00.000Z",
+    "endsAt": "2026-11-21T00:00:00.000Z",
+    "entryMinSessions": 0,
+    "leaderboard": true,
+    "participants": 1,
+    "locked": true,
+    "teams": [],
+    "missions": [
+      {
+        "id": "three-hours",
+        "measure": "focus_minutes",
+        "target": 180,
+        "dailyMinutes": 0,
+        "name": "Focus 3 hours",
+        "description": "Three hours of focus."
+      }
+    ],
+    "milestones": [
+      {
+        "id": "steady",
+        "name": "Steady",
+        "requiredMissions": 1,
+        "badgeId": "november-sprint:steady",
+        "cosmeticId": null,
+        "traitId": null
+      }
+    ],
+    "communityTree": {
+      "name": "The November Oak",
+      "artworkId": "november-oak",
+      "totalMinutes": 300,
+      "contributors": 1,
+      "milestones": [
+        {
+          "stage": "seedling",
+          "thresholdMinutes": 240,
+          "badgeId": "november-sprint:oak",
+          "reachedAt": "2026-11-02T15:05:00.000Z"
+        }
+      ]
+    }
+  },
+  "board": {
+    "scope": "event",
+    "period": {
+      "kind": "event",
+      "startDate": "2026-11-01",
+      "endDate": "2026-11-20"
+    },
+    "rows": [],
+    "teams": null
+  },
+  "exclusions": {
+    "items": []
+  },
+  "versions": {
+    "items": [
+      {
+        "version": 1,
+        "note": "test",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "active": true
+      }
+    ]
+  },
+  "diff": {
+    "against": 1,
+    "changes": [
+      {
+        "key": "growth.dailySoftCap",
+        "active": 240,
+        "proposed": 120
+      }
+    ]
+  },
+  "preview": {
+    "against": 1,
+    "samples": [
+      {
+        "id": "light",
+        "label": "Light: 20 minutes on 4 days",
+        "active": {
+          "stage": "sprout",
+          "fullnessLevel": 0,
+          "blossomLevel": 0,
+          "richnessTier": 0,
+          "traitIds": [],
+          "activeDays": 4,
+          "focusedMinutes": 80,
+          "growthMinutes": 80
+        },
+        "proposed": {
+          "stage": "sprout",
+          "fullnessLevel": 0,
+          "blossomLevel": 0,
+          "richnessTier": 0,
+          "traitIds": [],
+          "activeDays": 4,
+          "focusedMinutes": 80,
+          "growthMinutes": 80
+        }
+      },
+      {
+        "id": "steady",
+        "label": "Steady: 30 minutes every weekday",
+        "active": {
+          "stage": "growing_tree",
+          "fullnessLevel": 4,
+          "blossomLevel": 7,
+          "richnessTier": 0,
+          "traitIds": [
+            "monthly-focus-hours:10"
+          ],
+          "activeDays": 22,
+          "focusedMinutes": 660,
+          "growthMinutes": 660
+        },
+        "proposed": {
+          "stage": "growing_tree",
+          "fullnessLevel": 4,
+          "blossomLevel": 7,
+          "richnessTier": 0,
+          "traitIds": [
+            "monthly-focus-hours:10"
+          ],
+          "activeDays": 22,
+          "focusedMinutes": 660,
+          "growthMinutes": 660
+        }
+      },
+      {
+        "id": "deep",
+        "label": "Deep: 3 hours on 20 days",
+        "active": {
+          "stage": "final_form",
+          "fullnessLevel": 3,
+          "blossomLevel": 7,
+          "richnessTier": 5,
+          "traitIds": [
+            "monthly-focus-hours:10",
+            "monthly-focus-hours:25",
+            "monthly-focus-hours:40"
+          ],
+          "activeDays": 20,
+          "focusedMinutes": 3600,
+          "growthMinutes": 3600
+        },
+        "proposed": {
+          "stage": "final_form",
+          "fullnessLevel": 3,
+          "blossomLevel": 7,
+          "richnessTier": 4,
+          "traitIds": [
+            "monthly-focus-hours:10",
+            "monthly-focus-hours:25",
+            "monthly-focus-hours:40"
+          ],
+          "activeDays": 20,
+          "focusedMinutes": 3600,
+          "growthMinutes": 2880
+        }
+      },
+      {
+        "id": "first-month",
+        "label": "First month: joined on the 20th, 30 minutes a day",
+        "active": {
+          "stage": "mature_tree",
+          "fullnessLevel": 4,
+          "blossomLevel": 7,
+          "richnessTier": 0,
+          "traitIds": [],
+          "activeDays": 10,
+          "focusedMinutes": 300,
+          "growthMinutes": 300
+        },
+        "proposed": {
+          "stage": "mature_tree",
+          "fullnessLevel": 4,
+          "blossomLevel": 7,
+          "richnessTier": 0,
+          "traitIds": [],
+          "activeDays": 10,
+          "focusedMinutes": 300,
+          "growthMinutes": 300
+        }
+      }
+    ]
+  },
+  "activated": {
+    "version": 2,
+    "note": "A lower daily soft cap.",
+    "createdAt": "2026-01-01T00:00:00.000Z",
+    "active": true,
+    "values": {
+      "recovery.limit": {
+        "perMonth": 1
+      },
+      "vitality.rules": {
+        "stableWithinDays": 2,
+        "healthyWithinDays": 1,
+        "thrivingActiveRunDays": 2
+      },
+      "forest.areaLevels": {
+        "lake": 2,
+        "night": 4,
+        "seasonal": 5,
+        "mountains": 3,
+        "decorations": 6
+      },
+      "streak.milestones": [
+        3,
+        7,
+        14,
+        30,
+        60,
+        100
+      ],
+      "growth.overCapRate": 40,
+      "recovery.mechanics": {
+        "nextDaySession": {
+          "minPreviousStreak": 3
+        }
+      },
+      "restDay.maxPerWeek": 2,
+      "challenge.templates": [
+        {
+          "id": "seven-days-thirty-minutes",
+          "days": 7,
+          "goal": "each",
+          "kind": "personal",
+          "target": 7,
+          "measure": "active_days",
+          "dailyMinutes": 30,
+          "maxParticipants": 1
+        },
+        {
+          "id": "ten-hours-week",
+          "days": 7,
+          "goal": "each",
+          "kind": "personal",
+          "target": 600,
+          "measure": "focus_minutes",
+          "dailyMinutes": 0,
+          "maxParticipants": 1
+        },
+        {
+          "id": "thirty-sessions-month",
+          "days": 30,
+          "goal": "each",
+          "kind": "personal",
+          "target": 30,
+          "measure": "sessions",
+          "dailyMinutes": 0,
+          "maxParticipants": 1
+        },
+        {
+          "id": "steady-week-together",
+          "days": 7,
+          "goal": "each",
+          "kind": "friend",
+          "target": 7,
+          "measure": "active_days",
+          "dailyMinutes": 15,
+          "maxParticipants": 5
+        },
+        {
+          "id": "ten-hours-each",
+          "days": 14,
+          "goal": "each",
+          "kind": "friend",
+          "target": 600,
+          "measure": "focus_minutes",
+          "dailyMinutes": 0,
+          "maxParticipants": 5
+        },
+        {
+          "id": "team-fifty-hours",
+          "days": 7,
+          "goal": "shared",
+          "kind": "group",
+          "target": 3000,
+          "measure": "focus_minutes",
+          "dailyMinutes": 0,
+          "maxParticipants": 10
+        }
+      ],
+      "growth.dailySoftCap": 120,
+      "growth.blossomPoints": {
+        "dailyGoal": 1,
+        "weeklyGoal": 2
+      },
+      "growth.richnessTiers": [
+        180,
+        360,
+        600,
+        900,
+        1260
+      ],
+      "restDay.allowSameDay": true,
+      "growth.fullnessLevels": [
+        15,
+        35,
+        55,
+        75,
+        95
+      ],
+      "forest.levelThresholds": [
+        1,
+        3,
+        6,
+        12,
+        24
+      ],
+      "growth.fullnessTargets": {
+        "activeDays": 24,
+        "activeDaysPerWeek": 3
+      },
+      "growth.fullnessWeights": {
+        "activeDays": 60,
+        "weeklyConsistency": 40
+      },
+      "growth.stageThresholds": [
+        120,
+        360,
+        720,
+        1200,
+        1800
+      ],
+      "session.maxPauseMinutes": 30,
+      "session.minValidMinutes": 5,
+      "goal.dailyDefaultMinutes": 30,
+      "growth.blossomThresholds": [
+        1,
+        3,
+        6,
+        10,
+        15,
+        21,
+        28
+      ],
+      "leaderboard.scoreWeights": {
+        "goals": 30,
+        "focusTime": 20,
+        "activeDays": 20,
+        "consistency": 30
+      },
+      "vitality.goalConsistency": {
+        "windowDays": 4,
+        "metDaysRequired": 3
+      },
+      "session.monthGraceMinutes": 180,
+      "growth.firstMonthProration": {
+        "floorPercent": 25
+      },
+      "growth.focusHourMilestones": [
+        10,
+        25,
+        40
+      ],
+      "leaderboard.dailyFocusCapMinutes": 120,
+      "notifications.informationalHours": {
+        "end": 21,
+        "start": 9
+      },
+      "notifications.eventEndingSoonHours": 48,
+      "notifications.maxUnrequestedPerDay": 2,
+      "notifications.focusLeaseGraceMinutes": 30
+    }
+  },
+  "granted": {
+    "kind": "badge",
+    "itemId": "october-marathon",
+    "grantedAt": "2026-12-02T15:05:00.000Z"
+  },
+  "diagnostics": {
+    "devices": [
+      {
+        "token": "ExponentPushToken[ana…234]",
+        "platform": "android",
+        "appVersion": "1.0.0",
+        "registeredAt": "2026-10-15T08:00:00.000Z",
+        "lastSeenAt": "2026-10-15T08:00:00.000Z"
+      }
+    ],
+    "focusUntil": null,
+    "enabled": [
+      {
+        "category": "dailyGoalReminder",
+        "time": "19:00"
+      },
+      {
+        "category": "badgeUnlocked",
+        "time": null
+      }
+    ],
+    "recent": []
+  },
+  "auditFiltered": {
+    "items": [
+      {
+        "id": "audit-x6-1",
+        "admin": {
+          "id": "admin-x6",
+          "email": "admin@example.com"
+        },
+        "action": "user.grant",
+        "targetType": "user",
+        "targetId": "00000000-0000-4000-8000-0000000006d1",
+        "reason": "Missed by the outage",
+        "details": {
+          "kind": "badge",
+          "itemId": "october-marathon"
+        },
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "nextCursor": null
+  }
+}
