@@ -21,6 +21,7 @@ npm run start:dev
 - `GET /health` reports that the process is up.
 - `POST /auth/sign-up`, `/auth/sign-in`, and `/auth/refresh` return an access token and a refresh token. Every other route requires `Authorization: Bearer <access token>`.
 - `GET /me/profile` and `PATCH /me/profile` read and update the signed-in user's profile (display name, bio, time zone).
+- `GET /me/export` downloads a JSON copy of everything stored about the signed-in user; `DELETE /me { password }` deletes the account and its data at once.
 - `GET /me/preferences` and `PATCH /me/preferences` read and update theme, sound, haptics, reduced motion, and per-category notification settings (with the three reminders' local times).
 - Push notifications (Phase 6): the app registers its Expo push token (`PUT/DELETE /me/devices/:token`) and holds a focus lease while focusing (`PUT/DELETE /me/focus/active`). A Postgres job queue and a background worker plan and send them. Delivery is off until `PUSH_PROVIDER=expo` (and `EXPO_ACCESS_TOKEN`, optional) is set; `JOBS_POLL_SECONDS` sets the worker's pace (0 turns it off).
 - Staff use `/admin/*` (see `AGENTS.md`): support and moderation, the content catalog, live operations, and configuration versions.
