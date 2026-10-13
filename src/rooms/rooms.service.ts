@@ -377,11 +377,25 @@ export class RoomsService implements OnModuleInit {
       take: 100,
     });
     const maxPause = await this.maxPause();
+    // One read of everyone the viewer blocks or is blocked by, not one per room (A7.5).
+    const blocks = await this.prisma.block.findMany({
+      where: { OR: [{ blockerId: viewerId }, { blockedId: viewerId }] },
+      select: { blockerId: true, blockedId: true },
+    });
+    const blocked = new Set(
+      blocks.map((b) => (b.blockerId === viewerId ? b.blockedId : b.blockerId)),
+    );
     const items: RoomDto[] = [];
     for (const room of rooms) {
       const present = room.participants.filter((p) => !p.leftAt);
       if (present.length >= room.maxParticipants) continue;
-      if (await this.blockedWithAnyone(viewerId, room)) continue;
+      if (
+        room.participants.some(
+          (p) => isPresent(p) && p.userId !== viewerId && blocked.has(p.userId),
+        )
+      ) {
+        continue;
+      }
       items.push(this.render(room, viewerId, maxPause));
       if (items.length === 50) break;
     }
