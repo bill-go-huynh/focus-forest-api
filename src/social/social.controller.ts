@@ -25,6 +25,7 @@ import {
 import { PrivacyService, type PrivacyAnswer } from './privacy.service.js';
 import { ReactionsService } from './reactions.service.js';
 import { SocialGraphService } from './social-graph.service.js';
+import { RateLimit } from '../safety/rate-limit.decorator.js';
 
 const userId = new ParseUUIDPipe();
 
@@ -33,6 +34,7 @@ const userId = new ParseUUIDPipe();
 export class UsersController {
   constructor(private readonly graph: SocialGraphService) {}
 
+  @RateLimit('search', 'user')
   @Get('search')
   search(
     @CurrentUser() user: AuthenticatedUser,
@@ -62,6 +64,7 @@ export class SocialGraphController {
     return this.graph.following(user.userId, query.cursor);
   }
 
+  @RateLimit('follows', 'user')
   @Put('following/:userId')
   @HttpCode(200)
   follow(

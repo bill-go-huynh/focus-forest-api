@@ -87,6 +87,13 @@ export class EnvironmentVariables {
   @Min(0)
   @Max(3600)
   JOBS_POLL_SECONDS: number = 15;
+
+  /**
+   * A7.2: `off` turns rate limits off. The integration tests run with it off (one address signs
+   * up many people); their rate-limit test turns it back on. Never off in production.
+   */
+  @IsEnum(['on', 'off'])
+  RATE_LIMITS: 'on' | 'off' = 'on';
 }
 
 export function validateEnv(config: Record<string, unknown>): EnvironmentVariables {

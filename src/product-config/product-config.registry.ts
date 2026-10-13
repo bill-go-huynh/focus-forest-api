@@ -12,6 +12,12 @@ import {
   type ConfigValueType,
 } from './config-types.js';
 
+/** A7.2: a rate limit, `limit` requests in a fixed window of `windowSeconds` (at most a day). */
+const rateLimit = shape({
+  limit: integer({ min: 1 }),
+  windowSeconds: integer({ min: 1, max: 86_400 }),
+});
+
 /** A5.5: the challenge templates, coherent as a list (`templateProblem`). */
 function challengeTemplates(): ConfigValueType<readonly ChallengeTemplate[]> {
   const items = list(
@@ -240,6 +246,53 @@ export const productConfigRegistry = {
   'notifications.eventEndingSoonHours': {
     description: 'Hours before an event ends when its participants are told it ends soon',
     type: integer({ min: 1, max: 336 }),
+  },
+
+  // Phase 7 (A7.2): rate limits, each a number of requests in a fixed window of seconds.
+  'rateLimit.signUp': {
+    description: 'New accounts per address, in a fixed window',
+    type: rateLimit,
+  },
+  'rateLimit.signIn': {
+    description: 'Sign-in attempts per address, and per email, in a fixed window',
+    type: rateLimit,
+  },
+  'rateLimit.refresh': {
+    description: 'Token refreshes per address, in a fixed window',
+    type: rateLimit,
+  },
+  'rateLimit.deleteAttempts': {
+    description:
+      'Account deletion attempts per person (each checks the password), in a fixed window',
+    type: rateLimit,
+  },
+  'rateLimit.reports': {
+    description: 'Reports a person files, in a fixed window',
+    type: rateLimit,
+  },
+  'rateLimit.follows': {
+    description: 'Follows a person makes, in a fixed window',
+    type: rateLimit,
+  },
+  'rateLimit.reactions': {
+    description: 'Reactions a person gives, in a fixed window',
+    type: rateLimit,
+  },
+  'rateLimit.invites': {
+    description: 'Room and challenge invitations a person sends, in a fixed window',
+    type: rateLimit,
+  },
+  'rateLimit.roomCodes': {
+    description: 'Room codes a person tries (private rooms), in a fixed window',
+    type: rateLimit,
+  },
+  'rateLimit.search': {
+    description: 'People searches a person makes, in a fixed window',
+    type: rateLimit,
+  },
+  'rateLimit.analytics': {
+    description: 'Analytics batches a person sends, in a fixed window',
+    type: rateLimit,
   },
 } as const satisfies ConfigRegistry;
 

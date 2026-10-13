@@ -29,6 +29,7 @@ import {
   type RoomInviteDto,
 } from './rooms.dto.js';
 import { RoomsService } from './rooms.service.js';
+import { RateLimit } from '../safety/rate-limit.decorator.js';
 
 const uuid = new ParseUUIDPipe();
 
@@ -53,6 +54,7 @@ export class RoomsController {
     return this.rooms.current(user.userId);
   }
 
+  @RateLimit('roomCodes', 'user')
   @Post('join')
   @HttpCode(200)
   joinByCode(@CurrentUser() user: AuthenticatedUser, @Body() body: JoinRoomDto): Promise<RoomDto> {
@@ -93,6 +95,7 @@ export class RoomsController {
   }
 
   /** Links the person's own completed session to the room, after they submitted it. */
+  @RateLimit('invites', 'user')
   @Post(':id/invites')
   @HttpCode(200)
   invite(

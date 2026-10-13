@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { createAdmin } from '../../src/admin/create-admin.js';
 import { PasswordHasher } from '../../src/identity/password-hasher.js';
 import { ConsistencyHarness } from '../support/consistency-harness.js';
-import { CURRENT_CONFIG_VALUES } from '../support/product-config-values.js';
+import { configValues } from '../support/product-config-values.js';
 
 /**
  * A6.6 configuration versions and operations (docs/09 later admin: "Product configuration:
@@ -29,7 +29,8 @@ const audit = async () =>
     .map((row) => [row.action, row.targetId, row.reason, row.details]);
 
 const PROPOSAL = {
-  values: { ...CURRENT_CONFIG_VALUES, 'growth.dailySoftCap': 120 },
+  // What the tests run with (`configValues`), the soft cap lowered.
+  values: configValues({ 'growth.dailySoftCap': 120 }),
   note: 'A lower daily soft cap.',
   reason: 'Long days were growing trees too fast',
 };
@@ -141,7 +142,7 @@ describe('configuration versions and operations (A6.6)', () => {
     it('refuses an incomplete or invalid version, saying why', async () => {
       const auth = await admin('admin@example.com', 'admin');
       const values: Record<string, unknown> = {
-        ...CURRENT_CONFIG_VALUES,
+        ...configValues(),
         'growth.overCapRate': 140,
       };
       delete values['growth.dailySoftCap'];

@@ -9,6 +9,7 @@ import {
   type ChallengeListsDto,
 } from './challenges.dto.js';
 import { ChallengesService } from './challenges.service.js';
+import { RateLimit } from '../safety/rate-limit.decorator.js';
 
 const uuid = new ParseUUIDPipe();
 
@@ -32,6 +33,7 @@ export class ChallengesController {
     return this.challenges.lists(user.userId);
   }
 
+  @RateLimit('invites', 'user')
   @Post()
   create(
     @CurrentUser() user: AuthenticatedUser,
@@ -48,6 +50,7 @@ export class ChallengesController {
     return this.challenges.one(user.userId, id);
   }
 
+  @RateLimit('invites', 'user')
   @Post(':id/invite')
   @HttpCode(200)
   invite(

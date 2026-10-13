@@ -127,6 +127,30 @@ export const LIVE_NOTIFICATION_CONFIG_VALUES = {
   'notifications.eventEndingSoonHours': 48,
 } as const;
 
+/** Phase 7 rate limits (configuration version 10, A7.2): project defaults. */
+const window = (limit: number, windowSeconds: number) => ({ limit, windowSeconds });
+export const RATE_LIMIT_CONFIG_VALUES = {
+  'rateLimit.signUp': window(10, 3600),
+  'rateLimit.signIn': window(10, 900),
+  'rateLimit.refresh': window(120, 3600),
+  'rateLimit.deleteAttempts': window(5, 3600),
+  'rateLimit.reports': window(20, 86_400),
+  'rateLimit.follows': window(200, 3600),
+  'rateLimit.reactions': window(300, 3600),
+  'rateLimit.invites': window(50, 3600),
+  'rateLimit.roomCodes': window(20, 3600),
+  'rateLimit.search': window(120, 3600),
+  'rateLimit.analytics': window(300, 3600),
+} as const;
+
+/**
+ * Tests sign many people up and in from one address, and re-sign everyone when the clock moves:
+ * they run with limits nobody reaches. The rate-limit tests set their own.
+ */
+const UNREACHED_RATE_LIMITS = Object.fromEntries(
+  Object.keys(RATE_LIMIT_CONFIG_VALUES).map((key) => [key, window(1_000_000, 60)]),
+);
+
 export const CURRENT_CONFIG_VALUES = {
   ...SESSION_CONFIG_VALUES,
   ...TREE_CONFIG_VALUES,
@@ -136,9 +160,10 @@ export const CURRENT_CONFIG_VALUES = {
   ...LEADERBOARD_CONFIG_VALUES,
   ...NOTIFICATION_CONFIG_VALUES,
   ...LIVE_NOTIFICATION_CONFIG_VALUES,
+  ...RATE_LIMIT_CONFIG_VALUES,
 };
 
-/** A complete set of values: the current ones with some replaced. */
+/** A complete set of values for a test: the current ones, limits out of reach, some replaced. */
 export function configValues(overrides: Record<string, unknown> = {}): Record<string, unknown> {
-  return { ...CURRENT_CONFIG_VALUES, ...overrides };
+  return { ...CURRENT_CONFIG_VALUES, ...UNREACHED_RATE_LIMITS, ...overrides };
 }

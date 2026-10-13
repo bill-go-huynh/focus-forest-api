@@ -10,6 +10,7 @@ import { ConsistencyModule } from './consistency/consistency.module.js';
 import { ContentModule } from './content/content.module.js';
 import { EventsModule } from './events/events.module.js';
 import { LeaderboardsModule } from './leaderboards/leaderboards.module.js';
+import { SafetyModule } from './safety/safety.module.js';
 import { SeasonsModule } from './seasons/seasons.module.js';
 import { ForestModule } from './forest/forest.module.js';
 import { HealthController } from './health/health.controller.js';
@@ -57,6 +58,7 @@ import { VisitsModule } from './visits/visits.module.js';
     AnalyticsModule,
     AdminModule,
     ContentModule,
+    SafetyModule,
   ],
   controllers: [HealthController],
 })

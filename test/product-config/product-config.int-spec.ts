@@ -13,6 +13,7 @@ import {
   CURRENT_CONFIG_VALUES,
   FOREST_CONFIG_VALUES,
   LEADERBOARD_CONFIG_VALUES,
+  LIVE_NOTIFICATION_CONFIG_VALUES,
   NOTIFICATION_CONFIG_VALUES,
   SESSION_CONFIG_VALUES,
   TREE_CONFIG_VALUES,
@@ -40,7 +41,7 @@ describe('product configuration (PostgreSQL)', () => {
     await close();
   });
 
-  it('keeps every earlier version and activates the latest (version 9, Phase 6 notifications)', async () => {
+  it('keeps every earlier version and activates the latest (version 10, Phase 7 rate limits)', async () => {
     await migrateFreshTestDatabase();
     const seeded = createTestPrismaClient();
     try {
@@ -123,13 +124,28 @@ describe('product configuration (PostgreSQL)', () => {
         ...NOTIFICATION_CONFIG_VALUES,
       });
 
-      const config = await productionService.active();
-      expect(config.version).toBe(9);
-      const stored = await seeded.productConfigVersion.findUniqueOrThrow({
+      const liveNotifications = await seeded.productConfigVersion.findUniqueOrThrow({
         where: { version: 9 },
       });
+      expect(liveNotifications.values).toEqual({
+        ...SESSION_CONFIG_VALUES,
+        ...TREE_CONFIG_VALUES,
+        ...CONSISTENCY_CONFIG_VALUES,
+        ...FOREST_CONFIG_VALUES,
+        ...CHALLENGE_CONFIG_VALUES,
+        ...LEADERBOARD_CONFIG_VALUES,
+        ...NOTIFICATION_CONFIG_VALUES,
+        ...LIVE_NOTIFICATION_CONFIG_VALUES,
+      });
+      expect(liveNotifications.note).toMatch(/phase 6/i);
+
+      const config = await productionService.active();
+      expect(config.version).toBe(10);
+      const stored = await seeded.productConfigVersion.findUniqueOrThrow({
+        where: { version: 10 },
+      });
       expect(stored.values).toEqual(CURRENT_CONFIG_VALUES);
-      expect(stored.note).toMatch(/phase 6/i);
+      expect(stored.note).toMatch(/phase 7/i);
       for (const key of Object.keys(
         CURRENT_CONFIG_VALUES,
       ) as (keyof typeof CURRENT_CONFIG_VALUES)[]) {

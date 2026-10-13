@@ -1549,3 +1549,15 @@ model AdminAuditLog {
   @@index([targetType, targetId])
   @@map("admin_audit_log")
 }
+
+/// A7.2 Rate limits: hits per bucket (a limit's name and a hashed address, email, or user id) in
+/// a fixed window. Old windows are pruned by a recurring job.
+model RateLimitWindow {
+  bucket      String
+  windowStart DateTime @map("window_start")
+  hits        Int
+
+  @@id([bucket, windowStart])
+  @@index([windowStart])
+  @@map("rate_limit_windows")
+}

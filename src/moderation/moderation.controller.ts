@@ -31,6 +31,7 @@ import {
 } from './dto/moderation.dto.js';
 import { ModerationService } from './moderation.service.js';
 import { ReportsService } from './reports.service.js';
+import { RateLimit } from '../safety/rate-limit.decorator.js';
 
 const uuid = new ParseUUIDPipe();
 
@@ -39,6 +40,7 @@ const uuid = new ParseUUIDPipe();
 export class ReportsController {
   constructor(private readonly reports: ReportsService) {}
 
+  @RateLimit('reports', 'user')
   @Post()
   async file(
     @CurrentUser() user: AuthenticatedUser,

@@ -19,6 +19,7 @@ import {
   type VisitedProfileResponse,
 } from './visits.dto.js';
 import { VisitsService } from './visits.service.js';
+import { RateLimit } from '../safety/rate-limit.decorator.js';
 
 const userId = new ParseUUIDPipe();
 
@@ -67,6 +68,7 @@ export class VisitsController {
     return this.visits.reactionSummary(user.userId, ownerId, query.target);
   }
 
+  @RateLimit('reactions', 'user')
   @Put('reactions/:reaction')
   @HttpCode(200)
   react(

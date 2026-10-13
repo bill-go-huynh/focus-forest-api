@@ -188,12 +188,40 @@
         "healthyWithinDays": 1,
         "thrivingActiveRunDays": 2
       },
+      "rateLimit.search": {
+        "limit": 1000000,
+        "windowSeconds": 60
+      },
+      "rateLimit.signIn": {
+        "limit": 1000000,
+        "windowSeconds": 60
+      },
+      "rateLimit.signUp": {
+        "limit": 1000000,
+        "windowSeconds": 60
+      },
       "forest.areaLevels": {
         "lake": 2,
         "night": 4,
         "seasonal": 5,
         "mountains": 3,
         "decorations": 6
+      },
+      "rateLimit.follows": {
+        "limit": 1000000,
+        "windowSeconds": 60
+      },
+      "rateLimit.invites": {
+        "limit": 1000000,
+        "windowSeconds": 60
+      },
+      "rateLimit.refresh": {
+        "limit": 1000000,
+        "windowSeconds": 60
+      },
+      "rateLimit.reports": {
+        "limit": 1000000,
+        "windowSeconds": 60
       },
       "streak.milestones": [
         3,
@@ -273,6 +301,18 @@
         }
       ],
       "growth.dailySoftCap": 240,
+      "rateLimit.analytics": {
+        "limit": 1000000,
+        "windowSeconds": 60
+      },
+      "rateLimit.reactions": {
+        "limit": 1000000,
+        "windowSeconds": 60
+      },
+      "rateLimit.roomCodes": {
+        "limit": 1000000,
+        "windowSeconds": 60
+      },
       "growth.blossomPoints": {
         "dailyGoal": 1,
         "weeklyGoal": 2
@@ -331,6 +371,10 @@
         "focusTime": 20,
         "activeDays": 20,
         "consistency": 30
+      },
+      "rateLimit.deleteAttempts": {
+        "limit": 1000000,
+        "windowSeconds": 60
       },
       "vitality.goalConsistency": {
         "windowDays": 4,

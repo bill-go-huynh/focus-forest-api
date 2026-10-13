@@ -20,6 +20,8 @@ export default defineConfig({
       DATABASE_URL: testDatabaseUrl,
       JWT_ACCESS_SECRET: 'test-only-access-token-secret-0123456789',
       ADMIN_JWT_SECRET: 'test-only-admin-token-secret-9876543210',
+      // One address signs up and in many people; test/safety turns limits on again.
+      RATE_LIMITS: 'off',
     },
     include: ['**/*.int-spec.ts'],
     globalSetup: ['./test/database/global-setup.ts'],
