@@ -7,6 +7,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 
 import { HealthController } from '../../src/health/health.controller.js';
+import { PrismaService } from '../../src/prisma/prisma.service.js';
 import { listenOnLoopback } from './loopback-http.js';
 
 /** Resolves to 'listening' or the bind error code, and keeps the server for cleanup. */
@@ -27,7 +28,11 @@ describe('listenOnLoopback', () => {
   let others: net.Server[];
 
   beforeEach(async () => {
-    const moduleRef = await Test.createTestingModule({ controllers: [HealthController] }).compile();
+    // Liveness only: the readiness check's database is not needed here.
+    const moduleRef = await Test.createTestingModule({
+      controllers: [HealthController],
+      providers: [{ provide: PrismaService, useValue: {} }],
+    }).compile();
     app = moduleRef.createNestApplication({ logger: false });
     others = [];
   });

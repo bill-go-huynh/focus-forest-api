@@ -2,9 +2,15 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { WsAdapter } from '@nestjs/platform-ws';
 import helmet from 'helmet';
 
+import { requestId } from './monitoring/request-id.middleware.js';
+import { ServerErrorFilter } from './monitoring/server-error.filter.js';
+
 // HTTP-level setup shared by main.ts and the e2e tests.
 export function configureApp(app: INestApplication): void {
   app.use(helmet());
+  // A7.4: a request id on every response, and one structured log line per unexpected error.
+  app.use(requestId);
+  app.useGlobalFilters(new ServerErrorFilter());
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

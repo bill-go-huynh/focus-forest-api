@@ -1579,3 +1579,21 @@ model IntegrityDismissal {
   @@id([userId, flagKey])
   @@map("integrity_dismissals")
 }
+
+/// A7.4 A crash or error an app reported (self-built monitoring, owner decision 1). Nothing says
+/// who: no user, no address. Text is cut and email addresses removed on the way in. Pruned after
+/// 30 days.
+model ClientError {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  receivedAt DateTime @map("received_at")
+  occurredAt DateTime @map("occurred_at")
+  kind       String
+  platform   String
+  appVersion String   @map("app_version")
+  screen     String?
+  message    String
+  stack      String?
+
+  @@index([receivedAt])
+  @@map("client_errors")
+}

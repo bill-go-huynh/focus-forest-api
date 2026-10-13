@@ -290,6 +290,10 @@ export const productConfigRegistry = {
     description: 'People searches a person makes, in a fixed window',
     type: rateLimit,
   },
+  'rateLimit.clientErrors': {
+    description: 'Crash and error reports per address (signed in or not), in a fixed window',
+    type: rateLimit,
+  },
   'rateLimit.analytics': {
     description: 'Analytics batches a person sends, in a fixed window',
     type: rateLimit,

@@ -653,6 +653,10 @@
         1800
       ],
       "integrity.lookbackDays": 28,
+      "rateLimit.clientErrors": {
+        "limit": 1000000,
+        "windowSeconds": 60
+      },
       "session.maxPauseMinutes": 30,
       "session.minValidMinutes": 5,
       "goal.dailyDefaultMinutes": 30,

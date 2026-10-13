@@ -12,7 +12,8 @@ export type RateLimitName =
   | 'invites'
   | 'roomCodes'
   | 'search'
-  | 'analytics';
+  | 'analytics'
+  | 'clientErrors';
 
 /** What a limit counts per: the client address, the email in the body, or the signed-in user. */
 export type RateLimitKey = 'ip' | 'email' | 'user';

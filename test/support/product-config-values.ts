@@ -151,12 +151,19 @@ export const INTEGRITY_CONFIG_VALUES = {
   'integrity.spike': { ratio: 5, minMinutes: 600 },
 } as const;
 
+/** Phase 7 crash and error reports (configuration version 12, A7.4): project default. */
+export const CLIENT_ERROR_CONFIG_VALUES = {
+  'rateLimit.clientErrors': window(60, 3600),
+} as const;
+
 /**
  * Tests sign many people up and in from one address, and re-sign everyone when the clock moves:
  * they run with limits nobody reaches. The rate-limit tests set their own.
  */
 const UNREACHED_RATE_LIMITS = Object.fromEntries(
-  Object.keys(RATE_LIMIT_CONFIG_VALUES).map((key) => [key, window(1_000_000, 60)]),
+  [...Object.keys(RATE_LIMIT_CONFIG_VALUES), ...Object.keys(CLIENT_ERROR_CONFIG_VALUES)].map(
+    (key) => [key, window(1_000_000, 60)],
+  ),
 );
 
 export const CURRENT_CONFIG_VALUES = {
@@ -170,6 +177,7 @@ export const CURRENT_CONFIG_VALUES = {
   ...LIVE_NOTIFICATION_CONFIG_VALUES,
   ...RATE_LIMIT_CONFIG_VALUES,
   ...INTEGRITY_CONFIG_VALUES,
+  ...CLIENT_ERROR_CONFIG_VALUES,
 };
 
 /** A complete set of values for a test: the current ones, limits out of reach, some replaced. */
