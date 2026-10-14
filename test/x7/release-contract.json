@@ -1,0 +1,126 @@
+{
+  "integrityFlags": {
+    "items": [
+      {
+        "user": {
+          "id": "00000000-0000-4000-8000-0000000007a3",
+          "email": "bot@example.com",
+          "username": "bot",
+          "displayName": null
+        },
+        "flags": [
+          {
+            "kind": "overlap",
+            "key": "overlap:00000000-0000-4000-8000-0000000007b1:00000000-0000-4000-8000-0000000007b2",
+            "detail": {
+              "sessionIds": [
+                "00000000-0000-4000-8000-0000000007b1",
+                "00000000-0000-4000-8000-0000000007b2"
+              ],
+              "overlapMinutes": 40
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "clientErrors": {
+    "items": [
+      {
+        "kind": "crash",
+        "message": "TypeError: rows is undefined ([email])",
+        "platform": "android",
+        "appVersion": "1.0.0",
+        "screen": "/together/leaderboards",
+        "count": 1,
+        "firstSeen": "2026-11-06T09:31:00.000Z",
+        "lastSeen": "2026-11-06T09:31:00.000Z",
+        "stack": null
+      }
+    ]
+  },
+  "rateLimited": {
+    "statusCode": 429,
+    "error": "Too Many Requests",
+    "message": "Too many attempts. Please wait a little and try again.",
+    "code": "rate_limited",
+    "retryAfterSeconds": 840
+  },
+  "rateLimits": {
+    "since": "2026-11-05T09:31:00.000Z",
+    "items": [
+      {
+        "name": "signIn",
+        "limit": 3,
+        "refused": 1,
+        "keys": 1
+      },
+      {
+        "name": "analytics",
+        "limit": 1000000,
+        "refused": 0,
+        "keys": 0
+      },
+      {
+        "name": "clientErrors",
+        "limit": 1000000,
+        "refused": 0,
+        "keys": 0
+      },
+      {
+        "name": "deleteAttempts",
+        "limit": 1000000,
+        "refused": 0,
+        "keys": 0
+      },
+      {
+        "name": "follows",
+        "limit": 1000000,
+        "refused": 0,
+        "keys": 0
+      },
+      {
+        "name": "invites",
+        "limit": 1000000,
+        "refused": 0,
+        "keys": 0
+      },
+      {
+        "name": "reactions",
+        "limit": 1000000,
+        "refused": 0,
+        "keys": 0
+      },
+      {
+        "name": "refresh",
+        "limit": 1000000,
+        "refused": 0,
+        "keys": 0
+      },
+      {
+        "name": "reports",
+        "limit": 1000000,
+        "refused": 0,
+        "keys": 0
+      },
+      {
+        "name": "roomCodes",
+        "limit": 1000000,
+        "refused": 0,
+        "keys": 0
+      },
+      {
+        "name": "search",
+        "limit": 1000000,
+        "refused": 0,
+        "keys": 0
+      },
+      {
+        "name": "signUp",
+        "limit": 1000000,
+        "refused": 0,
+        "keys": 0
+      }
+    ]
+  }
+}

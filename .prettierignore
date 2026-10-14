@@ -21,3 +21,6 @@ test/x5/community-contract.json
 
 # X6 contracts: generated, byte-identical with the mobile (notifications) and admin (operations) copies.
 test/x6/*.json
+
+# X7 release contract: generated, byte-identical with the admin copy.
+test/x7/release-contract.json
