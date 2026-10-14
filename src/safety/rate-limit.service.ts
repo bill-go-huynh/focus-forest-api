@@ -7,7 +7,7 @@ import type { EnvironmentVariables } from '../config/env.validation.js';
 import { JobsService } from '../jobs/jobs.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ProductConfigService } from '../product-config/product-config.service.js';
-import type { RateLimitKey, RateLimitName } from './rate-limit.decorator.js';
+import { RATE_LIMIT_NAMES, type RateLimitKey, type RateLimitName } from './rate-limit.decorator.js';
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -68,6 +68,34 @@ export class RateLimitService implements OnModuleInit {
     if ((row?.hits ?? 0) > limit) {
       throw new RateLimitedException(Math.ceil((start + windowMs - now.getTime()) / 1000));
     }
+  }
+
+  /**
+   * D7.1 Per limit, over the day before `now`: requests refused (hits past the limit in each
+   * window) and how many keys were refused. Counts only: buckets are hashed.
+   */
+  async refusals(now: Date): Promise<{
+    since: string;
+    items: { name: RateLimitName; limit: number; refused: number; keys: number }[];
+  }> {
+    const since = new Date(now.getTime() - DAY);
+    const active = await this.config.active();
+    const rows = await this.prisma.rateLimitWindow.findMany({
+      where: { windowStart: { gte: since } },
+      select: { bucket: true, hits: true },
+    });
+    const items = RATE_LIMIT_NAMES.map((name) => {
+      const { limit } = active.get(`rateLimit.${name}`);
+      const over = rows.filter((row) => row.bucket.startsWith(`${name}:`) && row.hits > limit);
+      return {
+        name,
+        limit,
+        refused: over.reduce((sum, row) => sum + row.hits - limit, 0),
+        keys: new Set(over.map((row) => row.bucket)).size,
+      };
+    });
+    items.sort((a, b) => b.refused - a.refused || a.name.localeCompare(b.name));
+    return { since: since.toISOString(), items };
   }
 
   /** Removes windows that started more than a day before `slot`. */

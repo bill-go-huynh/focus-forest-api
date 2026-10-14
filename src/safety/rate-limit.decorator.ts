@@ -1,19 +1,21 @@
 import { SetMetadata } from '@nestjs/common';
 
 /** The configured limits (`rateLimit.<name>` in the product configuration, A7.2). */
-export type RateLimitName =
-  | 'signUp'
-  | 'signIn'
-  | 'refresh'
-  | 'deleteAttempts'
-  | 'reports'
-  | 'follows'
-  | 'reactions'
-  | 'invites'
-  | 'roomCodes'
-  | 'search'
-  | 'analytics'
-  | 'clientErrors';
+export const RATE_LIMIT_NAMES = [
+  'signUp',
+  'signIn',
+  'refresh',
+  'deleteAttempts',
+  'reports',
+  'follows',
+  'reactions',
+  'invites',
+  'roomCodes',
+  'search',
+  'analytics',
+  'clientErrors',
+] as const;
+export type RateLimitName = (typeof RATE_LIMIT_NAMES)[number];
 
 /** What a limit counts per: the client address, the email in the body, or the signed-in user. */
 export type RateLimitKey = 'ip' | 'email' | 'user';

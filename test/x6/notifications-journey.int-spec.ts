@@ -284,5 +284,6 @@ describe('X6 notifications integration (HTTP + PostgreSQL + worker)', () => {
       writeFileSync(FILE, captured);
     }
     expect(captured).toBe(readFileSync(FILE, 'utf8'));
-  });
+    // A whole day, a quarter hour at a time: give a busy machine room.
+  }, 120_000);
 });

@@ -6,6 +6,7 @@ import { JobsModule } from '../jobs/jobs.module.js';
 import { ProductConfigModule } from '../product-config/product-config.module.js';
 import { IntegrityController } from './integrity.controller.js';
 import { IntegrityService } from './integrity.service.js';
+import { AdminRateLimitsController } from './rate-limits.controller.js';
 import { RateLimitInterceptor } from './rate-limit.interceptor.js';
 import { RateLimitService } from './rate-limit.service.js';
 
@@ -15,7 +16,7 @@ import { RateLimitService } from './rate-limit.service.js';
  */
 @Module({
   imports: [ProductConfigModule, JobsModule, AdminModule],
-  controllers: [IntegrityController],
+  controllers: [IntegrityController, AdminRateLimitsController],
   providers: [
     RateLimitService,
     IntegrityService,

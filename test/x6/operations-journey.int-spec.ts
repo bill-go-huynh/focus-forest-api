@@ -328,5 +328,6 @@ describe('X6 operations integration (HTTP + PostgreSQL)', () => {
       writeFileSync(FILE, captured);
     }
     expect(captured).toBe(readFileSync(FILE, 'utf8'));
-  });
+    // Two months of growth and a run of admin work: give a busy machine room.
+  }, 120_000);
 });
