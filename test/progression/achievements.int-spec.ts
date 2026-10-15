@@ -322,10 +322,12 @@ describe('A4.2 achievements, badges, and showcase (HTTP + PostgreSQL)', () => {
       });
     });
 
-    it('never grants planned, Event, time-based, or special-category badges', async () => {
+    // Time-based badges are evaluated since the owner decision of 2026-10-15
+    // (test/progression/time-community-badges.int-spec.ts).
+    it('never grants planned, Event, or special-category badges', async () => {
       const ada = await t.signUp('ada@example.com');
       await testAchievement('event-badge', { category: 'event', source: 'event' });
-      await testAchievement('early-bird', { category: 'time_based' });
+      await testAchievement('planned-badge', { status: 'planned' });
       await testAchievement('rare-category', { category: 'rare' });
       await testAchievement('rare-rarity', { category: 'focus', rarity: 'rare' });
 
@@ -334,7 +336,7 @@ describe('A4.2 achievements, badges, and showcase (HTTP + PostgreSQL)', () => {
       expect(await ownedIds(ada.userId)).toEqual(['first-session', 'rare-rarity']);
       // Hidden until their phase: not shown as progress the user could make now.
       const listed = (await achievements(ada)).map((a) => a.id);
-      for (const id of ['community-contributor', 'event-badge', 'early-bird', 'rare-category']) {
+      for (const id of ['planned-badge', 'event-badge', 'rare-category']) {
         expect(listed).not.toContain(id);
       }
       // Category "rare" and rarity "rare" are different things.
@@ -498,9 +500,14 @@ describe('A4.2 achievements, badges, and showcase (HTTP + PostgreSQL)', () => {
         'focus-streak:7',
         'focus-streak:30',
         'focus-streak:100',
-        // A5.4: Focus Together.
+        // Owner decision 2026-10-15: time-based.
+        'early-bird',
+        'night-owl',
+        'weekend-warrior',
+        // A5.4: Focus Together; then Community Contributor (2026-10-15).
         'focus-together:first',
         'focus-buddy',
+        'community-contributor',
       ]);
       expect(list[0]).toEqual({
         id: 'first-session',

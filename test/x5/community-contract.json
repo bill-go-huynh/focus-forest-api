@@ -467,6 +467,15 @@
           "rarity": "common",
           "artworkId": "first-session",
           "earnedAt": "2026-10-14T08:31:10.000Z"
+        },
+        {
+          "id": "community-contributor",
+          "name": "Community Contributor",
+          "description": "Helped a Community Tree grow.",
+          "category": "social",
+          "rarity": "rare",
+          "artworkId": "community-contributor",
+          "earnedAt": "2026-10-14T08:31:10.000Z"
         }
       ],
       "newlyUnlockedSpecies": [

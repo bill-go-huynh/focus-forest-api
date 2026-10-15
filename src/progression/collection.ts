@@ -5,6 +5,7 @@ import {
   type Acquisition,
   type ContentSource,
   type ContentStatus,
+  type CriterionUnit,
 } from './progression-rules.js';
 
 /**
@@ -61,7 +62,7 @@ export type UnlockHint =
       /** The achievement's badge name and description (its user-facing copy). */
       name: string;
       description: string;
-      unit: 'sessions' | 'minutes' | 'days';
+      unit: CriterionUnit;
       target: number;
       /** Null when the achievement does not show progress. */
       current: number | null;

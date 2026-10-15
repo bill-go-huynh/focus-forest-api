@@ -169,6 +169,10 @@ export class SessionsService {
         const growth = (await this.closure.isClosed(tx, userId, attribution))
           ? closedMonthGrowth(isCounted(row.status))
           : await this.trees.applySession(tx, userId, row);
+        // Then the joined events' missions and Community Tree minutes, from the same stored
+        // truth (A5.6, A5.7). Before achievements, which read the contributions (Community
+        // Contributor); events never read badges.
+        const events = await this.events.evaluateSession(tx, userId, row);
         // Then achievements, from the same stored truth: a grant commits with its session, or
         // neither does (the app keeps the session and submits it again).
         const achieved = await this.achievements.evaluateSession(tx, userId, row);
@@ -179,8 +183,6 @@ export class SessionsService {
           newlyEarnedBadgeIds: [...achieved.newlyEarnedBadgeIds, ...seasonal.badgeIds],
           newlyUnlockedCosmeticIds: [...achieved.newlyUnlockedCosmeticIds, ...seasonal.cosmeticIds],
         };
-        // Then the joined events' missions, from the same stored truth (A5.6).
-        const events = await this.events.evaluateSession(tx, userId, row);
         // A counted session may complete a challenge nobody is looking at: the challenges module
         // settles it after the commit and tells the others (A6.3).
         if (isCounted(row.status)) {

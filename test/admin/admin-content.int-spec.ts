@@ -99,7 +99,8 @@ describe('admin content catalog (A6.4)', () => {
     expect(
       ((await get(auth, 'cosmetics')) as { items: Body[] }).items.map((i) => i['id']),
     ).toContain('meadow');
-    expect(((await get(auth, 'achievements')) as { items: Body[] }).items[0]).toEqual({
+    const achievements = ((await get(auth, 'achievements')) as { items: Body[] }).items;
+    expect(achievements.find((a) => a['id'] === 'first-session')).toEqual({
       id: 'first-session',
       badgeId: 'first-session',
       criterion: 'counted_sessions',

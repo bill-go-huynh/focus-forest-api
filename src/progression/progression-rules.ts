@@ -68,18 +68,29 @@ export const ACHIEVEMENT_CRITERIA = [
   'longest_streak_days',
   'focus_together_sessions',
   'focus_together_with_friend',
+  // Owner decision 2026-10-15 (docs/06 Badge): time-based badges and Community Contributor.
+  'sessions_before_7',
+  'sessions_after_22',
+  'full_weekends',
+  'community_contributions',
 ] as const;
 export type AchievementCriterion = (typeof ACHIEVEMENT_CRITERIA)[number];
 
-const UNITS: Record<AchievementCriterion, 'sessions' | 'minutes' | 'days'> = {
+export type CriterionUnit = 'sessions' | 'minutes' | 'days' | 'weekends';
+
+const UNITS: Record<AchievementCriterion, CriterionUnit> = {
   counted_sessions: 'sessions',
   focused_minutes: 'minutes',
   longest_streak_days: 'days',
   focus_together_sessions: 'sessions',
   focus_together_with_friend: 'sessions',
+  sessions_before_7: 'sessions',
+  sessions_after_22: 'sessions',
+  full_weekends: 'weekends',
+  community_contributions: 'sessions',
 };
 
-export function criterionUnit(criterion: AchievementCriterion): 'sessions' | 'minutes' | 'days' {
+export function criterionUnit(criterion: AchievementCriterion): CriterionUnit {
   return UNITS[criterion];
 }
 

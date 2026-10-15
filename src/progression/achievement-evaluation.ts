@@ -1,5 +1,5 @@
 import { longestStreak, type ActivityHistory } from '../consistency/streak.js';
-import type { LocalDate } from '../common/local-date.js';
+import { addDays, type LocalDate } from '../common/local-date.js';
 import {
   ACHIEVEMENT_CRITERIA,
   acquirableAt,
@@ -7,6 +7,7 @@ import {
   isContentId,
   type AchievementCriterion,
   type Acquisition,
+  type CriterionUnit,
   type BadgeCategory,
   type ContentRarity,
 } from './progression-rules.js';
@@ -30,14 +31,27 @@ export interface AchievementInput {
    * room they started with), and those in a room where a friend focused too.
    */
   together: { sessions: number; withFriend: number };
+  /**
+   * Owner decision 2026-10-15: counted sessions started before 07:00 and at or after 22:00, in
+   * the local time of their month's time zone (the session's own attribution).
+   */
+  timeOfDay: { early: number; late: number };
+  /** Owner decision 2026-10-15: counted sessions that added minutes to a Community Tree. */
+  community: { contributions: number };
 }
 
 /**
- * Categories whose criteria exist. Social is evaluated from A5.4 (Focus Together); event (Phase 14),
- * time-based (criteria not yet defined by the product), and special badges are never evaluated,
- * even if activated. A category, never a rarity: category "rare" and rarity "rare" are unrelated.
+ * Categories whose criteria exist. Social is evaluated from A5.4 (Focus Together), time-based from
+ * the owner decision of 2026-10-15; event badges come from event milestones, and special badges
+ * are never evaluated, even if activated. A category, never a rarity: category "rare" and rarity
+ * "rare" are unrelated.
  */
-export const EVALUATED_CATEGORIES: readonly BadgeCategory[] = ['focus', 'consistency', 'social'];
+export const EVALUATED_CATEGORIES: readonly BadgeCategory[] = [
+  'focus',
+  'consistency',
+  'time_based',
+  'social',
+];
 
 export interface AchievementBadge extends Acquisition {
   id: string;
@@ -81,7 +95,22 @@ export function achievementValues(input: AchievementInput): AchievementValues {
     longest_streak_days: longestStreak(input.history),
     focus_together_sessions: input.together.sessions,
     focus_together_with_friend: input.together.withFriend,
+    sessions_before_7: input.timeOfDay.early,
+    sessions_after_22: input.timeOfDay.late,
+    full_weekends: fullWeekends(input.history.activeDates),
+    community_contributions: input.community.contributions,
   };
+}
+
+/** Weekends with counted focus on both the Saturday and the Sunday (any weekends, in any order). */
+export function fullWeekends(activeDates: readonly LocalDate[]): number {
+  const active = new Set(activeDates);
+  return [...active].filter((date) => isSaturday(date) && active.has(addDays(date, 1))).length;
+}
+
+function isSaturday(date: LocalDate): boolean {
+  const [year = 0, month = 1, day = 1] = date.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day)).getUTCDay() === 6;
 }
 
 /** A counted session to take out of the input: what the values were just before it. */
@@ -90,6 +119,9 @@ export interface RemovedSession {
   localDate: LocalDate;
   /** Counted sessions on its local date, itself included. */
   countedOnSameDay: number;
+  startedBefore7: boolean;
+  startedAfter22: boolean;
+  contributedToCommunity: boolean;
 }
 
 export function withoutSession(input: AchievementInput, session: RemovedSession): AchievementInput {
@@ -105,6 +137,13 @@ export function withoutSession(input: AchievementInput, session: RemovedSession)
       activeDates: aloneOnItsDay
         ? input.history.activeDates.filter((date) => date !== session.localDate)
         : input.history.activeDates,
+    },
+    timeOfDay: {
+      early: input.timeOfDay.early - (session.startedBefore7 ? 1 : 0),
+      late: input.timeOfDay.late - (session.startedAfter22 ? 1 : 0),
+    },
+    community: {
+      contributions: input.community.contributions - (session.contributedToCommunity ? 1 : 0),
     },
   };
 }
@@ -128,7 +167,7 @@ export function isReached(value: number, target: number): boolean {
 }
 
 export interface AchievementProgress {
-  unit: 'sessions' | 'minutes' | 'days';
+  unit: CriterionUnit;
   /** Keeps counting above the target. */
   current: number;
   target: number;

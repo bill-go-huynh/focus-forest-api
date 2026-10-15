@@ -121,7 +121,8 @@ describe('A4.2.G recovery achievements (HTTP + PostgreSQL)', () => {
       ...dateRange(addDays(MISSED, -29), 29).map((date) => [date, 15] as [string, number]),
       [RETURN, 15],
     ]);
-    // Nothing reconciled yet: First Session and the 3- and 7-day streaks are granted now too.
+    // Nothing reconciled yet: First Session, the 3- and 7-day streaks, and Weekend Warrior (the
+    // 29 days hold four whole weekends) are granted now too.
     const res = await recover(ada).expect(201);
     expect(newly(res.body as RecoveryBody)).toEqual(['focus-streak:30']);
     expect(await ownedIds(ada.userId)).toEqual([
@@ -129,6 +130,7 @@ describe('A4.2.G recovery achievements (HTTP + PostgreSQL)', () => {
       'focus-streak:3',
       'focus-streak:30',
       'focus-streak:7',
+      'weekend-warrior',
     ]);
   });
 

@@ -39,6 +39,10 @@ describe('contentSeedStatements', () => {
       // A5.4: the Focus Together badges become earnable.
       'UPDATE badge_definitions',
       'INSERT INTO achievement_definitions',
+      // Final review Q1 and Q2: the time-based badges, Community Contributor made active.
+      'INSERT INTO badge_definitions',
+      'UPDATE badge_definitions',
+      'INSERT INTO achievement_definitions',
     ]);
     expect(statements.join('\n')).not.toMatch(/product_config/);
   });

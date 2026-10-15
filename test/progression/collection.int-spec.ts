@@ -147,8 +147,9 @@ describe('A4.4 Collection Book (HTTP + PostgreSQL)', () => {
     expect(Object.keys(body)).toEqual(['sections']);
     expect(body.sections.map((s) => [s.kind, s.owned, s.total])).toEqual([
       ['species', 1, 9],
-      // 9 Focus and Consistency badges, and the 2 Focus Together badges (A5.4).
-      ['badges', 0, 11],
+      // 9 Focus and Consistency badges, 3 time-based ones and Community Contributor
+      // (2026-10-15), and the 2 Focus Together badges (A5.4).
+      ['badges', 0, 15],
       ['cosmetics', 2, 5],
     ]);
     expect(JSON.stringify(body)).not.toMatch(/percent|completion|progressRatio/i);
@@ -283,8 +284,12 @@ describe('A4.4 Collection Book (HTTP + PostgreSQL)', () => {
         'focus-streak:7',
         'focus-streak:30',
         'focus-streak:100',
+        'early-bird',
+        'night-owl',
+        'weekend-warrior',
         'focus-together:first',
         'focus-buddy',
+        'community-contributor',
       ]);
       expect(item(body, 'badges', 'focus-streak:7')).toMatchObject({
         owned: true,
@@ -324,6 +329,11 @@ describe('A4.4 Collection Book (HTTP + PostgreSQL)', () => {
       await t.prisma.badgeDefinition.updateMany({
         where: { id: { in: ['first-session', 'focus-hours:500'] } },
         data: { status: 'retired' },
+      });
+      // Every seeded badge is active now: plan one again to see it hidden.
+      await t.prisma.badgeDefinition.update({
+        where: { id: 'community-contributor' },
+        data: { status: 'planned' },
       });
       const body = await collection(ada);
       const ids = idsOf(body, 'badges');

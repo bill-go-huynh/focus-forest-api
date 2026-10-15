@@ -32,6 +32,10 @@ const CRITERIA = [
   'longest_streak_days',
   'focus_together_sessions',
   'focus_together_with_friend',
+  'sessions_before_7',
+  'sessions_after_22',
+  'full_weekends',
+  'community_contributions',
 ] as const;
 
 type Field =

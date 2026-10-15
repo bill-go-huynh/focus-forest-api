@@ -2,7 +2,6 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import {
-  ContentNotAcquirableError,
   ContentNotFoundError,
   ProgressionOwnershipService,
 } from '../../src/progression/progression-ownership.service.js';
@@ -122,6 +121,9 @@ describe('A4.1 progression foundation (HTTP + PostgreSQL)', () => {
         'focus-streak:7',
         'focus-streak:30',
         'focus-streak:100',
+        'early-bird',
+        'night-owl',
+        'weekend-warrior',
         'focus-together:first',
         'focus-buddy',
         'community-contributor',
@@ -147,6 +149,11 @@ describe('A4.1 progression foundation (HTTP + PostgreSQL)', () => {
         // A5.4.
         'focus-together:first': ['focus_together_sessions', 1],
         'focus-buddy': ['focus_together_with_friend', 1],
+        // Owner decision 2026-10-15.
+        'early-bird': ['sessions_before_7', 10],
+        'night-owl': ['sessions_after_22', 10],
+        'weekend-warrior': ['full_weekends', 4],
+        'community-contributor': ['community_contributions', 1],
       });
       // Every active badge from an achievement has one; planned ones need none yet.
       const granting = new Set(achievements.map((a) => a.badgeId));
@@ -155,9 +162,9 @@ describe('A4.1 progression foundation (HTTP + PostgreSQL)', () => {
       }
     });
 
-    // A4.1 defined the Social badges as planned; A5.4 makes the Focus Together ones earnable.
-    // The Community Tree badge waits for its phase.
-    it('makes the Focus Together badges earnable and keeps Community Contributor for later', async () => {
+    // A4.1 defined the Social badges as planned; A5.4 makes the Focus Together ones earnable,
+    // and the owner decision of 2026-10-15 the Community Tree one.
+    it('makes every Social badge earnable, each by its own achievement', async () => {
       const social = await t.prisma.badgeDefinition.findMany({
         where: { category: 'social' },
         orderBy: { sortOrder: 'asc' },
@@ -165,18 +172,13 @@ describe('A4.1 progression foundation (HTTP + PostgreSQL)', () => {
       expect(social.map((b) => [b.id, b.status])).toEqual([
         ['focus-together:first', 'active'],
         ['focus-buddy', 'active'],
-        ['community-contributor', 'planned'],
+        ['community-contributor', 'active'],
       ]);
       expect(
         await t.prisma.achievementDefinition.count({
           where: { badgeId: 'community-contributor' },
         }),
-      ).toBe(0);
-      const user = await t.signUp('ada@example.com');
-      await expect(
-        ownership.grantBadge(user.userId, 'community-contributor', at),
-      ).rejects.toBeInstanceOf(ContentNotAcquirableError);
-      expect(await t.prisma.userBadge.count()).toBe(0);
+      ).toBe(1);
     });
 
     it('rejects invalid identifiers, values, and references', async () => {

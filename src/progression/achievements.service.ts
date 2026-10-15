@@ -7,7 +7,7 @@ import { unprocessable } from '../consistency/http-errors.js';
 import { StreakService } from '../consistency/streak.service.js';
 import { isCounted } from '../focus-stats/focus-stats.js';
 import { FocusStatsService } from '../focus-stats/focus-stats.service.js';
-import type { FocusSession, Prisma } from '../generated/prisma/client.js';
+import { Prisma, type FocusSession } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
   achievementValues,
@@ -380,14 +380,29 @@ export class AchievementsService {
     const { session } = cause;
     // A discarded session changed nothing.
     if (!isCounted(session.status)) return achievementValues(input);
-    const countedOnSameDay = await client.focusSession.count({
-      where: { userId, localDate: session.localDate, status: { not: 'discarded' } },
-    });
+    // One statement: the counted sessions of its day, its time of day, and its contribution.
+    const [row] = await client.$queryRaw<
+      { same_day: bigint; hour: number; contributed: boolean }[]
+    >`
+      SELECT
+        (SELECT COUNT(*) FROM focus_sessions o
+          WHERE o.user_id = s.user_id AND o.local_date = s.local_date AND o.status <> 'discarded')
+          AS same_day,
+        EXTRACT(HOUR FROM (s.started_at AT TIME ZONE 'UTC') AT TIME ZONE c.timezone)::int AS hour,
+        EXISTS (SELECT 1 FROM community_contributions cc
+          WHERE cc.user_id = s.user_id AND cc.session_id = s.id AND cc.minutes > 0) AS contributed
+      FROM focus_sessions s
+      JOIN month_attribution_contexts c
+        ON c.user_id = s.user_id AND c.year = s.year AND c.month = s.month
+      WHERE s.user_id = ${userId}::uuid AND s.id = ${session.id}::uuid`;
     return achievementValues(
       withoutSession(input, {
         focusedMilliseconds: session.focusedMilliseconds,
         localDate: localDateFromDb(session.localDate),
-        countedOnSameDay,
+        countedOnSameDay: Number(row?.same_day ?? 1),
+        startedBefore7: row !== undefined && row.hour < 7,
+        startedAfter22: row !== undefined && row.hour >= 22,
+        contributedToCommunity: row?.contributed ?? false,
       }),
     );
   }
@@ -444,12 +459,56 @@ export class AchievementsService {
     return new Map(rows.map((row) => [row.badgeId, row.earnedAt]));
   }
 
-  /** Every criterion's source, read once: lifetime counted focus, the streak, Focus Together. */
+  /**
+   * Every criterion's source, read once: lifetime counted focus, the streak, and one statement for
+   * Focus Together, the time of day of counted sessions, and Community Tree contributions.
+   */
   private async input(client: Client, userId: string): Promise<AchievementInput> {
     return {
       lifetime: await this.stats.lifetime(userId, client),
       history: await this.streak.history(userId, client),
-      together: await this.together(client, userId),
+      ...(await this.sessionSources(client, userId)),
+    };
+  }
+
+  /**
+   * - Focus Together (A5.4): see `together`.
+   * - Time of day (2026-10-15): counted sessions started before 07:00 and at or after 22:00, in
+   *   the local time of their month's time zone (docs/06 Time and attribution). started_at is
+   *   stored as UTC without a zone: read as UTC, then in the month's zone.
+   * - Community (2026-10-15): counted sessions that added minutes to a Community Tree.
+   */
+  private async sessionSources(
+    client: Client,
+    userId: string,
+  ): Promise<Pick<AchievementInput, 'together' | 'timeOfDay' | 'community'>> {
+    const [row] = await client.$queryRaw<
+      {
+        sessions: bigint;
+        with_friend: bigint;
+        early: bigint;
+        late: bigint;
+        contributions: bigint;
+      }[]
+    >`
+      WITH together AS (${this.togetherQuery(userId, null)}),
+      local_hours AS (
+        SELECT EXTRACT(HOUR FROM (s.started_at AT TIME ZONE 'UTC') AT TIME ZONE c.timezone) AS hour
+        FROM focus_sessions s
+        JOIN month_attribution_contexts c
+          ON c.user_id = s.user_id AND c.year = s.year AND c.month = s.month
+        WHERE s.user_id = ${userId}::uuid AND s.status <> 'discarded'
+      )
+      SELECT together.sessions, together.with_friend,
+        (SELECT COUNT(*) FROM local_hours WHERE hour < 7) AS early,
+        (SELECT COUNT(*) FROM local_hours WHERE hour >= 22) AS late,
+        (SELECT COUNT(DISTINCT session_id) FROM community_contributions
+          WHERE user_id = ${userId}::uuid AND minutes > 0) AS contributions
+      FROM together`;
+    return {
+      together: { sessions: Number(row?.sessions ?? 0), withFriend: Number(row?.with_friend ?? 0) },
+      timeOfDay: { early: Number(row?.early ?? 0), late: Number(row?.late ?? 0) },
+      community: { contributions: Number(row?.contributions ?? 0) },
     };
   }
 
@@ -464,6 +523,12 @@ export class AchievementsService {
     excludedRoomId: string | null = null,
   ): Promise<AchievementInput['together']> {
     const [row] = await client.$queryRaw<{ sessions: bigint; with_friend: bigint }[]>`
+      ${this.togetherQuery(userId, excludedRoomId)}`;
+    return { sessions: Number(row?.sessions ?? 0), withFriend: Number(row?.with_friend ?? 0) };
+  }
+
+  private togetherQuery(userId: string, excludedRoomId: string | null): Prisma.Sql {
+    return Prisma.sql`
       SELECT COUNT(*) AS sessions,
         COUNT(*) FILTER (WHERE EXISTS (
           SELECT 1 FROM room_participants other
@@ -474,7 +539,6 @@ export class AchievementsService {
       FROM room_participants mine
       WHERE mine.user_id = ${userId}::uuid AND mine.session_id IS NOT NULL
         AND (${excludedRoomId}::uuid IS NULL OR mine.room_id <> ${excludedRoomId}::uuid)`;
-    return { sessions: Number(row?.sessions ?? 0), withFriend: Number(row?.with_friend ?? 0) };
   }
 }
 

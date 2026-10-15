@@ -82,12 +82,20 @@ describe('achievement criteria', () => {
       'longest_streak_days',
       'focus_together_sessions',
       'focus_together_with_friend',
+      'sessions_before_7',
+      'sessions_after_22',
+      'full_weekends',
+      'community_contributions',
     ]);
     expect(ACHIEVEMENT_CRITERIA.map(criterionUnit)).toEqual([
       'sessions',
       'minutes',
       'days',
       'sessions',
+      'sessions',
+      'sessions',
+      'sessions',
+      'weekends',
       'sessions',
     ]);
   });

@@ -1,6 +1,11 @@
 import { ArrayMaxSize, ArrayUnique, IsArray, IsString } from 'class-validator';
 
-import type { BadgeCategory, ContentRarity, CosmeticType } from './progression-rules.js';
+import type {
+  BadgeCategory,
+  ContentRarity,
+  CosmeticType,
+  CriterionUnit,
+} from './progression-rules.js';
 
 /** A badge as the app shows it. Artwork is bundled in the app, by `artworkId`. */
 export interface BadgeDto {
@@ -112,7 +117,7 @@ export class SelectSpeciesDto {
 export interface AchievementDto {
   id: string;
   badge: BadgeDto;
-  unit: 'sessions' | 'minutes' | 'days';
+  unit: CriterionUnit;
   /** Keeps counting above the target once completed. */
   current: number;
   target: number;

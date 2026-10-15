@@ -117,7 +117,7 @@ export class EventsService {
   }
 
   /**
-   * In the session submission transaction, after achievements: the progress of every joined event
+   * In the session submission transaction, before achievements: the progress of every joined event
    * whose window holds the session's start, the missions it completed, and the milestones it
    * reached (whose rewards are granted now). Stored with the session for its replay.
    */

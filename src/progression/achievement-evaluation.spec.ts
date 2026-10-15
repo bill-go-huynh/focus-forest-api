@@ -31,6 +31,8 @@ const input = (
   lifetime: { sessionCount, focusedMilliseconds: minutes * MIN },
   history: history(activeDates, restDates),
   together: { sessions: 0, withFriend: 0 },
+  timeOfDay: { early: 0, late: 0 },
+  community: { contributions: 0 },
 });
 
 type Definition = Parameters<typeof earnableAchievements>[0][number];
@@ -60,13 +62,17 @@ const definition = (
   },
 });
 
-/** Values with no Focus Together sessions. */
+/** Values with no Focus Together, time-of-day, weekend, or Community Tree sessions. */
 const values = (counted: number, minutes: number, streak: number) => ({
   counted_sessions: counted,
   focused_minutes: minutes,
   longest_streak_days: streak,
   focus_together_sessions: 0,
   focus_together_with_friend: 0,
+  sessions_before_7: 0,
+  sessions_after_22: 0,
+  full_weekends: 0,
+  community_contributions: 0,
 });
 
 describe('achievement values: derived from Core truth, never counted separately', () => {
@@ -94,12 +100,18 @@ describe('achievement values: derived from Core truth, never counted separately'
       focusedMilliseconds: 40 * MIN,
       localDate: '2026-10-03',
       countedOnSameDay: 1,
+      startedBefore7: false,
+      startedAfter22: false,
+      contributedToCommunity: false,
     });
     expect(achievementValues(alone)).toEqual(values(2, 60, 2));
     const shared = withoutSession(all, {
       focusedMilliseconds: 40 * MIN,
       localDate: '2026-10-03',
       countedOnSameDay: 2,
+      startedBefore7: false,
+      startedAfter22: false,
+      contributedToCommunity: false,
     });
     expect(achievementValues(shared).longest_streak_days).toBe(3);
   });
@@ -110,6 +122,8 @@ describe('withoutRecovery: the values just before a streak recovery (A4.2.G)', (
     const all: AchievementInput = {
       lifetime: { sessionCount: 4, focusedMilliseconds: 80 * MIN },
       together: { sessions: 2, withFriend: 1 },
+      timeOfDay: { early: 0, late: 0 },
+      community: { contributions: 0 },
       history: {
         activeDates: ['2026-10-01', '2026-10-02', '2026-10-04', '2026-10-05'],
         restDates: [],
@@ -122,6 +136,10 @@ describe('withoutRecovery: the values just before a streak recovery (A4.2.G)', (
       longest_streak_days: 4,
       focus_together_sessions: 2,
       focus_together_with_friend: 1,
+      sessions_before_7: 0,
+      sessions_after_22: 0,
+      full_weekends: 0,
+      community_contributions: 0,
     });
     expect(achievementValues(withoutRecovery(all, '2026-10-03'))).toEqual({
       counted_sessions: 4,
@@ -129,6 +147,10 @@ describe('withoutRecovery: the values just before a streak recovery (A4.2.G)', (
       longest_streak_days: 2,
       focus_together_sessions: 2,
       focus_together_with_friend: 1,
+      sessions_before_7: 0,
+      sessions_after_22: 0,
+      full_weekends: 0,
+      community_contributions: 0,
     });
   });
 });
@@ -142,8 +164,8 @@ describe('thresholds', () => {
 });
 
 describe('earnable achievements', () => {
-  it('are active, acquirable, and in a category whose criteria exist (focus, consistency, social)', () => {
-    expect(EVALUATED_CATEGORIES).toEqual(['focus', 'consistency', 'social']);
+  it('are active, acquirable, and in a category whose criteria exist', () => {
+    expect(EVALUATED_CATEGORIES).toEqual(['focus', 'consistency', 'time_based', 'social']);
     const earnable = earnableAchievements(
       [
         definition('a', 'counted_sessions', 1),
@@ -162,7 +184,7 @@ describe('earnable achievements', () => {
       now,
     );
     // In catalog order: sort order, then id.
-    expect(earnable.map((a) => a.id)).toEqual(['a', 'legend', 'scarce', 'social']);
+    expect(earnable.map((a) => a.id)).toEqual(['a', 'legend', 'scarce', 'social', 'time']);
   });
 
   it('respect a limited window', () => {
@@ -333,7 +355,60 @@ describe('Focus Together values (A5.4)', () => {
       focusedMilliseconds: 30 * MIN,
       localDate: '2026-10-01',
       countedOnSameDay: 2,
+      startedBefore7: false,
+      startedAfter22: false,
+      contributedToCommunity: false,
     });
     expect(before.together).toEqual({ sessions: 1, withFriend: 1 });
+  });
+});
+
+describe('time-of-day, weekend, and Community Tree values (owner decision 2026-10-15)', () => {
+  it('count early and late sessions as the server read them', () => {
+    const v = achievementValues({ ...input(12, 300), timeOfDay: { early: 10, late: 2 } });
+    expect(v).toMatchObject({ sessions_before_7: 10, sessions_after_22: 2 });
+  });
+
+  it('count weekends with focus on both the Saturday and the Sunday, in any order of dates', () => {
+    // 2026-10-03/04 both; 10/11 Saturday only; 17/18 both; 24 none, 25 Sunday only; 31 + 1 Nov both.
+    const dates = ['2026-11-01', '2026-10-03', '2026-10-04', '2026-10-10', '2026-10-17'].concat([
+      '2026-10-18',
+      '2026-10-25',
+      '2026-10-31',
+      '2026-10-06',
+    ]);
+    expect(achievementValues(input(9, 300, dates)).full_weekends).toBe(3);
+  });
+
+  it('never counts a Sunday followed by a Saturday, nor a rest day without focus', () => {
+    expect(achievementValues(input(2, 60, ['2026-10-04', '2026-10-10'])).full_weekends).toBe(0);
+    expect(achievementValues(input(1, 30, ['2026-10-03'], ['2026-10-04'])).full_weekends).toBe(0);
+  });
+
+  it('count the sessions that added minutes to a Community Tree', () => {
+    const v = achievementValues({ ...input(3, 90), community: { contributions: 2 } });
+    expect(v.community_contributions).toBe(2);
+  });
+
+  it('take one session out: its time of day, its weekend day, and its contribution', () => {
+    const all = {
+      ...input(3, 90, ['2026-10-03', '2026-10-04']),
+      timeOfDay: { early: 1, late: 1 },
+      community: { contributions: 1 },
+    };
+    const before = withoutSession(all, {
+      focusedMilliseconds: 30 * MIN,
+      localDate: '2026-10-04',
+      countedOnSameDay: 1,
+      startedBefore7: true,
+      startedAfter22: false,
+      contributedToCommunity: true,
+    });
+    expect(achievementValues(before)).toMatchObject({
+      sessions_before_7: 0,
+      sessions_after_22: 1,
+      full_weekends: 0,
+      community_contributions: 0,
+    });
   });
 });

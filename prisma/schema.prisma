@@ -731,6 +731,14 @@ enum AchievementCriterion {
   focus_together_sessions
   /// A5.4: completed Focus Together sessions in a room where a friend (a mutual follow) focused too.
   focus_together_with_friend
+  /// Owner decision 2026-10-15: counted sessions started before 07:00 local time.
+  sessions_before_7
+  /// Owner decision 2026-10-15: counted sessions started at or after 22:00 local time.
+  sessions_after_22
+  /// Owner decision 2026-10-15: weekends with counted focus on both the Saturday and the Sunday.
+  full_weekends
+  /// Owner decision 2026-10-15: counted sessions that added minutes to a Community Tree.
+  community_contributions
 
   @@map("achievement_criterion")
 }
