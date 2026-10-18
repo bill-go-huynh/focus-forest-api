@@ -56,8 +56,9 @@ model User {
   id           String      @id @default(uuid(7)) @db.Uuid
   /// Stored trimmed and lowercased, so uniqueness ignores case.
   email        String      @unique
-  /// scrypt hash with its parameters. Never the password itself.
-  passwordHash String      @map("password_hash")
+  /// scrypt hash with its parameters. Never the password itself. W.2: null for an account that
+  /// signs in only with Google (`identities`).
+  passwordHash String?     @map("password_hash")
   status       UserStatus  @default(active)
   /// Set in onboarding. Null until then.
   displayName  String?     @map("display_name")
@@ -76,6 +77,7 @@ model User {
   updatedAt    DateTime    @updatedAt @map("updated_at")
 
   refreshTokens           RefreshToken[]
+  identities              UserIdentity[]
   preferences             UserPreferences?
   notificationPreferences NotificationPreference[]
   pushDevices             PushDevice[]
@@ -123,6 +125,23 @@ model User {
 
 /// A long-lived refresh token, stored only as a SHA-256 hash. Tokens rotate on
 /// every use; all tokens descended from one sign-in share a family.
+/// W.2 An outside account a user signs in with (docs/08 §3): Google's stable `sub`. One outside
+/// account belongs to one user; the user row stays ours.
+model UserIdentity {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  /// `google`; CHECK in the migration.
+  provider  String
+  subject   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, subject])
+  @@index([userId])
+  @@map("user_identities")
+}
+
 model RefreshToken {
   id        String    @id @default(uuid(7)) @db.Uuid
   userId    String    @map("user_id") @db.Uuid

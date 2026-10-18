@@ -1,8 +1,14 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { UsageDataExport } from '../analytics/usage-data-export.js';
 import { Clock } from '../common/clock.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { GoogleIdTokens } from './google-id-tokens.js';
 import { PasswordHasher } from './password-hasher.js';
 
 type Row = Record<string, unknown>;
@@ -40,21 +46,52 @@ export class AccountService {
     private readonly passwords: PasswordHasher,
     private readonly clock: Clock,
     private readonly usage: UsageDataExport,
+    private readonly google: GoogleIdTokens,
   ) {}
 
-  async delete(userId: string, password: string): Promise<void> {
+  /**
+   * Confirmed by the password, or (W.2) for an account that signs in only with Google, by a fresh
+   * Google ID token for the same Google account. Exactly one is given.
+   */
+  async delete(
+    userId: string,
+    confirmation: { password?: string; googleIdToken?: string },
+  ): Promise<void> {
+    const { password, googleIdToken } = confirmation;
+    if ((password === undefined) === (googleIdToken === undefined)) {
+      throw new BadRequestException(
+        'Confirm with the password, or with Google for an account that signs in with Google.',
+      );
+    }
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { passwordHash: true },
+      select: { passwordHash: true, identities: { select: { provider: true, subject: true } } },
     });
     if (!user) throw new NotFoundException('This account does not exist.');
-    if (!(await this.passwords.verify(password, user.passwordHash))) {
-      throw new ForbiddenException({
-        statusCode: 403,
-        error: 'Forbidden',
-        message: 'That password is not right.',
-        code: 'password_incorrect',
-      });
+    if (password !== undefined) {
+      const confirmed =
+        user.passwordHash !== null && (await this.passwords.verify(password, user.passwordHash));
+      if (!confirmed) {
+        throw new ForbiddenException({
+          statusCode: 403,
+          error: 'Forbidden',
+          message: 'That password is not right.',
+          code: 'password_incorrect',
+        });
+      }
+    } else {
+      const account = await this.google.verify(googleIdToken!);
+      const linked = user.identities.some(
+        (identity) => identity.provider === 'google' && identity.subject === account?.subject,
+      );
+      if (!account || !linked || user.passwordHash !== null) {
+        throw new ForbiddenException({
+          statusCode: 403,
+          error: 'Forbidden',
+          message: 'That Google account is not the one this account signs in with.',
+          code: 'google_account_mismatch',
+        });
+      }
     }
     // deleteMany: a second, concurrent request finds nothing left and still succeeds.
     await this.prisma.user.deleteMany({ where: { id: userId } });
@@ -68,9 +105,11 @@ export class AccountService {
   async export(userId: string): Promise<Row> {
     const p = this.prisma;
     const where = { where: { userId } };
-    const user = await p.user.findUniqueOrThrow({
+    const { passwordHash, identities, ...user } = await p.user.findUniqueOrThrow({
       where: { id: userId },
       select: {
+        passwordHash: true,
+        identities: { select: { provider: true }, orderBy: { createdAt: 'asc' } },
         id: true,
         email: true,
         username: true,
@@ -237,7 +276,14 @@ export class AccountService {
 
     return {
       exportedAt: this.clock.now().toISOString(),
-      account: plain(user),
+      // W.2 How the account signs in, never the secrets or outside ids behind it.
+      account: {
+        ...(plain(user) as Row),
+        signInMethods: [
+          ...(passwordHash ? ['password'] : []),
+          ...identities.map((identity) => identity.provider),
+        ],
+      },
       preferences: {
         settings: settings && plain(settings),
         notifications: rows(notificationPreferences),

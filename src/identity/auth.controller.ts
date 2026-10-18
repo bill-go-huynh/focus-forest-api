@@ -1,7 +1,7 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 
-import { AuthService, type AuthResult } from './auth.service.js';
-import { RefreshDto, SignInDto, SignUpDto } from './dto/auth.dto.js';
+import { AuthService, type AuthResult, type GoogleAuthResult } from './auth.service.js';
+import { GoogleSignInDto, RefreshDto, SignInDto, SignUpDto } from './dto/auth.dto.js';
 import { Public } from './public.decorator.js';
 import { RateLimit } from '../safety/rate-limit.decorator.js';
 
@@ -21,6 +21,14 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   signIn(@Body() body: SignInDto): Promise<AuthResult> {
     return this.auth.signIn(body.email, body.password);
+  }
+
+  /** W.2 Signs in with Google, creating the account the first time. */
+  @RateLimit('signIn', 'ip')
+  @Post('google')
+  @HttpCode(HttpStatus.OK)
+  google(@Body() body: GoogleSignInDto): Promise<GoogleAuthResult> {
+    return this.auth.signInWithGoogle(body.idToken, body.timezone);
   }
 
   @RateLimit('refresh', 'ip')

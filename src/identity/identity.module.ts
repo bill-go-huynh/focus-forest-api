@@ -11,6 +11,7 @@ import { AccountController } from './account.controller.js';
 import { AccountService } from './account.service.js';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
+import { GoogleIdTokens } from './google-id-tokens.js';
 import { PasswordHasher } from './password-hasher.js';
 import { PreferencesController } from './preferences.controller.js';
 import { PreferencesService } from './preferences.service.js';
@@ -35,6 +36,18 @@ import { ProfileService } from './profile.service.js';
             secret: config.get('JWT_ACCESS_SECRET', { infer: true }),
             ttlSeconds: config.get('ACCESS_TOKEN_TTL_SECONDS', { infer: true }),
           },
+          clock,
+        ),
+    },
+    {
+      provide: GoogleIdTokens,
+      inject: [ConfigService, Clock],
+      useFactory: (config: ConfigService<EnvironmentVariables, true>, clock: Clock) =>
+        GoogleIdTokens.remote(
+          (config.get('GOOGLE_CLIENT_IDS', { infer: true }) ?? '')
+            .split(',')
+            .map((id) => id.trim())
+            .filter(Boolean),
           clock,
         ),
     },

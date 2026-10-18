@@ -16,11 +16,14 @@ export class AccountController {
     return this.account.export(user.userId);
   }
 
-  /** Deletes the account and everything it owns, at once. The password confirms it. */
+  /**
+   * Deletes the account and everything it owns, at once. The password confirms it, or Google for
+   * an account that signs in only with Google (W.2).
+   */
   @RateLimit('deleteAttempts', 'user')
   @Delete()
   @HttpCode(204)
   delete(@CurrentUser() user: AuthenticatedUser, @Body() body: DeleteAccountDto): Promise<void> {
-    return this.account.delete(user.userId, body.password);
+    return this.account.delete(user.userId, body);
   }
 }

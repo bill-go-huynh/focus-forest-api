@@ -1,5 +1,7 @@
 import { Transform } from 'class-transformer';
-import { IsEmail, IsNotEmpty, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+
+import { IsIanaTimeZone } from '../time-zone.js';
 
 const normalizeEmail = ({ value }: { value: unknown }): unknown =>
   typeof value === 'string' ? value.trim().toLowerCase() : value;
@@ -33,4 +35,17 @@ export class RefreshDto {
   @IsNotEmpty()
   @MaxLength(256)
   refreshToken: string;
+}
+
+/** W.2 `POST /auth/google`: the ID token the app got from Google, and the device time zone. */
+export class GoogleSignInDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(4096)
+  idToken: string;
+
+  /** Saved to a new account's profile, like sign-up's first profile update. */
+  @IsOptional()
+  @IsIanaTimeZone()
+  timezone?: string;
 }

@@ -64,6 +64,14 @@ export class EnvironmentVariables {
   @Max(3600)
   ADMIN_TOKEN_TTL_SECONDS: number = 1800;
 
+  /**
+   * W.2 Google sign-in: our OAuth client ids a Google ID token may be issued for (the Web
+   * client the app asks tokens for), comma separated. Without it Google sign-in answers 503.
+   */
+  @IsOptional()
+  @IsString()
+  GOOGLE_CLIENT_IDS?: string;
+
   /** Browser origins allowed to call the API (the admin web app), comma separated. */
   @IsOptional()
   @IsString()
