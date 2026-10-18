@@ -72,6 +72,20 @@ export class EnvironmentVariables {
   @IsString()
   GOOGLE_CLIENT_IDS?: string;
 
+  /**
+   * W.3 Outgoing email (password reset codes): an SMTP URL such as
+   * `smtps://user:app-password@smtp.gmail.com:465`. A secret: never logged or committed. Without
+   * it, development writes mail to the log and other environments send nothing.
+   */
+  @IsOptional()
+  @IsString()
+  SMTP_URL?: string;
+
+  /** The sender of outgoing email. */
+  @IsString()
+  @IsNotEmpty()
+  MAIL_FROM: string = 'Focus Forest <no-reply@focusforest.app>';
+
   /** Browser origins allowed to call the API (the admin web app), comma separated. */
   @IsOptional()
   @IsString()

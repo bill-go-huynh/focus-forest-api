@@ -1,5 +1,13 @@
 import { Transform } from 'class-transformer';
-import { IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Matches,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 
 import { IsIanaTimeZone } from '../time-zone.js';
 
@@ -48,4 +56,29 @@ export class GoogleSignInDto {
   @IsOptional()
   @IsIanaTimeZone()
   timezone?: string;
+}
+
+/** W.3 `POST /auth/password-reset/request`. */
+export class PasswordResetRequestDto {
+  @Transform(normalizeEmail)
+  @IsEmail({}, { message: 'Enter a valid email address.' })
+  @MaxLength(254)
+  email: string;
+}
+
+/** W.3 `POST /auth/password-reset/confirm`: the emailed code and the new password. */
+export class PasswordResetConfirmDto {
+  @Transform(normalizeEmail)
+  @IsEmail({}, { message: 'Enter a valid email address.' })
+  @MaxLength(254)
+  email: string;
+
+  @IsString()
+  @Matches(/^\d{6}$/, { message: 'Enter the 6-digit code from the email.' })
+  code: string;
+
+  @IsString()
+  @MinLength(8, { message: 'Use at least 8 characters for your password.' })
+  @MaxLength(128, { message: 'Use at most 128 characters for your password.' })
+  password: string;
 }

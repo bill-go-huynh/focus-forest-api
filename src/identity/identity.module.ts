@@ -13,6 +13,7 @@ import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 import { GoogleIdTokens } from './google-id-tokens.js';
 import { PasswordHasher } from './password-hasher.js';
+import { PasswordResetService } from './password-reset.service.js';
 import { PreferencesController } from './preferences.controller.js';
 import { PreferencesService } from './preferences.service.js';
 import { ProfileController } from './profile.controller.js';
@@ -24,6 +25,7 @@ import { ProfileService } from './profile.service.js';
   providers: [
     AccountService,
     AuthService,
+    PasswordResetService,
     ProfileService,
     PreferencesService,
     { provide: PasswordHasher, useFactory: () => new PasswordHasher() },

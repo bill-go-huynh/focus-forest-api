@@ -78,6 +78,7 @@ model User {
 
   refreshTokens           RefreshToken[]
   identities              UserIdentity[]
+  passwordResetCodes      PasswordResetCode[]
   preferences             UserPreferences?
   notificationPreferences NotificationPreference[]
   pushDevices             PushDevice[]
@@ -140,6 +141,24 @@ model UserIdentity {
   @@unique([provider, subject])
   @@index([userId])
   @@map("user_identities")
+}
+
+/// W.3 A password reset code sent by email: only its hash is kept. Works once, until it expires,
+/// for a few tries; a new request replaces it.
+model PasswordResetCode {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  /// HMAC-SHA-256 of the code, keyed by the server secret.
+  codeHash  String    @map("code_hash")
+  expiresAt DateTime  @map("expires_at")
+  attempts  Int       @default(0)
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_codes")
 }
 
 model RefreshToken {

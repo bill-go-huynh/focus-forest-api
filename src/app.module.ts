@@ -30,12 +30,14 @@ import { StreakRecoveryModule } from './streak-recovery/streak-recovery.module.j
 import { TopicsModule } from './topics/topics.module.js';
 import { TreesModule } from './trees/trees.module.js';
 import { VisitsModule } from './visits/visits.module.js';
+import { MailModule } from './mail/mail.module.js';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, cache: true, validate: validateEnv }),
     ClockModule,
     PrismaModule,
+    MailModule,
     ProductConfigModule,
     IdentityModule,
     TopicsModule,

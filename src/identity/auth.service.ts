@@ -145,6 +145,11 @@ export class AuthService {
     }
   }
 
+  /** W.3 A new sign-in for an account whose password was just reset. */
+  startSession(user: TokenUser): Promise<AuthResult> {
+    return this.issueTokens(user, randomUUID());
+  }
+
   private async findGoogleUser(subject: string) {
     const identity = await this.prisma.userIdentity.findUnique({
       where: { provider_subject: { provider: 'google', subject } },
