@@ -116,6 +116,13 @@ export class EnvironmentVariables {
    */
   @IsEnum(['on', 'off'])
   RATE_LIMITS: 'on' | 'off' = 'on';
+
+  /**
+   * DM.1 Demo tools for a local demo or QA (spec/demo): admin-made demo worlds and notifications
+   * on demand. Off by default, and refused in production.
+   */
+  @IsEnum(['on', 'off'])
+  DEMO_TOOLS: 'on' | 'off' = 'off';
 }
 
 export function validateEnv(config: Record<string, unknown>): EnvironmentVariables {
@@ -123,6 +130,9 @@ export function validateEnv(config: Record<string, unknown>): EnvironmentVariabl
   const errors = validateSync(env);
   if (errors.length > 0) {
     throw new Error(`Invalid environment configuration:\n${errors.toString()}`);
+  }
+  if (env.DEMO_TOOLS === 'on' && env.NODE_ENV === NodeEnv.Production) {
+    throw new Error('Invalid environment configuration: DEMO_TOOLS cannot be on in production.');
   }
   return env;
 }

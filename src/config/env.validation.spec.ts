@@ -40,3 +40,26 @@ describe('validateEnv (auth settings)', () => {
     );
   });
 });
+
+describe('validateEnv (DM.1 demo tools)', () => {
+  const base = {
+    DATABASE_URL: 'postgresql://localhost/test',
+    JWT_ACCESS_SECRET: 'x'.repeat(40),
+  };
+
+  it('keeps demo tools off by default', () => {
+    expect(validateEnv(base).DEMO_TOOLS).toBe('off');
+  });
+
+  it('turns them on outside production', () => {
+    expect(validateEnv({ ...base, DEMO_TOOLS: 'on', NODE_ENV: 'development' }).DEMO_TOOLS).toBe(
+      'on',
+    );
+  });
+
+  it('refuses them in production', () => {
+    expect(() => validateEnv({ ...base, DEMO_TOOLS: 'on', NODE_ENV: 'production' })).toThrow(
+      /DEMO_TOOLS/,
+    );
+  });
+});

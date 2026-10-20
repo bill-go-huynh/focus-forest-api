@@ -22,6 +22,8 @@ export default defineConfig({
       ADMIN_JWT_SECRET: 'test-only-admin-token-secret-9876543210',
       // One address signs up and in many people; test/safety turns limits on again.
       RATE_LIMITS: 'off',
+      // DM.1: the demo tools' own tests need them; no other test calls them.
+      DEMO_TOOLS: 'on',
     },
     include: ['**/*.int-spec.ts'],
     globalSetup: ['./test/database/global-setup.ts'],

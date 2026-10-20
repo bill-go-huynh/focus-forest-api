@@ -31,6 +31,7 @@ import { TopicsModule } from './topics/topics.module.js';
 import { TreesModule } from './trees/trees.module.js';
 import { VisitsModule } from './visits/visits.module.js';
 import { MailModule } from './mail/mail.module.js';
+import { DemoModule } from './demo/demo.module.js';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { MailModule } from './mail/mail.module.js';
     ClockModule,
     PrismaModule,
     MailModule,
+    DemoModule,
     ProductConfigModule,
     IdentityModule,
     TopicsModule,
