@@ -2,6 +2,8 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
+  type OnApplicationBootstrap,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
@@ -26,6 +28,11 @@ import { ReactionsService } from '../social/reactions.service.js';
 import { SocialGraphService } from '../social/social-graph.service.js';
 import { MonthClosureService } from '../trees/month-closure.service.js';
 import { DemoTooEarlyError, worldPlan, type PlannedSession } from './demo-plan.js';
+import { DemoEvents } from './demo-live.gateway.js';
+import { ConfigService } from '@nestjs/config';
+import type { EnvironmentVariables } from '../config/env.validation.js';
+import { RestDaysService } from '../consistency/rest-days.service.js';
+import { SessionsService } from '../sessions/sessions.service.js';
 
 /**
  * DM.1 Demo tools (spec/demo/PLAN.md). Not product scope: a local demo and QA tool, on only with
@@ -115,7 +122,7 @@ const addDays = (date: string, days: number) =>
   new Date(Date.parse(`${date}T00:00:00Z`) + days * DAY).toISOString().slice(0, 10);
 
 @Injectable()
-export class DemoService {
+export class DemoService implements OnApplicationBootstrap {
   constructor(
     private readonly prisma: PrismaService,
     private readonly clock: Clock,
@@ -129,7 +136,17 @@ export class DemoService {
     private readonly config: ProductConfigService,
     private readonly audit: AdminAuditService,
     private readonly modules: ModuleRef,
+    private readonly live: DemoEvents,
+    private readonly env: ConfigService<EnvironmentVariables, true>,
   ) {}
+
+  onApplicationBootstrap(): void {
+    if (this.env.get('DEMO_TOOLS', { infer: true }) === 'on') {
+      new Logger('DemoTools').warn(
+        'DEMO_TOOLS is on: admins can make demo accounts and send notifications. Use it only on a demo server.',
+      );
+    }
+  }
 
   private get rooms() {
     return this.modules.get(RoomsService, { strict: false });
@@ -140,8 +157,14 @@ export class DemoService {
   private get graph() {
     return this.modules.get(SocialGraphService, { strict: false });
   }
-  private get live() {
+  private get content() {
     return this.modules.get(LiveService, { strict: false });
+  }
+  private get sessions() {
+    return this.modules.get(SessionsService, { strict: false });
+  }
+  private get restDays() {
+    return this.modules.get(RestDaysService, { strict: false });
   }
 
   /** Every demo world, from its accounts' addresses. */
@@ -385,7 +408,7 @@ export class DemoService {
         },
       });
     }
-    await this.live.createEvent(adminId, {
+    await this.content.createEvent(adminId, {
       id,
       name: `Demo Grove ${world}`,
       description: 'A demo event: everyone’s focus grows one shared tree.',
@@ -516,6 +539,7 @@ export class DemoService {
       targetId: userId,
       reason: `Demo world ${worldId}: ${category}`,
     });
+    this.live.announce(userId, { type: 'refresh', reason: 'notification' });
     if (!row) return result('skipped', 'not_created', null);
     return result(row.status, row.reason, row.title);
   }
@@ -545,6 +569,99 @@ export class DemoService {
       reason: `Demo world ${worldId}`,
     });
     return ready;
+  }
+
+  /**
+   * Adds a session that just finished, through the real submission (growth, badges, streak,
+   * events, challenges), and sends its result to the phone, which celebrates it as its own.
+   */
+  async addSession(
+    adminId: string,
+    worldId: number,
+    persona: DemoPersona,
+    minutes: number,
+  ): Promise<unknown> {
+    const world = await this.worldOrThrow(worldId);
+    const userId = DemoService.user(world, persona);
+    const now = this.clock.now();
+    const end = new Date(now.getTime() - 30_000);
+    const start = new Date(end.getTime() - minutes * MIN);
+    const last = await this.prisma.focusSession.findFirst({
+      where: { userId },
+      orderBy: { effectiveEndedAt: 'desc' },
+      select: { effectiveEndedAt: true },
+    });
+    if (last && last.effectiveEndedAt > start) {
+      const wait = Math.ceil((last.effectiveEndedAt.getTime() - start.getTime()) / MIN);
+      throw new ConflictException({
+        statusCode: 409,
+        error: 'Conflict',
+        message: `The last session ended moments ago: wait ${wait} more minute${wait === 1 ? '' : 's'}, or add a shorter one.`,
+        code: 'too_soon',
+      });
+    }
+    const topic = await this.prisma.topic.findFirst({
+      where: { userId, status: 'active' },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true },
+    });
+    if (!topic) throw new BadRequestException('This account has no topic.');
+    const { session } = await this.sessions.submit(userId, randomUUID(), {
+      topicId: topic.id,
+      startedAt: start.toISOString(),
+      endedAt: end.toISOString(),
+      plannedMinutes: minutes,
+      pauseIntervals: [],
+    });
+    this.live.announce(userId, { type: 'session', session });
+    await this.audit.record({
+      adminId,
+      action: 'demo.session',
+      targetType: 'user',
+      targetId: userId,
+      reason: `Demo world ${worldId}: ${minutes} minutes`,
+    });
+    return session;
+  }
+
+  /** Makes today a rest day, under the product's own rules (two a week). */
+  async restToday(adminId: string, worldId: number, persona: DemoPersona): Promise<unknown> {
+    const world = await this.worldOrThrow(worldId);
+    const userId = DemoService.user(world, persona);
+    const result = await this.restDays.schedule(userId, localToday(this.clock.now()));
+    this.live.announce(userId, { type: 'refresh', reason: 'rest_day' });
+    await this.audit.record({
+      adminId,
+      action: 'demo.rest_today',
+      targetType: 'user',
+      targetId: userId,
+      reason: `Demo world ${worldId}`,
+    });
+    return result.restDays;
+  }
+
+  /** A friend reacts to the presenter's forest with something they have not sent yet. */
+  async react(adminId: string, worldId: number, persona: DemoPersona): Promise<unknown> {
+    const world = await this.worldOrThrow(worldId);
+    if (!persona.startsWith('friend-')) throw new BadRequestException('Only a friend reacts.');
+    const friend = DemoService.user(world, persona);
+    const main = DemoService.user(world, 'main');
+    const sent = await this.prisma.reaction.findMany({
+      where: { reactorId: friend, ownerId: main, targetType: 'forest' },
+      select: { reaction: true },
+    });
+    const kinds = ['fire', 'sprout', 'clap', 'heart', 'sparkles'] as const;
+    const kind = kinds.find((k) => !sent.some((r) => r.reaction === k)) ?? 'sparkles';
+    const summary = await this.reactions.add(friend, main, { type: 'forest', key: '' }, kind);
+    this.live.announce(main, { type: 'refresh', reason: 'reaction' });
+    await this.audit.record({
+      adminId,
+      action: 'demo.react',
+      targetType: 'user',
+      targetId: main,
+      reason: `Demo world ${worldId}: ${persona} sent ${kind}`,
+    });
+    return summary;
   }
 
   private async leaveRoom(userId: string): Promise<void> {

@@ -57,9 +57,9 @@ describe('validateEnv (DM.1 demo tools)', () => {
     );
   });
 
-  it('refuses them in production', () => {
-    expect(() => validateEnv({ ...base, DEMO_TOOLS: 'on', NODE_ENV: 'production' })).toThrow(
-      /DEMO_TOOLS/,
+  it('allows them on a deployed demo server (owner decision 2026-10-20)', () => {
+    expect(validateEnv({ ...base, DEMO_TOOLS: 'on', NODE_ENV: 'production' }).DEMO_TOOLS).toBe(
+      'on',
     );
   });
 });

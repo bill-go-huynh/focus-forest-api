@@ -10,6 +10,7 @@ import { AttributionModule } from '../sessions/attribution/attribution.module.js
 import { SocialModule } from '../social/social.module.js';
 import { TreesModule } from '../trees/trees.module.js';
 import { DemoController, DemoEnabledGuard } from './demo.controller.js';
+import { DemoEvents, DemoLiveGateway } from './demo-live.gateway.js';
 import { DemoService } from './demo.service.js';
 
 /** DM.1 Demo tools (spec/demo/PLAN.md): local demo and QA only. */
@@ -26,6 +27,6 @@ import { DemoService } from './demo.service.js';
     TreesModule,
   ],
   controllers: [DemoController],
-  providers: [DemoService, DemoEnabledGuard],
+  providers: [DemoService, DemoEnabledGuard, DemoEvents, DemoLiveGateway],
 })
 export class DemoModule {}

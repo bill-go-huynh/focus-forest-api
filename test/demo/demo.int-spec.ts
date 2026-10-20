@@ -236,3 +236,130 @@ describe('demo tools (DM.1)', () => {
     expect(JSON.stringify(res.body)).toContain('"state":"ready"');
   });
 });
+
+/** The demo live channel (`/demo/live`): what an admin changes reaches the phone at once. */
+interface Live {
+  socket: WebSocket;
+  next: (type: string, ms?: number) => Promise<Body>;
+}
+async function live(token: string): Promise<Live> {
+  const socket = new WebSocket(`${t.url.replace(/^http/, 'ws')}/demo/live`);
+  const messages: Body[] = [];
+  socket.addEventListener('message', (event) =>
+    messages.push(JSON.parse(String(event.data)) as Body),
+  );
+  await new Promise<void>((resolve, reject) => {
+    socket.addEventListener('open', () => resolve());
+    socket.addEventListener('error', () => reject(new Error('socket error')));
+  });
+  socket.send(JSON.stringify({ type: 'auth', token }));
+  return {
+    socket,
+    next: async (type, ms = 4000) => {
+      const until = Date.now() + ms;
+      while (Date.now() < until) {
+        const i = messages.findIndex((m) => m['type'] === type);
+        if (i >= 0) return messages.splice(i, 1)[0]!;
+        await new Promise((r) => setTimeout(r, 25));
+      }
+      throw new Error(`No ${type} message; got ${JSON.stringify(messages)}`);
+    },
+  };
+}
+const tokenOf = (auth: Auth) => auth['Authorization']!.replace('Bearer ', '');
+
+describe('demo live changes (DM.1b)', () => {
+  let auth: Auth;
+  const sockets: WebSocket[] = [];
+  beforeAll(async () => {
+    await t.start();
+  });
+  afterAll(() => t.stop());
+  beforeEach(async () => {
+    t.reset();
+    await t.setNow('2026-10-20T05:00:00.000Z');
+    await t.activateConfig();
+    auth = await admin('ops@example.com');
+  });
+  afterEach(() => {
+    for (const s of sockets.splice(0)) s.close();
+  });
+  const open = async (token: string) => {
+    const l = await live(token);
+    sockets.push(l.socket);
+    return l;
+  };
+
+  it('lets only demo accounts listen', async () => {
+    const world = await makeWorld(auth);
+    const main = await open(tokenOf(await signIn(account(world, 'main').email)));
+    expect(await main.next('authenticated')).toEqual({ type: 'authenticated' });
+    await t
+      .http()
+      .post('/auth/sign-up')
+      .send({ email: 'real@example.com', password: DEMO_PASSWORD });
+    const real = await open(tokenOf(await signIn('real@example.com')));
+    expect(await real.next('error')).toEqual({ type: 'error', code: 'not_a_demo_account' });
+  });
+
+  it('adds a finished session from the admin and sends its result to the phone', async () => {
+    const world = await makeWorld(auth);
+    const main = await open(tokenOf(await signIn(account(world, 'main').email)));
+    await main.next('authenticated');
+    const res = await t
+      .http()
+      .post(`/admin/demo/worlds/${world.id}/session`)
+      .set(auth)
+      .send({ persona: 'main', minutes: 25 })
+      .expect(201);
+    expect(JSON.stringify(res.body)).toContain('mature_tree');
+    const pushed = await main.next('session');
+    expect(JSON.stringify(pushed['session'])).toContain('focus-hours:50');
+  });
+
+  it('says to wait when the last session ended moments ago', async () => {
+    const world = await makeWorld(auth);
+    await t
+      .http()
+      .post(`/admin/demo/worlds/${world.id}/session`)
+      .set(auth)
+      .send({ persona: 'main', minutes: 25 })
+      .expect(201);
+    const again = await t
+      .http()
+      .post(`/admin/demo/worlds/${world.id}/session`)
+      .set(auth)
+      .send({ persona: 'main', minutes: 25 })
+      .expect(409);
+    expect(again.body).toMatchObject({ code: 'too_soon' });
+  });
+
+  it('makes today a rest day and tells the phone to refresh', async () => {
+    const world = await makeWorld(auth);
+    const mainAuth = await signIn(account(world, 'main').email);
+    const main = await open(tokenOf(mainAuth));
+    await main.next('authenticated');
+    await t
+      .http()
+      .post(`/admin/demo/worlds/${world.id}/rest-today`)
+      .set(auth)
+      .send({ persona: 'main' })
+      .expect(201);
+    expect(await main.next('refresh')).toMatchObject({ type: 'refresh' });
+    const rest = await t.http().get('/me/rest-days').set(mainAuth).expect(200);
+    expect(JSON.stringify(rest.body)).toContain('2026-10-20');
+  });
+
+  it('has a friend react to the presenter’s forest, and tells the phone', async () => {
+    const world = await makeWorld(auth);
+    const main = await open(tokenOf(await signIn(account(world, 'main').email)));
+    await main.next('authenticated');
+    await t
+      .http()
+      .post(`/admin/demo/worlds/${world.id}/react`)
+      .set(auth)
+      .send({ persona: 'friend-linh' })
+      .expect(201);
+    expect(await main.next('refresh')).toMatchObject({ type: 'refresh' });
+  });
+});

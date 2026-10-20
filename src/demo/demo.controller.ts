@@ -10,7 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { IsIn, IsOptional, IsString, Length, MaxLength } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, Length, Max, MaxLength, Min } from 'class-validator';
 
 import {
   AdminController,
@@ -48,6 +48,18 @@ export class CreateWorldDto {
   @IsString()
   @MaxLength(500)
   reason?: string;
+}
+
+export class PersonaDto {
+  @IsIn(DEMO_PERSONAS)
+  persona!: DemoPersona;
+}
+
+export class AddSessionDto extends PersonaDto {
+  @IsInt()
+  @Min(5)
+  @Max(180)
+  minutes!: number;
 }
 
 export class NotifyDto {
@@ -96,6 +108,36 @@ export class DemoController {
     @Body() body: NotifyDto,
   ): Promise<DemoNotifyResult> {
     return this.demo.notify(admin.adminId, id, body.persona, body.category);
+  }
+
+  @UseGuards(DemoEnabledGuard)
+  @Post('worlds/:id/session')
+  session(
+    @CurrentAdmin() admin: AuthenticatedAdmin,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: AddSessionDto,
+  ): Promise<unknown> {
+    return this.demo.addSession(admin.adminId, id, body.persona, body.minutes);
+  }
+
+  @UseGuards(DemoEnabledGuard)
+  @Post('worlds/:id/rest-today')
+  restToday(
+    @CurrentAdmin() admin: AuthenticatedAdmin,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: PersonaDto,
+  ): Promise<unknown> {
+    return this.demo.restToday(admin.adminId, id, body.persona);
+  }
+
+  @UseGuards(DemoEnabledGuard)
+  @Post('worlds/:id/react')
+  react(
+    @CurrentAdmin() admin: AuthenticatedAdmin,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: PersonaDto,
+  ): Promise<unknown> {
+    return this.demo.react(admin.adminId, id, body.persona);
   }
 
   @UseGuards(DemoEnabledGuard)
