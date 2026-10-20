@@ -112,6 +112,49 @@ describe('demo tools (DM.1)', () => {
     expect(audit).toHaveLength(1);
   });
 
+  it('makes the accounts with the emails the admin enters, and fills in the rest', async () => {
+    const res = await t
+      .http()
+      .post('/admin/demo/worlds')
+      .set(auth)
+      .send({
+        password: DEMO_PASSWORD,
+        emails: { main: '  Bill.Presenter@Gmail.com ', 'friend-khoa': 'khoa@team.dev' },
+      })
+      .expect(201);
+    const world = res.body as World;
+    expect(account(world, 'main').email).toBe('bill.presenter@gmail.com');
+    expect(account(world, 'friend-khoa').email).toBe('khoa@team.dev');
+    expect(account(world, 'comeback').email).toBe(`demo${world.id}-comeback@focusforest.test`);
+    // Listed as a demo world although the addresses are the admin's own.
+    const list = await t.http().get('/admin/demo/worlds').set(auth).expect(200);
+    expect((list.body as { items: World[] }).items[0]!.accounts).toEqual(world.accounts);
+    // The main account is poised as usual and signs in with the entered address.
+    const main = await signIn('bill.presenter@gmail.com');
+    const home = await t.http().get('/me/home').set(main).expect(200);
+    expect(home.body).toMatchObject({ pendingCeremony: { year: 2026, month: 9 } });
+  });
+
+  it('never takes over an existing account, and refuses a bad or repeated email', async () => {
+    await t
+      .http()
+      .post('/auth/sign-up')
+      .send({ email: 'real@example.com', password: DEMO_PASSWORD });
+    const make = (emails: Record<string, string>) =>
+      t.http().post('/admin/demo/worlds').set(auth).send({ password: DEMO_PASSWORD, emails });
+    const taken = await make({ main: 'Real@example.com' }).expect(409);
+    expect(taken.body).toMatchObject({ code: 'email_taken', email: 'real@example.com' });
+    await make({ main: 'not-an-email' }).expect(400);
+    await make({ stranger: 'x@team.dev' }).expect(400);
+    const repeated = await make({ main: 'a@team.dev', comeback: 'A@team.dev' }).expect(400);
+    expect(repeated.body).toMatchObject({ code: 'email_repeated' });
+    // Nothing half-made.
+    expect(await t.prisma.user.count()).toBe(1);
+    expect((await t.http().get('/admin/demo/worlds').set(auth).expect(200)).body).toEqual({
+      items: [],
+    });
+  });
+
   it('plays the planting ceremony on the main account’s first open', async () => {
     const world = await makeWorld(auth);
     const main = await signIn(account(world, 'main').email);
@@ -300,6 +343,18 @@ describe('demo live changes (DM.1b)', () => {
       .send({ email: 'real@example.com', password: DEMO_PASSWORD });
     const real = await open(tokenOf(await signIn('real@example.com')));
     expect(await real.next('error')).toEqual({ type: 'error', code: 'not_a_demo_account' });
+  });
+
+  it('lets a demo account with an entered email listen', async () => {
+    const res = await t
+      .http()
+      .post('/admin/demo/worlds')
+      .set(auth)
+      .send({ password: DEMO_PASSWORD, emails: { main: 'presenter@team.dev' } })
+      .expect(201);
+    expect((res.body as World).accounts[0]!.email).toBe('presenter@team.dev');
+    const main = await open(tokenOf(await signIn('presenter@team.dev')));
+    expect(await main.next('authenticated')).toEqual({ type: 'authenticated' });
   });
 
   it('adds a finished session from the admin and sends its result to the phone', async () => {

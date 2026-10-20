@@ -79,6 +79,7 @@ model User {
   refreshTokens           RefreshToken[]
   identities              UserIdentity[]
   passwordResetCodes      PasswordResetCode[]
+  demoAccount             DemoAccount?
   preferences             UserPreferences?
   notificationPreferences NotificationPreference[]
   pushDevices             PushDevice[]
@@ -159,6 +160,20 @@ model PasswordResetCode {
 
   @@index([userId])
   @@map("password_reset_codes")
+}
+
+/// DM.1 Demo tools (spec/demo): an account a demo world made, whatever its email. Only these
+/// accounts belong to a world and may listen on `/demo/live`. Not product data.
+model DemoAccount {
+  userId    String   @id @map("user_id") @db.Uuid
+  world     Int
+  persona   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([world, persona])
+  @@map("demo_accounts")
 }
 
 model RefreshToken {

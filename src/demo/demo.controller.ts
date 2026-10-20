@@ -10,7 +10,19 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { IsIn, IsInt, IsOptional, IsString, Length, Max, MaxLength, Min } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import {
+  IsEmail,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  Length,
+  Max,
+  MaxLength,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 
 import {
   AdminController,
@@ -29,7 +41,7 @@ import {
   type DemoWorld,
 } from './demo.service.js';
 
-/** Off (404) unless DEMO_TOOLS=on; env validation already refuses it in production. */
+/** Off (404) unless DEMO_TOOLS=on. */
 @Injectable()
 export class DemoEnabledGuard implements CanActivate {
   constructor(private readonly config: ConfigService<EnvironmentVariables, true>) {}
@@ -37,6 +49,28 @@ export class DemoEnabledGuard implements CanActivate {
     if (this.config.get('DEMO_TOOLS', { infer: true }) !== 'on') throw new NotFoundException();
     return true;
   }
+}
+
+/** Trimmed and lowercased; left blank, the persona gets its generated address. */
+const entered = ({ value }: { value: unknown }): unknown => {
+  if (typeof value !== 'string') return value;
+  return value.trim().toLowerCase() || undefined;
+};
+const IsEnteredEmail = (): PropertyDecorator => (target, key) => {
+  Transform(entered)(target, key);
+  IsOptional()(target, key);
+  IsEmail({}, { message: 'Enter a valid email address.' })(target, key);
+  MaxLength(254)(target, key);
+};
+
+/** The address the admin chose for each persona, any of them left out. */
+export class DemoEmailsDto implements Partial<Record<DemoPersona, string>> {
+  @IsEnteredEmail() main?: string;
+  @IsEnteredEmail() comeback?: string;
+  @IsEnteredEmail() recovery?: string;
+  @IsEnteredEmail() 'friend-mai'?: string;
+  @IsEnteredEmail() 'friend-khoa'?: string;
+  @IsEnteredEmail() 'friend-linh'?: string;
 }
 
 export class CreateWorldDto {
@@ -48,6 +82,11 @@ export class CreateWorldDto {
   @IsString()
   @MaxLength(500)
   reason?: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => DemoEmailsDto)
+  emails?: DemoEmailsDto;
 }
 
 export class PersonaDto {
@@ -97,7 +136,12 @@ export class DemoController {
     @CurrentAdmin() admin: AuthenticatedAdmin,
     @Body() body: CreateWorldDto,
   ): Promise<DemoWorld> {
-    return this.demo.createWorld(admin.adminId, body.password, body.reason?.trim() || 'Demo');
+    return this.demo.createWorld(
+      admin.adminId,
+      body.password,
+      body.reason?.trim() || 'Demo',
+      body.emails,
+    );
   }
 
   @UseGuards(DemoEnabledGuard)

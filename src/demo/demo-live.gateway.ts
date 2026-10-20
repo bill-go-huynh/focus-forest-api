@@ -30,8 +30,6 @@ interface Socket {
 }
 
 const OPEN = 1;
-/** Demo accounts only: a real account's phone never listens here. */
-export const DEMO_EMAIL = /^demo\d+(?:-[a-z-]+)?@focusforest\.test$/;
 
 /**
  * DM.1b The demo live channel: so a change an admin makes on the Demo page shows on the phone
@@ -78,13 +76,14 @@ export class DemoLiveGateway implements OnGatewayConnection, OnGatewayDisconnect
     const user = verified
       ? await this.prisma.user.findUnique({
           where: { id: verified.userId },
-          select: { email: true, status: true },
+          select: { status: true, demoAccount: { select: { world: true } } },
         })
       : null;
     if (!verified || !user || user.status !== 'active') {
       return send(socket, { type: 'error', code: 'not_authenticated' });
     }
-    if (!DEMO_EMAIL.test(user.email)) {
+    // Demo accounts only (made by a demo world, whatever their email): a real account never listens.
+    if (!user.demoAccount) {
       return send(socket, { type: 'error', code: 'not_a_demo_account' });
     }
     this.connections.set(socket, verified.userId);

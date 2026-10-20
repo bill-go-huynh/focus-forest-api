@@ -35,8 +35,8 @@ import { RestDaysService } from '../consistency/rest-days.service.js';
 import { SessionsService } from '../sessions/sessions.service.js';
 
 /**
- * DM.1 Demo tools (spec/demo/PLAN.md). Not product scope: a local demo and QA tool, on only with
- * DEMO_TOOLS=on outside production (env validation), for the admin role, every action audited.
+ * DM.1 Demo tools (spec/demo/PLAN.md). Not product scope: a demo and QA tool, on only with
+ * DEMO_TOOLS=on (meant for a demo server), for the admin role, every action audited.
  *
  * The server keeps one real clock and much of the product is one-shot (archived trees, the
  * ceremony, ownership, Community Tree totals), so nothing is ever rewound: each demo makes a
@@ -54,7 +54,6 @@ const OFFSET_HOURS = 7;
 const MIN = 60_000;
 const DAY = 24 * 60 * MIN;
 const DOMAIN = 'focusforest.test';
-const EMAIL = /^demo(\d+)(?:-([a-z-]+))?@focusforest\.test$/;
 
 export const DEMO_PERSONAS = [
   'main',
@@ -107,6 +106,7 @@ export interface DemoNotifyResult {
   title: string | null;
 }
 
+/** The address a persona gets when the admin enters none. */
 const emailOf = (world: number, persona: DemoPersona) =>
   persona === 'main' ? `demo${world}@${DOMAIN}` : `demo${world}-${persona}@${DOMAIN}`;
 const eventIdOf = (world: number) => `demo-world-${world}`;
@@ -167,21 +167,25 @@ export class DemoService implements OnApplicationBootstrap {
     return this.modules.get(RestDaysService, { strict: false });
   }
 
-  /** Every demo world, from its accounts' addresses. */
+  /** Every demo world, from the accounts demo worlds made (`demo_accounts`). */
   async worlds(): Promise<{ items: DemoWorld[] }> {
-    const users = await this.prisma.user.findMany({
-      where: { email: { endsWith: `@${DOMAIN}`, startsWith: 'demo' } },
-      select: { id: true, email: true, displayName: true },
+    const rows = await this.prisma.demoAccount.findMany({
+      select: {
+        world: true,
+        persona: true,
+        user: { select: { id: true, email: true, displayName: true } },
+      },
     });
     const byWorld = new Map<number, DemoAccount[]>();
-    for (const user of users) {
-      const match = EMAIL.exec(user.email);
-      if (!match) continue;
-      const persona = (match[2] ?? 'main') as DemoPersona;
-      if (!DEMO_PERSONAS.includes(persona)) continue;
-      const world = Number(match[1]);
+    for (const { world, persona, user } of rows) {
+      if (!(DEMO_PERSONAS as readonly string[]).includes(persona)) continue;
       const list = byWorld.get(world) ?? [];
-      list.push({ persona, email: user.email, userId: user.id, name: user.displayName ?? '' });
+      list.push({
+        persona: persona as DemoPersona,
+        email: user.email,
+        userId: user.id,
+        name: user.displayName ?? '',
+      });
       byWorld.set(world, list);
     }
     const items = [...byWorld.entries()]
@@ -194,7 +198,17 @@ export class DemoService implements OnApplicationBootstrap {
     return { items };
   }
 
-  async createWorld(adminId: string, password: string, reason: string): Promise<DemoWorld> {
+  /**
+   * `emails` are the addresses the admin entered for some personas (the rest get
+   * `demoN…@focusforest.test`). A world only ever makes new accounts: an address that already has
+   * one is refused, so a real account's history is never touched.
+   */
+  async createWorld(
+    adminId: string,
+    password: string,
+    reason: string,
+    emails: Partial<Record<DemoPersona, string>> = {},
+  ): Promise<DemoWorld> {
     const now = this.clock.now();
     const today = localToday(now);
     let plan;
@@ -211,8 +225,9 @@ export class DemoService implements OnApplicationBootstrap {
       }
       throw error;
     }
-    const existing = (await this.worlds()).items.map((w) => w.id);
-    const world = Math.max(0, ...existing) + 1;
+    const latest = await this.prisma.demoAccount.aggregate({ _max: { world: true } });
+    const world = (latest._max.world ?? 0) + 1;
+    const addresses = await this.addresses(world, emails);
     const passwordHash = await this.passwords.hash(password);
     const configVersion = (await this.config.active()).version;
     const joined = new Date(`${addDays(today, -110).slice(0, 8)}01T00:00:00Z`);
@@ -222,12 +237,13 @@ export class DemoService implements OnApplicationBootstrap {
       const profile = PROFILES[persona];
       const user = await this.prisma.user.create({
         data: {
-          email: emailOf(world, persona),
+          email: addresses[persona],
           passwordHash,
           displayName: profile.name,
           username: `demo${world}_${profile.username}`,
           timezone: DEMO_TIME_ZONE,
           createdAt: joined,
+          demoAccount: { create: { world, persona } },
         },
       });
       accounts.push({ persona, email: user.email, userId: user.id, name: profile.name });
@@ -288,6 +304,41 @@ export class DemoService implements OnApplicationBootstrap {
       reason,
     });
     return { id: world, eventId: eventIdOf(world), accounts };
+  }
+
+  /** Each persona's address: the one entered (trimmed, lowercased) or the generated one. */
+  private async addresses(
+    world: number,
+    entered: Partial<Record<DemoPersona, string>>,
+  ): Promise<Record<DemoPersona, string>> {
+    const addresses = Object.fromEntries(
+      DEMO_PERSONAS.map((p) => [p, entered[p]?.trim().toLowerCase() || emailOf(world, p)]),
+    ) as Record<DemoPersona, string>;
+    const all = Object.values(addresses);
+    const repeated = all.find((email, i) => all.indexOf(email) !== i);
+    if (repeated) {
+      throw new BadRequestException({
+        statusCode: 400,
+        error: 'Bad Request',
+        message: `${repeated} is entered for two accounts. Each account needs its own email.`,
+        code: 'email_repeated',
+        email: repeated,
+      });
+    }
+    const taken = await this.prisma.user.findFirst({
+      where: { email: { in: all } },
+      select: { email: true },
+    });
+    if (taken) {
+      throw new ConflictException({
+        statusCode: 409,
+        error: 'Conflict',
+        message: `${taken.email} already has an account. A demo world only makes new accounts.`,
+        code: 'email_taken',
+        email: taken.email,
+      });
+    }
+    return addresses;
   }
 
   /**
