@@ -5,7 +5,7 @@ const message = (n: number): PushMessage => ({
   to: `ExponentPushToken[token${n}]`,
   title: 'Time to focus',
   body: 'Your tree is ready when you are.',
-  data: { link: '/', category: 'scheduledFocusReminder' },
+  data: { link: '/', category: 'scheduledFocusReminder', recipient: 'user-1' },
 });
 
 function fakeFetch(answer: (body: unknown, url: string) => unknown) {
@@ -44,7 +44,7 @@ describe('ExpoPushTransport', () => {
           to: 'ExponentPushToken[token0]',
           title: 'Time to focus',
           body: 'Your tree is ready when you are.',
-          data: { link: '/', category: 'scheduledFocusReminder' },
+          data: { link: '/', category: 'scheduledFocusReminder', recipient: 'user-1' },
           sound: 'default',
           priority: 'normal',
         },

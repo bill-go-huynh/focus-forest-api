@@ -8,7 +8,8 @@ export interface PushMessage {
   to: string;
   title: string;
   body: string;
-  data: { link: string; category: string };
+  /** `recipient` is the user it was for, so a phone opens `link` only for that account. */
+  data: { link: string; category: string; recipient: string };
 }
 
 export type PushTicket = { status: 'ok'; id: string } | { status: 'error'; error: string };

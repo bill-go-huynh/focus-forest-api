@@ -199,7 +199,12 @@ describe('notification foundation (A6.1)', () => {
             to,
             title: 'A new badge: Study Oak Seedling',
             body: expect.any(String) as string,
-            data: { link: '/profile/achievements', category: 'badgeUnlocked' },
+            // The recipient, so the phone opens the link only for the account it was for.
+            data: {
+              link: '/profile/achievements',
+              category: 'badgeUnlocked',
+              recipient: ana.userId,
+            },
           })),
         ),
       );

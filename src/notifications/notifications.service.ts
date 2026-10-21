@@ -232,7 +232,11 @@ export class NotificationsService implements OnModuleInit {
         to,
         title: notification.title,
         body: notification.body,
-        data: { link: notification.link, category: notification.category },
+        data: {
+          link: notification.link,
+          category: notification.category,
+          recipient: notification.userId,
+        },
       })),
     );
     const accepted: { id: string; token: string }[] = [];
