@@ -137,6 +137,49 @@ describe('Google sign-in (HTTP + PostgreSQL)', () => {
       expect(await prisma.userIdentity.count()).toBe(0);
     });
 
+    /** A demo world's account for an email the admin entered: no password, no Google yet. */
+    const demoAccount = (email = 'ada@gmail.com', data: Record<string, unknown> = {}) =>
+      prisma.user.create({
+        data: {
+          email,
+          passwordHash: null,
+          displayName: 'Bill',
+          demoAccount: { create: { world: 1, persona: 'main' } },
+          ...data,
+        },
+      });
+
+    it('signs a demo account made for this Gmail in with Google, and keeps it linked', async () => {
+      const demo = await demoAccount();
+      const first = asAuth(await google(200));
+      expect(first.user.id).toBe(demo.id);
+      expect(first.created).toBe(false);
+      expect(first.user.signInMethod).toBe('google');
+      const again = asAuth(await google(200));
+      expect(again.user.id).toBe(demo.id);
+      expect(await prisma.userIdentity.count()).toBe(1);
+      // Its demo history is untouched: still its own name, not Google's.
+      expect((await prisma.user.findUniqueOrThrow({ where: { id: demo.id } })).displayName).toBe(
+        'Bill',
+      );
+    });
+
+    it('never links a passwordless account that no demo world made', async () => {
+      await prisma.user.create({ data: { email: 'ada@gmail.com', passwordHash: null } });
+      const res = await google(409);
+      expect(res.body).toMatchObject({ code: 'email_in_use' });
+      expect(await prisma.userIdentity.count()).toBe(0);
+    });
+
+    it('never links a demo account to a second Google account', async () => {
+      const demo = await demoAccount();
+      await prisma.userIdentity.create({
+        data: { userId: demo.id, provider: 'google', subject: 'google-someone-else' },
+      });
+      await google(409);
+      expect(await prisma.userIdentity.count()).toBe(1);
+    });
+
     it('refuses a token it cannot confirm, and creates nothing', async () => {
       const res = await http()
         .post('/auth/google')

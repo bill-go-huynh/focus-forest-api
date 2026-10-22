@@ -93,7 +93,21 @@ export interface DemoAccount {
   email: string;
   userId: string;
   name: string;
+  /** An email the admin entered signs in with Google; a demo address with the shared password. */
+  signIn: 'google' | 'password';
+  /** The shared password, for a demo address; null for Google. */
+  password: string | null;
 }
+
+/**
+ * The one password of every demo address (owner, 2026-10-22: no password step). Demo tools are
+ * for a demo server only; an entered email gets no password and signs in with Google.
+ */
+export const DEMO_PASSWORD = 'focus-forest-demo';
+const signInOf = (hasPassword: boolean): Pick<DemoAccount, 'signIn' | 'password'> =>
+  hasPassword
+    ? { signIn: 'password', password: DEMO_PASSWORD }
+    : { signIn: 'google', password: null };
 export interface DemoWorld {
   id: number;
   eventId: string;
@@ -173,7 +187,7 @@ export class DemoService implements OnApplicationBootstrap {
       select: {
         world: true,
         persona: true,
-        user: { select: { id: true, email: true, displayName: true } },
+        user: { select: { id: true, email: true, displayName: true, passwordHash: true } },
       },
     });
     const byWorld = new Map<number, DemoAccount[]>();
@@ -185,6 +199,7 @@ export class DemoService implements OnApplicationBootstrap {
         email: user.email,
         userId: user.id,
         name: user.displayName ?? '',
+        ...signInOf(user.passwordHash !== null),
       });
       byWorld.set(world, list);
     }
@@ -200,12 +215,12 @@ export class DemoService implements OnApplicationBootstrap {
 
   /**
    * `emails` are the addresses the admin entered for some personas (the rest get
-   * `demoN…@focusforest.test`). A world only ever makes new accounts: an address that already has
+   * `demoN…@focusforest.test`). No password is asked for: a demo address gets the shared
+   * `DEMO_PASSWORD`, an entered email none (its owner signs in with Google). A world only ever makes new accounts: an address that already has
    * one is refused, so a real account's history is never touched.
    */
   async createWorld(
     adminId: string,
-    password: string,
     reason: string,
     emails: Partial<Record<DemoPersona, string>> = {},
   ): Promise<DemoWorld> {
@@ -228,17 +243,19 @@ export class DemoService implements OnApplicationBootstrap {
     const latest = await this.prisma.demoAccount.aggregate({ _max: { world: true } });
     const world = (latest._max.world ?? 0) + 1;
     const addresses = await this.addresses(world, emails);
-    const passwordHash = await this.passwords.hash(password);
+    const passwordHash = await this.passwords.hash(DEMO_PASSWORD);
     const configVersion = (await this.config.active()).version;
     const joined = new Date(`${addDays(today, -110).slice(0, 8)}01T00:00:00Z`);
 
     const accounts: DemoAccount[] = [];
     for (const persona of DEMO_PERSONAS) {
       const profile = PROFILES[persona];
+      // An entered email signs in with Google (linked on its first sign-in), so no password.
+      const entered = addresses[persona] !== emailOf(world, persona);
       const user = await this.prisma.user.create({
         data: {
           email: addresses[persona],
-          passwordHash,
+          passwordHash: entered ? null : passwordHash,
           displayName: profile.name,
           username: `demo${world}_${profile.username}`,
           timezone: DEMO_TIME_ZONE,
@@ -246,7 +263,13 @@ export class DemoService implements OnApplicationBootstrap {
           demoAccount: { create: { world, persona } },
         },
       });
-      accounts.push({ persona, email: user.email, userId: user.id, name: profile.name });
+      accounts.push({
+        persona,
+        email: user.email,
+        userId: user.id,
+        name: profile.name,
+        ...signInOf(!entered),
+      });
     }
     const id = (persona: DemoPersona) => accounts.find((a) => a.persona === persona)!.userId;
 

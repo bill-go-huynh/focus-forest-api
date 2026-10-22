@@ -17,7 +17,6 @@ import {
   IsInt,
   IsOptional,
   IsString,
-  Length,
   Max,
   MaxLength,
   Min,
@@ -74,10 +73,6 @@ export class DemoEmailsDto implements Partial<Record<DemoPersona, string>> {
 }
 
 export class CreateWorldDto {
-  @IsString()
-  @Length(8, 128, { message: 'password has 8 to 128 characters.' })
-  password!: string;
-
   @IsOptional()
   @IsString()
   @MaxLength(500)
@@ -136,12 +131,7 @@ export class DemoController {
     @CurrentAdmin() admin: AuthenticatedAdmin,
     @Body() body: CreateWorldDto,
   ): Promise<DemoWorld> {
-    return this.demo.createWorld(
-      admin.adminId,
-      body.password,
-      body.reason?.trim() || 'Demo',
-      body.emails,
-    );
+    return this.demo.createWorld(admin.adminId, body.reason?.trim() || 'Demo', body.emails);
   }
 
   @UseGuards(DemoEnabledGuard)

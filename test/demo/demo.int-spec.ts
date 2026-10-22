@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
 import { createAdmin } from '../../src/admin/create-admin.js';
+import { AuthService } from '../../src/identity/auth.service.js';
 import { PasswordHasher } from '../../src/identity/password-hasher.js';
 import { ConsistencyHarness } from '../support/consistency-harness.js';
 
@@ -14,7 +15,10 @@ import { ConsistencyHarness } from '../support/consistency-harness.js';
 // 12:00 in Ho Chi Minh City on 20 October.
 const t = new ConsistencyHarness('2026-10-20T05:00:00.000Z');
 const ADMIN_PASSWORD = 'correct horse battery staple admin';
-const DEMO_PASSWORD = 'demo-password-1';
+/** The one password of every demo address (`demoN…@focusforest.test`). */
+const DEMO_PASSWORD = 'focus-forest-demo';
+/** Real sign-ups in these tests. */
+const USER_PASSWORD = 'demo-password-1';
 const hasher = new PasswordHasher({ cost: 2 ** 10 });
 type Auth = Record<string, string>;
 type Body = Record<string, unknown>;
@@ -25,12 +29,19 @@ async function admin(email: string, role: 'admin' | 'support' = 'admin'): Promis
   const res = await t.http().post('/admin/auth/sign-in').send({ email, password: ADMIN_PASSWORD });
   return { Authorization: `Bearer ${(res.body as { accessToken: string }).accessToken}` };
 }
+/**
+ * Signs an account in: a demo address with the shared password, a real sign-up with its own,
+ * and an account with no password (an email the admin entered, which signs in with Google on
+ * the phone) through a session started directly, as Google sign-in would.
+ */
 async function signIn(email: string): Promise<Auth> {
-  const res = await t
-    .http()
-    .post('/auth/sign-in')
-    .send({ email, password: DEMO_PASSWORD })
-    .expect(200);
+  const user = await t.prisma.user.findUniqueOrThrow({ where: { email } });
+  if (!user.passwordHash) {
+    const session = await t.app.get(AuthService).startSession(user);
+    return { Authorization: `Bearer ${session.accessToken}` };
+  }
+  const password = email.endsWith('@focusforest.test') ? DEMO_PASSWORD : USER_PASSWORD;
+  const res = await t.http().post('/auth/sign-in').send({ email, password }).expect(200);
   return { Authorization: `Bearer ${(res.body as { accessToken: string }).accessToken}` };
 }
 interface World {
@@ -43,7 +54,7 @@ async function makeWorld(auth: Auth): Promise<World> {
     .http()
     .post('/admin/demo/worlds')
     .set(auth)
-    .send({ password: DEMO_PASSWORD, reason: 'Demo for the team' })
+    .send({ reason: 'Demo for the team' })
     .expect(201);
   return res.body as World;
 }
@@ -92,7 +103,7 @@ describe('demo tools (DM.1)', () => {
       .http()
       .post('/admin/demo/worlds')
       .set(support)
-      .send({ password: DEMO_PASSWORD })
+      .send({})
       .expect(403);
   });
 
@@ -118,7 +129,6 @@ describe('demo tools (DM.1)', () => {
       .post('/admin/demo/worlds')
       .set(auth)
       .send({
-        password: DEMO_PASSWORD,
         emails: { main: '  Bill.Presenter@Gmail.com ', 'friend-khoa': 'khoa@team.dev' },
       })
       .expect(201);
@@ -135,13 +145,42 @@ describe('demo tools (DM.1)', () => {
     expect(home.body).toMatchObject({ pendingCeremony: { year: 2026, month: 9 } });
   });
 
+  it('needs no password: entered emails sign in with Google, demo addresses with one shared password', async () => {
+    const res = await t
+      .http()
+      .post('/admin/demo/worlds')
+      .set(auth)
+      .send({ emails: { main: 'bill.presenter@gmail.com' } })
+      .expect(201);
+    const world = res.body as World & {
+      accounts: { persona: string; signIn: string; password: string | null }[];
+    };
+    const main = world.accounts.find((a) => a.persona === 'main')!;
+    const comeback = world.accounts.find((a) => a.persona === 'comeback')!;
+    expect(main).toMatchObject({ signIn: 'google', password: null });
+    expect(comeback).toMatchObject({ signIn: 'password', password: 'focus-forest-demo' });
+    // The Gmail account has no password at all; the demo address signs in with the shared one.
+    const owner = await t.prisma.user.findUniqueOrThrow({
+      where: { email: 'bill.presenter@gmail.com' },
+    });
+    expect(owner.passwordHash).toBeNull();
+    await t
+      .http()
+      .post('/auth/sign-in')
+      .send({ email: comeback.email, password: 'focus-forest-demo' })
+      .expect(200);
+    // Listed the same way.
+    const list = await t.http().get('/admin/demo/worlds').set(auth).expect(200);
+    expect((list.body as { items: World[] }).items[0]!.accounts).toEqual(world.accounts);
+  });
+
   it('never takes over an existing account, and refuses a bad or repeated email', async () => {
     await t
       .http()
       .post('/auth/sign-up')
-      .send({ email: 'real@example.com', password: DEMO_PASSWORD });
+      .send({ email: 'real@example.com', password: USER_PASSWORD });
     const make = (emails: Record<string, string>) =>
-      t.http().post('/admin/demo/worlds').set(auth).send({ password: DEMO_PASSWORD, emails });
+      t.http().post('/admin/demo/worlds').set(auth).send({ emails });
     const taken = await make({ main: 'Real@example.com' }).expect(409);
     expect(taken.body).toMatchObject({ code: 'email_taken', email: 'real@example.com' });
     await make({ main: 'not-an-email' }).expect(400);
@@ -340,7 +379,7 @@ describe('demo live changes (DM.1b)', () => {
     await t
       .http()
       .post('/auth/sign-up')
-      .send({ email: 'real@example.com', password: DEMO_PASSWORD });
+      .send({ email: 'real@example.com', password: USER_PASSWORD });
     const real = await open(tokenOf(await signIn('real@example.com')));
     expect(await real.next('error')).toEqual({ type: 'error', code: 'not_a_demo_account' });
   });
@@ -350,7 +389,7 @@ describe('demo live changes (DM.1b)', () => {
       .http()
       .post('/admin/demo/worlds')
       .set(auth)
-      .send({ password: DEMO_PASSWORD, emails: { main: 'presenter@team.dev' } })
+      .send({ emails: { main: 'presenter@team.dev' } })
       .expect(201);
     expect((res.body as World).accounts[0]!.email).toBe('presenter@team.dev');
     const main = await open(tokenOf(await signIn('presenter@team.dev')));

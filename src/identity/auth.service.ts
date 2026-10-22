@@ -102,6 +102,11 @@ export class AuthService {
       assertActive(linked);
       return { ...(await this.issueTokens(linked, randomUUID())), created: false };
     }
+    const demo = await this.linkDemoAccount(account.email, account.subject);
+    if (demo) {
+      assertActive(demo);
+      return { ...(await this.issueTokens(demo, randomUUID())), created: false };
+    }
     try {
       const user = await this.prisma.user.create({
         data: {
@@ -143,6 +148,36 @@ export class AuthService {
             },
       );
     }
+  }
+
+  /**
+   * Demo tools (spec/demo): a demo world may make an account for an email the admin entered,
+   * with no password, so its owner signs in with Google (owner, 2026-10-22). Google has just
+   * verified that email, so the first such sign-in links the account. Only an account a demo
+   * world made, with no password and no Google account yet: any other email stays as it is.
+   */
+  private async linkDemoAccount(email: string, subject: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        passwordHash: true,
+        demoAccount: { select: { world: true } },
+        _count: { select: { identities: true } },
+      },
+    });
+    if (!user?.demoAccount || user.passwordHash || user._count.identities > 0) return null;
+    try {
+      await this.prisma.userIdentity.create({
+        data: { userId: user.id, provider: 'google', subject },
+      });
+    } catch (error) {
+      // Linked by a concurrent sign-in a moment ago: the lookup below finds it.
+      if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002')) {
+        throw error;
+      }
+    }
+    return this.findGoogleUser(subject);
   }
 
   /** W.3 A new sign-in for an account whose password was just reset. */
