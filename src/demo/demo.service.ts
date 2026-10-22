@@ -301,6 +301,9 @@ export class DemoService implements OnApplicationBootstrap {
       await this.graph.follow(id('main'), id(friend));
       await this.graph.follow(id(friend), id('main'));
     }
+    // The comeback and recovery accounts follow the presenter too: followers beyond friends.
+    await this.graph.follow(id('comeback'), id('main'));
+    await this.graph.follow(id('recovery'), id('main'));
     const kinds = ['fire', 'sprout', 'heart'] as const;
     for (const [i, friend] of friends.entries()) {
       await this.reactions.add(id(friend), id('main'), { type: 'forest', key: '' }, kinds[i]!);
@@ -318,6 +321,8 @@ export class DemoService implements OnApplicationBootstrap {
     for (const participant of [...friends, 'main' as const]) {
       await this.events.join(id(participant), eventIdOf(world));
     }
+    // A waiting room Mai opened, the presenter invited, Khoa already ready (owner, 2026-10-22).
+    await this.waitingRoom(id('main'), id('friend-mai'), id('friend-khoa'));
 
     await this.audit.record({
       adminId,
@@ -616,6 +621,45 @@ export class DemoService implements OnApplicationBootstrap {
     this.live.announce(userId, { type: 'refresh', reason: 'notification' });
     if (!row) return result('skipped', 'not_created', null);
     return result(row.status, row.reason, row.title);
+  }
+
+  /**
+   * Mai opens a private waiting room, invites the presenter, and Khoa joins and is ready. Any
+   * room either friend was in is left first, so a lobby that ran out (2 h) is simply replaced.
+   */
+  private async waitingRoom(main: string, mai: string, khoa: string): Promise<void> {
+    await this.leaveRoom(mai);
+    await this.leaveRoom(khoa);
+    const room = await this.rooms.create(mai, {
+      name: 'Study with Mai',
+      topic: null,
+      durationMinutes: 25,
+      maxParticipants: 4,
+      visibility: 'private',
+    });
+    await this.rooms.invite(mai, room.id, [main]);
+    if (room.code) await this.rooms.joinByCode(khoa, room.code);
+    await this.rooms.ready(khoa, room.id, true);
+  }
+
+  /** A fresh waiting room for the presenter, in place of one that ran out. */
+  async openRoom(adminId: string, worldId: number): Promise<{ opened: true }> {
+    const world = await this.worldOrThrow(worldId);
+    const main = DemoService.user(world, 'main');
+    await this.waitingRoom(
+      main,
+      DemoService.user(world, 'friend-mai'),
+      DemoService.user(world, 'friend-khoa'),
+    );
+    this.live.announce(main, { type: 'refresh', reason: 'room' });
+    await this.audit.record({
+      adminId,
+      action: 'demo.room',
+      targetType: 'user',
+      targetId: main,
+      reason: `Demo world ${worldId}`,
+    });
+    return { opened: true };
   }
 
   /** A friend joins the presenter's lobby and is ready: the room counts down and starts. */

@@ -175,6 +175,15 @@ export class DemoController {
   }
 
   @UseGuards(DemoEnabledGuard)
+  @Post('worlds/:id/room')
+  room(
+    @CurrentAdmin() admin: AuthenticatedAdmin,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ opened: true }> {
+    return this.demo.openRoom(admin.adminId, id);
+  }
+
+  @UseGuards(DemoEnabledGuard)
   @Post('worlds/:id/friend-ready')
   friendReady(
     @CurrentAdmin() admin: AuthenticatedAdmin,

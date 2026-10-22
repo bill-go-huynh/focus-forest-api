@@ -99,12 +99,7 @@ describe('demo tools (DM.1)', () => {
     const status = await t.http().get('/admin/demo/status').set(auth).expect(200);
     expect(status.body).toEqual({ enabled: true });
     const support = await admin('support@example.com', 'support');
-    await t
-      .http()
-      .post('/admin/demo/worlds')
-      .set(support)
-      .send({})
-      .expect(403);
+    await t.http().post('/admin/demo/worlds').set(support).send({}).expect(403);
   });
 
   it('makes a world of five accounts and an event, and lists it', async () => {
@@ -292,6 +287,44 @@ describe('demo tools (DM.1)', () => {
       .send({ persona: 'main', category: 'badgeUnlocked' })
       .expect(201);
     expect(res.body).toMatchObject({ status: 'skipped', reason: 'no_device' });
+  });
+
+  it('starts with a waiting room the presenter is invited to, a friend already ready', async () => {
+    const world = await makeWorld(auth);
+    const main = await signIn(account(world, 'main').email);
+    const invites = await t.http().get('/me/room-invites').set(main).expect(200);
+    const items = (invites.body as { items: { room: { id: string; participants: unknown[] } }[] })
+      .items;
+    expect(items).toHaveLength(1);
+    const room = JSON.stringify(items[0]!.room);
+    expect(room).toContain('Mai');
+    expect(room).toContain('Khoa');
+    expect(room).toContain('"state":"ready"');
+  });
+
+  it('has followers beyond the three friends', async () => {
+    const world = await makeWorld(auth);
+    const main = await signIn(account(world, 'main').email);
+    const followers = await t.http().get('/me/followers').set(main).expect(200);
+    expect((followers.body as { items: unknown[] }).items).toHaveLength(5);
+  });
+
+  it('opens a fresh waiting room when asked, closing the old one', async () => {
+    const world = await makeWorld(auth);
+    const main = await signIn(account(world, 'main').email);
+    const before = (
+      (await t.http().get('/me/room-invites').set(main).expect(200)).body as {
+        items: { room: { id: string } }[];
+      }
+    ).items[0]!.room.id;
+    await t.http().post(`/admin/demo/worlds/${world.id}/room`).set(auth).send({}).expect(201);
+    const after = (
+      (await t.http().get('/me/room-invites').set(main).expect(200)).body as {
+        items: { room: { id: string } }[];
+      }
+    ).items;
+    expect(after).toHaveLength(1);
+    expect(after[0]!.room.id).not.toBe(before);
   });
 
   it('lets a friend join the presenter’s lobby and get ready', async () => {
