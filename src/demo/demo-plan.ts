@@ -3,10 +3,10 @@
  * presenter's time zone. Pure: the service turns them into sessions.
  *
  * - Main presenter: an August tree of 600 minutes (archived when the world is made), a September
- *   tree of 1,690 (left to close on the first app open: the planting ceremony and recap), and
- *   700 minutes this month; 2,990 in all. A 6-day streak ends yesterday; no run anywhere reaches
- *   7. So one 25-minute session makes a Mature Tree (720), passes 50 hours (3,000) and makes the
- *   streak 7.
+ *   tree of 1,680 (left to close on the first app open: the planting ceremony and recap), and
+ *   715 minutes this month; 2,995 in all. A 6-day streak ends yesterday; no run anywhere reaches
+ *   7. So one 5-minute session, the shortest that counts, makes a Mature Tree (720), passes 50
+ *   hours (3,000) and makes the streak 7: the presenter shows it live (owner, 2026-10-22).
  * - Comeback presenter: nothing for the last 3 days (Resting quietly; a session wakes it).
  * - Recovery presenter: 4 days in a row, then yesterday missed (a session today opens the offer).
  * - Three friends: together 290 minutes yesterday, the Community Tree's backfill.
@@ -73,10 +73,10 @@ export function worldPlan(today: string): WorldPlan {
   if (dayOfMonth < EARLIEST_DAY) throw new DemoTooEarlyError();
   const ago = (n: number) => addDays(today, -n);
 
-  const streak = [117, 117, 117, 117, 116, 116].map((minutes, i) => at(ago(6 - i), minutes));
+  const streak = [120, 119, 119, 119, 119, 119].map((minutes, i) => at(ago(6 - i), minutes));
   const main = [
     ...everyOtherDay(monthStart(today, 2), 600, 3),
-    ...everyOtherDay(monthStart(today, 1), 1690, 3),
+    ...everyOtherDay(monthStart(today, 1), 1680, 3),
     ...streak,
   ];
 

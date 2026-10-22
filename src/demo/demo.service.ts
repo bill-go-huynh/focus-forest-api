@@ -309,15 +309,15 @@ export class DemoService implements OnApplicationBootstrap {
       await this.reactions.add(id(friend), id('main'), { type: 'forest', key: '' }, kinds[i]!);
     }
 
-    // The event and its Community Tree: the first milestone sits 15 minutes past what the
-    // participants' sessions in its window add up to, so one session crosses it.
+    // The event and its Community Tree: the first milestone sits 5 minutes past what the
+    // participants' sessions in its window add up to, so one 5-minute session crosses it.
     const eventStart = instant(addDays(today, -1), 0, 0);
     const backfill = histories
       .filter(([persona]) => persona === 'main' || friends.includes(persona))
       .flatMap(([, sessions]) => sessions)
       .filter((s) => instant(s.localDate, s.startHour, s.startMinute) >= eventStart)
       .reduce((total, s) => total + s.minutes, 0);
-    await this.createEvent(adminId, world, eventStart, backfill + 15);
+    await this.createEvent(adminId, world, eventStart, backfill + 5);
     for (const participant of [...friends, 'main' as const]) {
       await this.events.join(id(participant), eventIdOf(world));
     }

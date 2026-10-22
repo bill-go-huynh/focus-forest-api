@@ -198,11 +198,12 @@ describe('demo tools (DM.1)', () => {
     expect(streak.body).toMatchObject({ current: 6 });
   });
 
-  it('turns one 25-minute session into a Mature Tree, 50 Hours, a 7-day streak, and a Community Tree milestone', async () => {
+  it('turns one 5-minute session into a Mature Tree, 50 Hours, a 7-day streak, and a Community Tree milestone', async () => {
     const world = await makeWorld(auth);
     const main = await signIn(account(world, 'main').email);
     await t.http().get('/me/home').set(main).expect(200);
-    const result = await focusNow(main, 25);
+    // The shortest counted session, so the presenter shows it live (owner, 2026-10-22).
+    const result = await focusNow(main, 5);
     expect(JSON.stringify(result.growth)).toContain('mature_tree');
     const badges = JSON.stringify(result.progression);
     expect(badges).toContain('focus-hours:50');

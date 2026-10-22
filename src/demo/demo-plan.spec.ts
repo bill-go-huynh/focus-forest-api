@@ -25,13 +25,14 @@ function longestRun(sessions: readonly PlannedSession[]): number {
 describe('worldPlan', () => {
   const plan = worldPlan(TODAY);
 
-  it('gives the main presenter an August tree, a full September one, and 700 minutes this month', () => {
+  it('gives the main presenter an August tree, a full September one, and 715 minutes this month', () => {
     const s = plan.main;
     expect(sum(s, '2026-08')).toBe(600);
-    expect(sum(s, '2026-09')).toBe(1690);
-    expect(sum(s, '2026-10')).toBe(700);
-    // 2,990 in all: one 25-minute session passes 50 hours (3,000 minutes).
-    expect(sum(s, '2026')).toBe(2990);
+    expect(sum(s, '2026-09')).toBe(1680);
+    expect(sum(s, '2026-10')).toBe(715);
+    // 2,995 in all: one 5-minute session passes 50 hours (3,000 minutes) and makes this month
+    // a Mature Tree (720), so the presenter shows it with a real session.
+    expect(sum(s, '2026')).toBe(2995);
   });
 
   it('ends the main presenter on a 6-day streak yesterday, never 7 days anywhere', () => {
@@ -95,7 +96,7 @@ describe('worldPlan', () => {
   it('works across a year boundary', () => {
     const january = worldPlan('2027-01-20');
     expect(sum(january.main, '2026-11')).toBe(600);
-    expect(sum(january.main, '2026-12')).toBe(1690);
-    expect(sum(january.main, '2027-01')).toBe(700);
+    expect(sum(january.main, '2026-12')).toBe(1680);
+    expect(sum(january.main, '2027-01')).toBe(715);
   });
 });
