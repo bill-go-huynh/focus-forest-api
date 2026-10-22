@@ -20,6 +20,7 @@ import { AdminSupportService } from './admin-support.service.js';
 import { AdminUsersService } from './admin-users.service.js';
 import { ADMIN_TOKENS, AdminTokens } from './admin-tokens.js';
 import { AdminGuard } from './admin.guard.js';
+import { DevAdminSeed } from './dev-admin-seed.js';
 
 /**
  * The early admin (docs/09, CR.3–CR.4): admins, their sign-in, roles, and the audit log. Without
@@ -41,6 +42,8 @@ import { AdminGuard } from './admin.guard.js';
     AdminConfigController,
   ],
   providers: [
+    // A ready admin for local testing, in development only.
+    DevAdminSeed,
     AdminAuthService,
     AdminAuditService,
     AdminUsersService,
