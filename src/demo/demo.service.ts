@@ -299,7 +299,9 @@ export class DemoService implements OnApplicationBootstrap {
     }
 
     // A waiting room Mai opened, the presenter invited, Khoa already ready (owner, 2026-10-22).
-    await this.waitingRoom(id('main'), id('friend-mai'), id('friend-khoa'));
+    // Owner, 2026-10-23: one friend invites, Linh, who is on the second phone in the demo.
+    await this.waitingRoom(id('main'), id('friend-linh'));
+    await this.challenges.create(id('friend-linh'), 'steady-week-together', [id('main')]);
 
     await this.audit.record({
       adminId,
@@ -481,20 +483,11 @@ export class DemoService implements OnApplicationBootstrap {
     });
 
     if (category === 'friendInvite') {
-      await this.challenges.create(DemoService.user(world, 'friend-mai'), 'steady-week-together', [
+      await this.challenges.create(DemoService.user(world, 'friend-linh'), 'steady-week-together', [
         userId,
       ]);
     } else if (category === 'focusRoomInvite') {
-      const mai = DemoService.user(world, 'friend-mai');
-      await this.leaveRoom(mai);
-      const room = await this.rooms.create(mai, {
-        name: 'Study with Mai',
-        topic: null,
-        durationMinutes: 25,
-        maxParticipants: 4,
-        visibility: 'private',
-      });
-      await this.rooms.invite(mai, room.id, [userId]);
+      await this.waitingRoom(userId, DemoService.user(world, 'friend-linh'));
     } else if (category === 'challengeUpdate') {
       const khoa = DemoService.user(world, 'friend-khoa');
       const challenge = await this.challenges.create(userId, 'steady-week-together', [khoa]);
@@ -540,33 +533,27 @@ export class DemoService implements OnApplicationBootstrap {
   }
 
   /**
-   * Mai opens a private waiting room, invites the presenter, and Khoa joins and is ready. Any
-   * room either friend was in is left first, so a lobby that ran out (2 h) is simply replaced.
+   * Linh opens a private waiting room and invites the presenter; she waits in it, so on the second
+   * phone she sees the presenter join and both get ready for real. Any room she was in is left
+   * first, so a lobby that ran out (2 h) is simply replaced.
    */
-  private async waitingRoom(main: string, mai: string, khoa: string): Promise<void> {
-    await this.leaveRoom(mai);
-    await this.leaveRoom(khoa);
-    const room = await this.rooms.create(mai, {
-      name: 'Study with Mai',
+  private async waitingRoom(main: string, linh: string): Promise<void> {
+    await this.leaveRoom(linh);
+    const room = await this.rooms.create(linh, {
+      name: 'Study with Linh',
       topic: null,
       durationMinutes: 25,
       maxParticipants: 4,
       visibility: 'private',
     });
-    await this.rooms.invite(mai, room.id, [main]);
-    if (room.code) await this.rooms.joinByCode(khoa, room.code);
-    await this.rooms.ready(khoa, room.id, true);
+    await this.rooms.invite(linh, room.id, [main]);
   }
 
   /** A fresh waiting room for the presenter, in place of one that ran out. */
   async openRoom(adminId: string, worldId: number): Promise<{ opened: true }> {
     const world = await this.worldOrThrow(worldId);
     const main = DemoService.user(world, 'main');
-    await this.waitingRoom(
-      main,
-      DemoService.user(world, 'friend-mai'),
-      DemoService.user(world, 'friend-khoa'),
-    );
+    await this.waitingRoom(main, DemoService.user(world, 'friend-linh'));
     this.live.announce(main, { type: 'refresh', reason: 'room' });
     await this.audit.record({
       adminId,

@@ -300,7 +300,8 @@ describe('demo tools (DM.1)', () => {
     expect(res.body).toMatchObject({ status: 'skipped', reason: 'no_device' });
   });
 
-  it('starts with a waiting room the presenter is invited to, a friend already ready', async () => {
+  it('starts with two invitations, both from Linh: her waiting room and a challenge', async () => {
+    // Owner, 2026-10-23: the demo uses one friend, Linh, on the second phone.
     const world = await makeWorld(auth);
     const main = await signIn(account(world, 'main').email);
     const invites = await t.http().get('/me/room-invites').set(main).expect(200);
@@ -308,9 +309,13 @@ describe('demo tools (DM.1)', () => {
       .items;
     expect(items).toHaveLength(1);
     const room = JSON.stringify(items[0]!.room);
-    expect(room).toContain('Mai');
-    expect(room).toContain('Khoa');
-    expect(room).toContain('"state":"ready"');
+    expect(room).toContain('Linh');
+    expect(room).not.toContain('Mai');
+    expect(room).not.toContain('Khoa');
+    const challenges = await t.http().get('/me/challenges').set(main).expect(200);
+    const invitations = (challenges.body as { invitations: unknown[] }).invitations;
+    expect(invitations).toHaveLength(1);
+    expect(JSON.stringify(invitations[0])).toContain('Linh');
   });
 
   it('has followers beyond the three friends', async () => {
