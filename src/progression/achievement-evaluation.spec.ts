@@ -32,7 +32,6 @@ const input = (
   history: history(activeDates, restDates),
   together: { sessions: 0, withFriend: 0 },
   timeOfDay: { early: 0, late: 0 },
-  community: { contributions: 0 },
 });
 
 type Definition = Parameters<typeof earnableAchievements>[0][number];
@@ -62,7 +61,7 @@ const definition = (
   },
 });
 
-/** Values with no Focus Together, time-of-day, weekend, or Community Tree sessions. */
+/** Values with no Focus Together, time-of-day, or weekend sessions. */
 const values = (counted: number, minutes: number, streak: number) => ({
   counted_sessions: counted,
   focused_minutes: minutes,
@@ -72,7 +71,6 @@ const values = (counted: number, minutes: number, streak: number) => ({
   sessions_before_7: 0,
   sessions_after_22: 0,
   full_weekends: 0,
-  community_contributions: 0,
 });
 
 describe('achievement values: derived from Core truth, never counted separately', () => {
@@ -102,7 +100,6 @@ describe('achievement values: derived from Core truth, never counted separately'
       countedOnSameDay: 1,
       startedBefore7: false,
       startedAfter22: false,
-      contributedToCommunity: false,
     });
     expect(achievementValues(alone)).toEqual(values(2, 60, 2));
     const shared = withoutSession(all, {
@@ -111,7 +108,6 @@ describe('achievement values: derived from Core truth, never counted separately'
       countedOnSameDay: 2,
       startedBefore7: false,
       startedAfter22: false,
-      contributedToCommunity: false,
     });
     expect(achievementValues(shared).longest_streak_days).toBe(3);
   });
@@ -123,7 +119,6 @@ describe('withoutRecovery: the values just before a streak recovery (A4.2.G)', (
       lifetime: { sessionCount: 4, focusedMilliseconds: 80 * MIN },
       together: { sessions: 2, withFriend: 1 },
       timeOfDay: { early: 0, late: 0 },
-      community: { contributions: 0 },
       history: {
         activeDates: ['2026-10-01', '2026-10-02', '2026-10-04', '2026-10-05'],
         restDates: [],
@@ -139,7 +134,6 @@ describe('withoutRecovery: the values just before a streak recovery (A4.2.G)', (
       sessions_before_7: 0,
       sessions_after_22: 0,
       full_weekends: 0,
-      community_contributions: 0,
     });
     expect(achievementValues(withoutRecovery(all, '2026-10-03'))).toEqual({
       counted_sessions: 4,
@@ -150,7 +144,6 @@ describe('withoutRecovery: the values just before a streak recovery (A4.2.G)', (
       sessions_before_7: 0,
       sessions_after_22: 0,
       full_weekends: 0,
-      community_contributions: 0,
     });
   });
 });
@@ -172,7 +165,7 @@ describe('earnable achievements', () => {
         definition('planned', 'counted_sessions', 1, { status: 'planned' }),
         definition('retired', 'counted_sessions', 1, { status: 'retired' }),
         definition('social', 'counted_sessions', 1, { category: 'social' }),
-        definition('event', 'counted_sessions', 1, { category: 'event', source: 'event' }),
+        definition('season', 'counted_sessions', 1, { category: 'event', source: 'season' }),
         definition('time', 'counted_sessions', 1, { category: 'time_based' }),
         definition('special', 'counted_sessions', 1, { category: 'rare' }),
         definition('scarce', 'counted_sessions', 1, { rarity: 'rare' }),
@@ -357,13 +350,12 @@ describe('Focus Together values (A5.4)', () => {
       countedOnSameDay: 2,
       startedBefore7: false,
       startedAfter22: false,
-      contributedToCommunity: false,
     });
     expect(before.together).toEqual({ sessions: 1, withFriend: 1 });
   });
 });
 
-describe('time-of-day, weekend, and Community Tree values (owner decision 2026-10-15)', () => {
+describe('time-of-day and weekend values (owner decision 2026-10-15)', () => {
   it('count early and late sessions as the server read them', () => {
     const v = achievementValues({ ...input(12, 300), timeOfDay: { early: 10, late: 2 } });
     expect(v).toMatchObject({ sessions_before_7: 10, sessions_after_22: 2 });
@@ -385,16 +377,10 @@ describe('time-of-day, weekend, and Community Tree values (owner decision 2026-1
     expect(achievementValues(input(1, 30, ['2026-10-03'], ['2026-10-04'])).full_weekends).toBe(0);
   });
 
-  it('count the sessions that added minutes to a Community Tree', () => {
-    const v = achievementValues({ ...input(3, 90), community: { contributions: 2 } });
-    expect(v.community_contributions).toBe(2);
-  });
-
-  it('take one session out: its time of day, its weekend day, and its contribution', () => {
+  it('take one session out: its time of day and its weekend day', () => {
     const all = {
       ...input(3, 90, ['2026-10-03', '2026-10-04']),
       timeOfDay: { early: 1, late: 1 },
-      community: { contributions: 1 },
     };
     const before = withoutSession(all, {
       focusedMilliseconds: 30 * MIN,
@@ -402,13 +388,11 @@ describe('time-of-day, weekend, and Community Tree values (owner decision 2026-1
       countedOnSameDay: 1,
       startedBefore7: true,
       startedAfter22: false,
-      contributedToCommunity: true,
     });
     expect(achievementValues(before)).toMatchObject({
       sessions_before_7: 0,
       sessions_after_22: 1,
       full_weekends: 0,
-      community_contributions: 0,
     });
   });
 });

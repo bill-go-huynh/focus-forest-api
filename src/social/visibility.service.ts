@@ -129,25 +129,19 @@ export class VisibilityService {
 
   /**
    * A5.8 The people a leaderboard may show: opted in (`leaderboards`, off by default) and active.
-   * Friends: the viewer and their mutual follows; event: its participants; global: everyone.
-   * `blocked` marks a block either way: never shown as a row (teams still count them as members,
-   * so a team's score is the same for every viewer). Accounts staff excluded (A6.5) are never
-   * candidates. Staff look without a viewer (`null`): no friends board, nobody blocked.
+   * Friends: the viewer and their mutual follows; global: everyone. `blocked` marks a block
+   * either way: never shown as a row. Accounts staff excluded (A6.5) are never candidates. Staff look without a viewer (`null`): no friends board, nobody blocked.
    */
   async boardCandidates(
     viewerId: string | null,
-    scope: 'friends' | 'global' | 'event',
-    eventId: string | null,
+    scope: 'friends' | 'global',
   ): Promise<BoardCandidate[]> {
     const inScope =
       scope === 'friends'
         ? Prisma.sql`AND (u.id = ${viewerId}::uuid OR (
             EXISTS (SELECT 1 FROM follows WHERE follower_id = ${viewerId}::uuid AND followee_id = u.id)
             AND EXISTS (SELECT 1 FROM follows WHERE follower_id = u.id AND followee_id = ${viewerId}::uuid)))`
-        : scope === 'event'
-          ? Prisma.sql`AND EXISTS (SELECT 1 FROM event_participations
-                                   WHERE user_id = u.id AND event_id = ${eventId})`
-          : Prisma.empty;
+        : Prisma.empty;
     const rows = await this.prisma.$queryRaw<
       {
         id: string;

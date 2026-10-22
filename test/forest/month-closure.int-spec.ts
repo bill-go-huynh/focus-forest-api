@@ -230,7 +230,6 @@ describe('month closure (HTTP + PostgreSQL)', () => {
             earnedAt: '2026-10-07T20:00:00.000Z',
           }) as unknown,
         ],
-        events: [],
       });
     });
 

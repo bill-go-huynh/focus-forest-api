@@ -201,11 +201,11 @@ describe('A4.2.G recovery achievements (HTTP + PostgreSQL)', () => {
     expect(newly(res.body as RecoveryBody)).toEqual(['focus-streak:30']);
   });
 
-  // Social badges are evaluated from A5.4 (Focus Together); event and planned ones still never.
-  it('never grants planned or Event badges', async () => {
+  // Social badges are evaluated from A5.4 (Focus Together); seasonal and planned ones never.
+  it('never grants planned or seasonal badges', async () => {
     const ada = await brokenRun('ada@example.com', 29);
     for (const [id, category, source, status] of [
-      ['event-streak', 'event', 'event', 'active'],
+      ['event-streak', 'event', 'season', 'active'],
       ['planned-streak', 'consistency', 'achievement', 'planned'],
     ] as const) {
       await t.prisma.badgeDefinition.create({

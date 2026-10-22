@@ -165,8 +165,6 @@ describe('focus sessions (HTTP + PostgreSQL)', () => {
           newlyUnlockedSpecies: [expect.objectContaining({ id: 'oak' }) as unknown],
           newlyUnlockedCosmetics: [],
         },
-        // A5.6: the joined events it advanced (none here).
-        events: [],
       });
       const row = await prisma.focusSession.findFirstOrThrow();
       expect(row.configVersion).toBe(configVersion);

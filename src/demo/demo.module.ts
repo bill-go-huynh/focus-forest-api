@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 
 import { AdminModule } from '../admin/admin.module.js';
-import { EventsModule } from '../events/events.module.js';
 import { IdentityModule } from '../identity/identity.module.js';
 import { NotificationsModule } from '../notifications/notifications.module.js';
 import { ProductConfigModule } from '../product-config/product-config.module.js';
@@ -18,7 +17,6 @@ import { DemoService } from './demo.service.js';
   imports: [
     AdminModule,
     AttributionModule,
-    EventsModule,
     IdentityModule,
     NotificationsModule,
     ProductConfigModule,

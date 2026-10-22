@@ -88,7 +88,7 @@ const STORES: Record<ContentKind, Store> = {
 
 /**
  * Permanent progression ownership (A4.1): the one way badges, species, and cosmetics are
- * granted, for the evaluators and sources that arrive later (A4.2 achievements, Phase 14 events,
+ * granted, for the evaluators and sources that arrive later (A4.2 achievements and
  * Phase 17 seasons). A grant is idempotent and safe under concurrency without a lock: the
  * ownership's primary key decides, and the insert skips a duplicate. Availability decides only
  * whether something can be acquired; nothing here removes ownership, and there is no revoke.

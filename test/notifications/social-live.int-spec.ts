@@ -1,4 +1,3 @@
-import { EventNoticesService } from '../../src/events/event-notices.service.js';
 import { JobsService } from '../../src/jobs/jobs.service.js';
 import { NotificationsService } from '../../src/notifications/notifications.service.js';
 import { RecapNoticesService } from '../../src/notifications/recap-notices.service.js';
@@ -6,10 +5,10 @@ import { ConsistencyHarness } from '../support/consistency-harness.js';
 import { CHALLENGE_CONFIG_VALUES } from '../support/product-config-values.js';
 
 /**
- * A6.3 social, live, and recap notifications (spec §18; docs/02 Notifications: social and event
+ * A6.3 social, live, and recap notifications (spec §18; docs/02 Notifications: social
  * notifications are informational): room invitations (new), a friend's challenge invitation,
- * challenge updates, an event's start and its last days, a Community Tree badge, and the monthly
- * recap. Every one goes through the A6.1 dispatcher, with the person's choices and blocks.
+ * challenge updates, and the monthly recap. Event notices were removed with events (owner,
+ * 2026-10-22). Every one goes through the A6.1 dispatcher, with the person's choices and blocks.
  */
 
 const t = new ConsistencyHarness('2026-11-02T10:00:00.000Z');
@@ -65,8 +64,6 @@ describe('social, live, and recap notifications (A6.3)', () => {
       .send({
         notifications: Object.fromEntries(
           [
-            'eventStart',
-            'eventEndingSoon',
             'friendInvite',
             'focusRoomInvite',
             'challengeUpdate',
@@ -293,148 +290,6 @@ describe('social, live, and recap notifications (A6.3)', () => {
       await t.http().get(`/me/challenges/${id}`).set(kai.auth).expect(200);
       await dispatch('2026-11-02T11:05:00Z');
       expect(pushed()).toHaveLength(1);
-    });
-  });
-
-  describe('events', () => {
-    async function event(change: Body = {}) {
-      await t.prisma.badgeDefinition.create({
-        data: {
-          id: 'garden-oak:seedling',
-          category: 'event',
-          rarity: 'common',
-          source: 'event',
-          availability: 'limited',
-          status: 'active',
-          availableFrom: at('2026-11-01T00:00:00Z'),
-          availableUntil: at('2026-12-31T00:00:00Z'),
-          name: 'Garden Oak Seedling',
-          description: 'The Garden Oak sprouted.',
-          artworkId: 'garden-oak-seedling',
-        },
-      });
-      await t.prisma.event.create({
-        data: {
-          id: 'autumn-study',
-          name: 'Autumn Study Event',
-          description: 'Steady autumn focus.',
-          artworkId: 'autumn-study',
-          status: 'active',
-          startsAt: at('2026-11-02T12:00:00Z'),
-          endsAt: at('2026-11-16T00:00:00Z'),
-          missions: {
-            create: [
-              {
-                id: 'one-hour',
-                measure: 'focus_minutes',
-                target: 60,
-                name: 'Focus 1 hour',
-                description: 'One hour.',
-              },
-            ],
-          },
-          communityTree: {
-            create: {
-              name: 'The Garden Oak',
-              artworkId: 'garden-oak',
-              milestones: {
-                create: [
-                  { stage: 'seedling', thresholdMinutes: 40, badgeId: 'garden-oak:seedling' },
-                ],
-              },
-            },
-          },
-          ...change,
-        },
-      });
-    }
-    const notices = () => t.app.get(EventNoticesService);
-
-    it('tells everyone who wants to know when an event begins', async () => {
-      await event();
-      await person('ana');
-      const ben = await person('ben');
-      await t
-        .http()
-        .patch('/me/preferences')
-        .set(ben.auth)
-        .send({ notifications: { eventStart: { enabled: false } } })
-        .expect(200);
-
-      await t.setNow('2026-11-02T11:45:00.000Z');
-      await notices().plan(at('2026-11-02T11:45:00Z'));
-      expect(await t.prisma.notificationOutbox.count()).toBe(0);
-      await t.setNow('2026-11-02T12:00:00.000Z');
-      await notices().plan(at('2026-11-02T12:00:00Z'));
-      await dispatch('2026-11-02T12:00:00Z');
-      expect(pushed()).toEqual([
-        ['ana', 'eventStart', 'Autumn Study Event has begun', '/together/events/autumn-study'],
-      ]);
-      // Only those who turned it on are planned for, once.
-      await notices().plan(at('2026-11-02T12:00:00Z'));
-      expect(await t.prisma.notificationOutbox.count()).toBe(1);
-    });
-
-    it('drops the start notice of an event retired before it is sent', async () => {
-      await event();
-      await person('ana');
-      await notices().plan(at('2026-11-02T12:00:00Z'));
-      await t.prisma.event.update({ where: { id: 'autumn-study' }, data: { status: 'retired' } });
-      await dispatch('2026-11-02T12:00:00Z');
-      expect(pushed()).toEqual([]);
-    });
-
-    it('tells participants, and only them, two days before the end', async () => {
-      await event();
-      await t.prisma.event.create({
-        data: {
-          id: 'winter-study',
-          name: 'Winter Study',
-          description: 'Steady winter focus.',
-          artworkId: 'winter-study',
-          status: 'active',
-          startsAt: at('2026-11-01T00:00:00Z'),
-          endsAt: at('2026-12-20T00:00:00Z'),
-        },
-      });
-      const ana = await person('ana');
-      const ben = await person('ben');
-      await t.setNow('2026-11-03T10:00:00.000Z');
-      await t.http().post('/events/autumn-study/join').set(ana.auth).expect(200);
-      // Ben takes part in another event only.
-      await t.http().post('/events/winter-study/join').set(ben.auth).expect(200);
-
-      // 48 hours before 16 November 00:00 UTC is 14 November 00:00 UTC.
-      await notices().plan(at('2026-11-13T23:45:00Z'));
-      expect(await t.prisma.notificationOutbox.count()).toBe(0);
-      await notices().plan(at('2026-11-14T00:00:00Z'));
-      // 00:00 is outside the day window: it is sent at 09:00.
-      await dispatch('2026-11-14T00:00:00Z');
-      expect(pushed()).toEqual([]);
-      await t.setNow('2026-11-14T09:00:00.000Z');
-      await dispatch('2026-11-14T09:00:00Z');
-      expect(pushed()).toEqual([
-        ['ana', 'eventEndingSoon', 'Autumn Study Event ends soon', '/together/events/autumn-study'],
-      ]);
-      expect(t.push.messages[0]!.body).toBe('It wraps up soon. Thank you for taking part.');
-    });
-
-    it('tells the other participants when the Community Tree reaches a stage with a badge', async () => {
-      await event({ startsAt: at('2026-11-02T00:00:00Z') });
-      const ana = await person('ana');
-      const ben = await person('ben');
-      await person('cam');
-      for (const user of [ana, ben]) {
-        await t.http().post('/events/autumn-study/join').set(user.auth).expect(200);
-      }
-
-      await t.submit(ana, '2026-11-02T09:00:00.000Z', 45).expect(201);
-      await jobs.runDue(at('2026-11-02T10:00:00Z'));
-      await dispatch('2026-11-02T10:00:00Z');
-      // Ana sees it on her completion screen; Ben is told; Cam never joined.
-      expect(pushed()).toEqual([
-        ['ben', 'badgeUnlocked', 'A new badge: Garden Oak Seedling', '/profile/achievements'],
-      ]);
     });
   });
 

@@ -212,7 +212,6 @@ export class MonthClosureService {
       // Earned in the month's own attribution window (its frozen time zone), never the UTC
       // month; badges granted later, even dated in this window, never reach the snapshot.
       badges: await this.ownership.badgesEarnedIn(userId, context.startsAt, context.endsAt, tx),
-      events: [],
     });
   }
 }

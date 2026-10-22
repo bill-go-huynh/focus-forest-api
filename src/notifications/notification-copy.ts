@@ -8,8 +8,6 @@ export type NotificationCopyInput =
   | { category: 'dailyGoalReminder'; goalMinutes: number }
   | { category: 'scheduledFocusReminder' }
   | { category: 'streakReminder'; streakDays: number }
-  | { category: 'eventStart'; eventName: string }
-  | { category: 'eventEndingSoon'; eventName: string }
   | { category: 'friendInvite'; friendName: string }
   | { category: 'focusRoomInvite'; friendName: string; roomName: string }
   | { category: 'challengeUpdate'; kind: 'completed' }
@@ -59,16 +57,6 @@ export function notificationCopy(input: NotificationCopyInput): NotificationCopy
       return {
         title: 'Your forest is waiting',
         body: `${input.streakDays} days of steady focus so far. A short session today keeps the rhythm, if it suits you.`,
-      };
-    case 'eventStart':
-      return {
-        title: `${short(input.eventName)} has begun`,
-        body: 'Join whenever you like. Your usual focus counts toward its missions.',
-      };
-    case 'eventEndingSoon':
-      return {
-        title: `${short(input.eventName)} ends soon`,
-        body: 'It wraps up soon. Thank you for taking part.',
       };
     case 'friendInvite':
       return {

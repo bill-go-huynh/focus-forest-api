@@ -13,8 +13,8 @@ import { get, sid } from '../x3/x3-support.js';
  *    from her friend.
  * 2. A Focus Together session grows each person's own tree: Mai and Linh focus together, each
  *    submits their own session, and each tree grows by its owner's minutes only.
- * 3. One session advances the challenge, the event mission, and the Community Tree, and earns the
- *    season's reward, all from the same stored truth.
+ * 3. One session advances the challenge and earns the season's reward, all from the same stored
+ *    truth. (Events and the Community Tree were removed, owner 2026-10-22.)
  * 4. Every answer the mobile app reads is captured (`community-contract.json`, byte-identical with
  *    focus-forest-mobile `src/test-utils/x5/community-contract.json`). After an intended change:
  *    `X5_UPDATE_CONTRACT=1 npm run test:int -- test/x5`, then copy the file.
@@ -33,30 +33,10 @@ const LIMITED = (from: string, until: string) => ({
   status: 'active' as const,
 });
 
-/** An autumn event with a Community Tree and a board, and the northern autumn theme. */
+/** The northern autumn theme and its reward. */
 async function content() {
   await t.prisma.cosmeticDefinition.createMany({
     data: [
-      {
-        id: 'maple-lanterns',
-        type: 'decoration',
-        rarity: 'rare',
-        source: 'event',
-        name: 'Maple Lanterns',
-        description: 'Lanterns from the Autumn Study event.',
-        artworkId: 'maple-lanterns',
-        ...LIMITED('2026-10-13T00:00:00Z', '2026-10-29T00:00:00Z'),
-      },
-      {
-        id: 'garden-lights',
-        type: 'decoration',
-        rarity: 'rare',
-        source: 'event',
-        name: 'Garden Lights',
-        description: 'Lights from the shared garden.',
-        artworkId: 'garden-lights',
-        ...LIMITED('2026-10-13T00:00:00Z', '2026-10-29T00:00:00Z'),
-      },
       {
         id: 'falling-leaves',
         type: 'decoration',
@@ -68,61 +48,6 @@ async function content() {
         ...LIMITED('2026-09-22T00:00:00Z', '2026-12-21T00:00:00Z'),
       },
     ],
-  });
-  await t.prisma.event.create({
-    data: {
-      id: 'autumn-study',
-      name: 'Autumn Study',
-      description: 'A week of steady autumn focus.',
-      artworkId: 'autumn-study',
-      status: 'active',
-      startsAt: new Date('2026-10-13T00:00:00Z'),
-      endsAt: new Date('2026-10-22T00:00:00Z'),
-      leaderboard: true,
-      missions: {
-        create: [
-          {
-            id: 'one-hour',
-            measure: 'focus_minutes',
-            target: 60,
-            name: 'Focus 1 hour',
-            description: 'One hour of focus.',
-            sortOrder: 1,
-          },
-          {
-            id: 'together',
-            measure: 'focus_together_sessions',
-            target: 1,
-            name: 'Focus together once',
-            description: 'One Focus Together session.',
-            sortOrder: 2,
-          },
-        ],
-      },
-      milestones: {
-        create: [
-          {
-            id: 'first-leaf',
-            requiredMissions: 1,
-            cosmeticId: 'maple-lanterns',
-            traitId: 'event:autumn-study',
-            name: 'First leaf',
-          },
-        ],
-      },
-      communityTree: {
-        create: {
-          name: 'The Garden Oak',
-          artworkId: 'garden-oak',
-          milestones: {
-            create: [
-              { stage: 'seedling', thresholdMinutes: 60, cosmeticId: 'garden-lights' },
-              { stage: 'bloom', thresholdMinutes: 600, cosmeticId: 'garden-lights' },
-            ],
-          },
-        },
-      },
-    },
   });
   await t.prisma.seasonalTheme.create({
     data: {
@@ -227,9 +152,7 @@ describe('X5 Community & Live integration (HTTP + PostgreSQL)', () => {
     c['privacy'] = await get(t, mai, '/me/privacy');
     c['warnings'] = await get(t, mai, '/me/warnings');
 
-    // Everyone joins the event; Mai starts a friend challenge with Linh.
-    await send(mai, 'post', '/events/autumn-study/join');
-    await send(linh, 'post', '/events/autumn-study/join');
+    // Mai starts a friend challenge with Linh.
     c['challengeCreated'] = await send(
       mai,
       'post',
@@ -284,13 +207,8 @@ describe('X5 Community & Live integration (HTTP + PostgreSQL)', () => {
     expect((await before(mai)) - maiBefore).toBe(30);
     expect((await before(linh)) - linhBefore).toBe(50);
 
-    // 3. One session, everywhere: the event, the challenge, the Community Tree, the season.
-    const results = (c['sessionInRoom'] as { events: Body[] }).events;
-    expect(results).toHaveLength(1);
-    expect(results[0]).toMatchObject({
-      eventId: 'autumn-study',
-      community: { minutes: 30, totalMinutes: 30, reachedStages: [] },
-    });
+    // 3. One session, everywhere: the challenge and the season.
+    expect(c['sessionInRoom']).not.toHaveProperty('events');
     const unlocked = (
       c['sessionInRoom'] as {
         progression: { newlyUnlockedCosmetics: { id: string }[] };
@@ -298,32 +216,6 @@ describe('X5 Community & Live integration (HTTP + PostgreSQL)', () => {
     ).progression.newlyUnlockedCosmetics.map((x) => x.id);
     expect(unlocked).toEqual(['falling-leaves']);
 
-    c['event'] = await get(t, mai, '/events/autumn-study');
-    expect(
-      (c['event'] as { missions: { id: string; value: number }[] }).missions.map((m) => [
-        m.id,
-        m.value,
-      ]),
-    ).toEqual([
-      ['one-hour', 30],
-      ['together', 1],
-    ]);
-    c['events'] = await get(t, mai, '/events');
-    c['community'] = await get(t, mai, '/events/autumn-study/community-tree');
-    expect(c['community']).toMatchObject({
-      totalMinutes: 80,
-      participants: 2,
-      yourMinutes: 30,
-      stage: 'seedling',
-      celebrate: ['seedling'],
-    });
-    await send(
-      mai,
-      'post',
-      '/events/autumn-study/community-tree/celebrations',
-      { stages: ['seedling'] },
-      204,
-    );
     c['challenges'] = await get(t, mai, '/me/challenges');
     const current = (c['challenges'] as { current: { participants: { value: number }[] }[] })
       .current;
@@ -331,12 +223,9 @@ describe('X5 Community & Live integration (HTTP + PostgreSQL)', () => {
     c['season'] = await get(t, mai, '/me/season');
     expect((c['season'] as { rewards: { owned: boolean }[] }).rewards[0]!.owned).toBe(true);
     c['home'] = await get(t, mai, '/me/home');
-    expect((c['home'] as { event: Body }).event).toMatchObject({
-      id: 'autumn-study',
-      joined: true,
-    });
+    expect(c['home']).not.toHaveProperty('event');
 
-    // Boards: friends (Mai and Linh), global without Kai for Mai, and the event's.
+    // Boards: friends (Mai and Linh), and global without Kai for Mai.
     c['boardFriends'] = await get(t, mai, '/leaderboards?scope=friends&period=weekly');
     c['boardGlobal'] = await get(t, mai, '/leaderboards?scope=global&period=weekly');
     const names = (board: unknown) =>
@@ -349,7 +238,6 @@ describe('X5 Community & Live integration (HTTP + PostgreSQL)', () => {
       'kai',
       'linh',
     ]);
-    c['boardEvent'] = await get(t, mai, '/leaderboards?scope=event&eventId=autumn-study');
     c['blocks'] = await get(t, kai, '/me/blocks');
 
     // 4. The capture.

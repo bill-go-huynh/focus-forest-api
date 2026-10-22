@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 
-import { EventsModule } from '../events/events.module.js';
 import { JobsModule } from '../jobs/jobs.module.js';
 import { SeasonsModule } from '../seasons/seasons.module.js';
 import { ProductConfigModule } from '../product-config/product-config.module.js';
@@ -18,7 +17,6 @@ import { SessionsService } from './sessions.service.js';
     AttributionModule,
     TreesModule,
     ProgressionModule,
-    EventsModule,
     SeasonsModule,
     JobsModule,
   ],

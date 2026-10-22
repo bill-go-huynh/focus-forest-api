@@ -3,10 +3,10 @@ import { PasswordHasher } from '../../src/identity/password-hasher.js';
 import { ConsistencyHarness } from '../support/consistency-harness.js';
 
 /**
- * A6.5 admin live operations (docs/09 later admin: events and missions, Community Tree,
- * seasonal content, leaderboards). Events and seasons are created and edited without a deploy,
- * under the same checks as content packs; what people already took part in is locked; the
- * Community Tree is monitored; abusive accounts are kept off every board. All audited.
+ * A6.5 admin live operations (docs/09 later admin: seasonal content, leaderboards). Seasons are
+ * created and edited without a deploy, under the same checks as content packs; what people
+ * already took part in is locked; abusive accounts are kept off every board. All audited.
+ * Events and the Community Tree were removed (owner, 2026-10-22).
  */
 
 const t = new ConsistencyHarness('2026-11-02T10:00:00.000Z');
@@ -30,15 +30,15 @@ const audit = async () =>
     .filter((row) => row.action !== 'admin.sign_in')
     .map((row) => [row.action, row.targetId, row.reason]);
 
-/** Event badges, acquirable through the event and a week after. */
+/** A seasonal badge, acquirable through the theme and after. */
 async function badges() {
-  for (const id of ['winter-sprint:steady', 'winter-sprint:seedling', 'season:winter-test']) {
+  for (const id of ['season:winter-test']) {
     await t.prisma.badgeDefinition.create({
       data: {
         id,
         category: 'event',
         rarity: 'common',
-        source: id.startsWith('season') ? 'season' : 'event',
+        source: 'season',
         availability: 'limited',
         status: 'active',
         availableFrom: new Date('2026-11-01T00:00:00Z'),
@@ -50,55 +50,6 @@ async function badges() {
     });
   }
 }
-
-const EVENT = {
-  id: 'winter-sprint',
-  name: 'Winter Sprint',
-  description: 'Two weeks of winter focus.',
-  artworkId: 'winter-sprint',
-  status: 'active',
-  startsAt: '2026-11-10T00:00:00.000Z',
-  endsAt: '2026-11-24T00:00:00.000Z',
-  entryMinSessions: 0,
-  leaderboard: true,
-  teams: [
-    { id: 'pine', name: 'Pine' },
-    { id: 'birch', name: 'Birch' },
-  ],
-  missions: [
-    {
-      id: 'two-hours',
-      measure: 'focus_minutes',
-      target: 120,
-      dailyMinutes: 0,
-      name: 'Focus 2 hours',
-      description: 'Two hours of focus.',
-    },
-    {
-      id: 'five-days',
-      measure: 'active_days',
-      target: 5,
-      dailyMinutes: 15,
-      name: 'Focus on 5 days',
-      description: 'Fifteen minutes on five days.',
-    },
-  ],
-  milestones: [
-    {
-      id: 'steady',
-      name: 'Steady',
-      requiredMissions: 2,
-      badgeId: 'winter-sprint:steady',
-      trait: true,
-    },
-  ],
-  communityTree: {
-    name: 'The Winter Pine',
-    artworkId: 'winter-pine',
-    milestones: [{ stage: 'seedling', thresholdMinutes: 60, badgeId: 'winter-sprint:seedling' }],
-  },
-  reason: 'Winter event',
-};
 
 const THEME = {
   id: 'winter-test-north',
@@ -130,199 +81,6 @@ describe('admin live operations (A6.5)', () => {
   const get = async (auth: Auth, path: string) =>
     (await t.http().get(`/admin/live/${path}`).set(auth).expect(200)).body as Body;
   const problems = (res: { body: unknown }) => (res.body as { problems: string[] }).problems;
-
-  describe('events', () => {
-    it('creates an event the app serves, with its missions, teams, and Community Tree', async () => {
-      const auth = await admin('content@example.com', 'content');
-      const created = (await post(auth, 'events', EVENT).expect(201)).body as Body;
-      expect(created).toMatchObject({
-        id: 'winter-sprint',
-        status: 'active',
-        participants: 0,
-        locked: false,
-        missions: [{ id: 'two-hours' }, { id: 'five-days' }],
-        milestones: [{ id: 'steady', traitId: 'event:winter-sprint' }],
-        teams: [{ id: 'pine' }, { id: 'birch' }],
-        communityTree: { name: 'The Winter Pine', totalMinutes: 0, contributors: 0 },
-      });
-
-      const ana = await t.signUp('ana@example.com');
-      const events = (await t.http().get('/events').set(ana.auth).expect(200)).body as {
-        items: Body[];
-      };
-      expect(events.items.map((e) => [e['id'], e['phase']])).toEqual([
-        ['winter-sprint', 'upcoming'],
-      ]);
-      expect(await audit()).toEqual([['content.event.create', 'winter-sprint', 'Winter event']]);
-    });
-
-    it('refuses an event the content checks refuse, saying why', async () => {
-      const auth = await admin('content@example.com', 'content');
-      expect(
-        problems(
-          await post(auth, 'events', { ...EVENT, endsAt: '2026-11-09T00:00:00.000Z' }).expect(422),
-        ),
-      ).toContainEqual(expect.stringContaining('ends before it starts'));
-      expect(
-        problems(
-          await post(auth, 'events', {
-            ...EVENT,
-            milestones: [{ ...EVENT.milestones[0], badgeId: 'season:winter-test' }],
-          }).expect(422),
-        ),
-      ).toContainEqual(expect.stringContaining('season:winter-test'));
-      expect(
-        problems(
-          await post(auth, 'events', {
-            ...EVENT,
-            milestones: [{ ...EVENT.milestones[0], badgeId: 'no-such-badge' }],
-          }).expect(422),
-        ),
-      ).toContainEqual(expect.stringContaining('no-such-badge'));
-      expect(
-        problems(await post(auth, 'events', { ...EVENT, leaderboard: false }).expect(422)),
-      ).toContainEqual(expect.stringContaining('pine'));
-      // New rewards are badges: a cosmetic is not one, even an event cosmetic.
-      await t.prisma.cosmeticDefinition.create({
-        data: {
-          id: 'snow-lantern',
-          type: 'decoration',
-          rarity: 'common',
-          source: 'event',
-          availability: 'limited',
-          status: 'active',
-          availableFrom: new Date('2026-11-01T00:00:00Z'),
-          availableUntil: new Date('2027-04-01T00:00:00Z'),
-          name: 'Snow Lantern',
-          description: 'A lantern in the snow.',
-          artworkId: 'snow-lantern',
-        },
-      });
-      expect(
-        problems(
-          await post(auth, 'events', {
-            ...EVENT,
-            milestones: [{ ...EVENT.milestones[0], badgeId: 'snow-lantern' }],
-          }).expect(422),
-        ),
-      ).toContainEqual(expect.stringContaining('snow-lantern'));
-      expect(
-        problems(
-          await post(auth, 'events', {
-            ...EVENT,
-            milestones: [{ ...EVENT.milestones[0], badgeId: 'meadow' }],
-          }).expect(422),
-        ),
-      ).toContainEqual(expect.stringContaining('meadow'));
-      await post(auth, 'events', EVENT).expect(201);
-      expect((await post(auth, 'events', EVENT).expect(409)).body).toMatchObject({
-        code: 'content_exists',
-      });
-    });
-
-    it('edits everything until someone joins, then locks what they took part in', async () => {
-      let auth = await admin('content@example.com', 'content');
-      await post(auth, 'events', EVENT).expect(201);
-      await patch(auth, 'events/winter-sprint', {
-        missions: [EVENT.missions[0]],
-        milestones: [{ ...EVENT.milestones[0], requiredMissions: 1 }],
-        reason: 'Simpler',
-      }).expect(200);
-
-      await t.setNow('2026-11-11T10:00:00.000Z');
-
-      auth = await signIn('content@example.com');
-      const ana = await t.signUp('ana@example.com');
-      await t.http().post('/events/winter-sprint/join').set(ana.auth).expect(200);
-
-      const locked = await get(auth, 'events/winter-sprint');
-      expect(locked).toMatchObject({ participants: 1, locked: true });
-      expect(
-        problems(
-          await patch(auth, 'events/winter-sprint', {
-            missions: EVENT.missions,
-            reason: 'More',
-          }).expect(422),
-        ),
-      ).toContainEqual(expect.stringContaining('missions'));
-      expect(
-        problems(
-          await patch(auth, 'events/winter-sprint', {
-            startsAt: '2026-11-12T00:00:00.000Z',
-            reason: 'Later',
-          }).expect(422),
-        ),
-      ).toContainEqual(expect.stringContaining('startsAt'));
-      // An earlier end would take time away from people taking part.
-      await patch(auth, 'events/winter-sprint', {
-        endsAt: '2026-11-20T00:00:00.000Z',
-        reason: 'Shorter',
-      }).expect(422);
-      await patch(auth, 'events/winter-sprint', {
-        name: 'Winter Sprint 2026',
-        endsAt: '2026-11-26T00:00:00.000Z',
-        reason: 'A little longer',
-      }).expect(200);
-      await patch(auth, 'events/winter-sprint', { status: 'retired', reason: 'Over' }).expect(200);
-      expect(
-        await t.prisma.event.findUniqueOrThrow({ where: { id: 'winter-sprint' } }),
-      ).toMatchObject({
-        name: 'Winter Sprint 2026',
-        status: 'retired',
-        endsAt: new Date('2026-11-26T00:00:00Z'),
-      });
-      // Taking part keeps the event: it cannot be deleted.
-      await t
-        .http()
-        .delete('/admin/live/events/winter-sprint')
-        .set(auth)
-        .send({ reason: 'Remove' })
-        .expect(409);
-    });
-
-    it('monitors the Community Tree', async () => {
-      let auth = await admin('content@example.com', 'content');
-      await post(auth, 'events', { ...EVENT, startsAt: '2026-11-01T00:00:00.000Z' }).expect(201);
-      const ana = await t.signUp('ana@example.com');
-      await t.http().post('/events/winter-sprint/join').set(ana.auth).expect(200);
-      await t.submit(ana, '2026-11-02T09:00:00.000Z', 45).expect(201);
-      await t.setNow('2026-11-02T11:00:00.000Z');
-      auth = await signIn('content@example.com');
-      await t.submit(ana, '2026-11-02T10:00:00.000Z', 30).expect(201);
-
-      expect((await get(auth, 'events/winter-sprint')).communityTree).toEqual({
-        name: 'The Winter Pine',
-        artworkId: 'winter-pine',
-        totalMinutes: 75,
-        contributors: 1,
-        milestones: [
-          {
-            stage: 'seedling',
-            thresholdMinutes: 60,
-            badgeId: 'winter-sprint:seedling',
-            reachedAt: '2026-11-02T11:00:00.000Z',
-          },
-        ],
-      });
-    });
-
-    it('deletes an event nobody joined', async () => {
-      const auth = await admin('content@example.com', 'content');
-      await post(auth, 'events', EVENT).expect(201);
-      await t
-        .http()
-        .delete('/admin/live/events/winter-sprint')
-        .set(auth)
-        .send({ reason: 'Created by mistake' })
-        .expect(204);
-      expect(await t.prisma.event.count()).toBe(0);
-      expect((await audit()).at(-1)).toEqual([
-        'content.event.delete',
-        'winter-sprint',
-        'Created by mistake',
-      ]);
-    });
-  });
 
   describe('seasonal themes', () => {
     it('schedules a theme the app serves to its hemisphere', async () => {
@@ -382,10 +140,10 @@ describe('admin live operations (A6.5)', () => {
             id: 'spring-test-north',
             startsAt: '2027-03-01T00:00:00.000Z',
             endsAt: '2027-03-20T00:00:00.000Z',
-            rewards: [{ id: 'a', badgeId: 'winter-sprint:steady', requiredActiveDays: 5 }],
+            rewards: [{ id: 'a', badgeId: 'early-bird', requiredActiveDays: 5 }],
           }).expect(422),
         ),
-      ).toContainEqual(expect.stringContaining('winter-sprint:steady'));
+      ).toContainEqual(expect.stringContaining('early-bird'));
     });
 
     it('lets a retired theme make room, and deletes only a theme not yet started', async () => {
@@ -487,23 +245,13 @@ describe('admin live operations (A6.5)', () => {
         .set(auth)
         .send({ reason: 'Twice' })
         .expect(404);
-      // An event without a board has none to show.
-      await t.prisma.event.create({
-        data: {
-          id: 'quiet',
-          name: 'Quiet',
-          description: 'No board.',
-          artworkId: 'quiet',
-          status: 'active',
-          startsAt: new Date('2026-11-01T00:00:00Z'),
-          endsAt: new Date('2026-11-10T00:00:00Z'),
-        },
-      });
+      // There are no event boards any more (owner, 2026-10-22).
       await t
         .http()
         .get('/admin/live/leaderboards?scope=event&eventId=quiet')
         .set(auth)
-        .expect(404);
+        .expect(400);
+      await t.http().get('/admin/live/events').set(auth).expect(404);
       expect((await audit()).map((row) => row[0])).toEqual([
         'leaderboard.exclude',
         'leaderboard.include',
@@ -514,7 +262,7 @@ describe('admin live operations (A6.5)', () => {
   it('lets only admins and content staff run live content', async () => {
     for (const role of ['support', 'moderator'] as const) {
       const auth = await admin(`${role}@example.com`, role);
-      await t.http().get('/admin/live/events').set(auth).expect(403);
+      await t.http().get('/admin/live/themes').set(auth).expect(403);
       await post(auth, 'themes', THEME).expect(403);
     }
   });

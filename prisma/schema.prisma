@@ -117,10 +117,6 @@ model User {
   challengePlaces         ChallengeParticipant[]    @relation("challengePlace")
   challengesCreated       Challenge[]
   challengeInvitesSent    ChallengeParticipant[]    @relation("challengeInviter")
-  eventParticipations     EventParticipation[]
-  eventMilestoneGrants    EventMilestoneGrant[]
-  communityContributions  CommunityContribution[]
-  communityRewardGrants   CommunityRewardGrant[]
 
   @@map("users")
 }
@@ -209,7 +205,6 @@ model UserPreferences {
   userId         String   @id @map("user_id") @db.Uuid
   theme          Theme
   sound          Boolean
-  haptics        Boolean
   /// In-app toggle. Clients also respect the system reduce-motion setting.
   reducedMotion  Boolean  @map("reduced_motion")
   /// Product analytics (CR.1): on by default for the checkpoint; off stores no event.
@@ -226,8 +221,6 @@ enum NotificationCategory {
   dailyGoalReminder      @map("daily_goal_reminder")
   scheduledFocusReminder @map("scheduled_focus_reminder")
   streakReminder         @map("streak_reminder")
-  eventStart             @map("event_start")
-  eventEndingSoon        @map("event_ending_soon")
   friendInvite           @map("friend_invite")
   focusRoomInvite        @map("focus_room_invite")
   challengeUpdate        @map("challenge_update")
@@ -356,9 +349,9 @@ model NotificationOutbox {
   id           BigInt               @id @default(autoincrement())
   userId       String               @map("user_id") @db.Uuid
   category     NotificationCategory
-  /// One notification per user and key (an event's start, a day's reminder).
+  /// One notification per user and key (a day's reminder, a room's invitation).
   dedupeKey    String               @map("dedupe_key")
-  /// What it is about (an event id, a room id), for the relevance check.
+  /// What it is about (a reminder's local date and time, a month), for the relevance check.
   subject      String?
   title        String
   body         String
@@ -503,8 +496,6 @@ model FocusSession {
   growthResult        Json?              @map("growth_result")
   /// The badges this session caused (A4.2), stored with it and replayed unchanged; null before.
   progressionResult   Json?              @map("progression_result")
-  /// A5.6: the joined events' mission progress this session caused. Null before A5.6.
-  eventResult         Json?              @map("event_result")
   createdAt           DateTime           @default(now()) @map("created_at")
   updatedAt           DateTime           @updatedAt @map("updated_at")
 
@@ -731,8 +722,6 @@ enum ContentSource {
   /// Owned by every user (the signature species).
   system
   achievement
-  /// Phase 14.
-  event
   /// Phase 17.
   season
 
@@ -790,8 +779,6 @@ enum AchievementCriterion {
   sessions_after_22
   /// Owner decision 2026-10-15: weekends with counted focus on both the Saturday and the Sunday.
   full_weekends
-  /// Owner decision 2026-10-15: counted sessions that added minutes to a Community Tree.
-  community_contributions
 
   @@map("achievement_criterion")
 }
@@ -813,11 +800,9 @@ model BadgeDefinition {
   sortOrder      Int                 @default(0) @map("sort_order")
   createdAt      DateTime            @default(now()) @map("created_at")
 
-  achievement         AchievementDefinition?
-  owners              UserBadge[]
-  milestones          EventMilestone[]
-  communityMilestones CommunityMilestone[]
-  seasonalRewards     SeasonalReward[]
+  achievement     AchievementDefinition?
+  owners          UserBadge[]
+  seasonalRewards SeasonalReward[]
 
   @@map("badge_definitions")
 }
@@ -885,12 +870,10 @@ model CosmeticDefinition {
   sortOrder      Int                 @default(0) @map("sort_order")
   createdAt      DateTime            @default(now()) @map("created_at")
 
-  achievement         AchievementDefinition? @relation(fields: [achievementId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  owners              UserCosmetic[]
-  equipped            UserEquipment[]
-  milestones          EventMilestone[]
-  communityMilestones CommunityMilestone[]
-  seasonalRewards     SeasonalReward[]
+  achievement     AchievementDefinition? @relation(fields: [achievementId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  owners          UserCosmetic[]
+  equipped        UserEquipment[]
+  seasonalRewards SeasonalReward[]
 
   @@unique([id, type])
   @@map("cosmetic_definitions")
@@ -1309,130 +1292,6 @@ model ChallengeParticipant {
   @@map("challenge_participants")
 }
 
-enum EventMissionMeasure {
-  focus_minutes
-  sessions
-  active_days
-  streak_days
-  focus_together_sessions
-
-  @@map("event_mission_measure")
-}
-
-/// A5.6 (docs/06 Event, spec §11): a time-bound program, as content (seed data until the admin
-/// content tools). Planned events are not shown; retired ones stay readable for those who joined.
-model Event {
-  id               String        @id
-  name             String
-  description      String
-  artworkId        String        @map("artwork_id")
-  status           ContentStatus
-  /// The window: missions count counted sessions that started in [startsAt, endsAt).
-  startsAt         DateTime      @map("starts_at")
-  endsAt           DateTime      @map("ends_at")
-  /// Entry condition: counted sessions before joining (0 = open to everyone).
-  entryMinSessions Int           @default(0) @map("entry_min_sessions")
-  sortOrder        Int           @default(0) @map("sort_order")
-  /// A5.8: whether the event has its own leaderboard (docs/06 Event: optional).
-  leaderboard      Boolean       @default(false)
-
-  missions       EventMission[]
-  milestones     EventMilestone[]
-  participations EventParticipation[]
-  grants         EventMilestoneGrant[]
-  communityTree  CommunityTree?
-  teams          EventTeam[]
-
-  @@map("events")
-}
-
-/// A goal within an event (docs/06 EventMission), derived from the user's normal sessions.
-model EventMission {
-  eventId      String              @map("event_id")
-  id           String
-  measure      EventMissionMeasure
-  target       Int
-  /// For active days: the counted minutes a day needs (0 = any counted session).
-  dailyMinutes Int                 @default(0) @map("daily_minutes")
-  name         String
-  description  String
-  sortOrder    Int                 @default(0) @map("sort_order")
-
-  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
-
-  @@id([eventId, id])
-  @@map("event_missions")
-}
-
-/// Reached when enough missions are completed; grants its rewards once, owned forever.
-model EventMilestone {
-  eventId          String  @map("event_id")
-  id               String
-  requiredMissions Int     @map("required_missions")
-  badgeId          String? @map("badge_id")
-  cosmeticId       String? @map("cosmetic_id")
-  /// An event trait on the tree growing when it is reached (`event:<event id>`).
-  traitId          String? @map("trait_id")
-  name             String
-  sortOrder        Int     @default(0) @map("sort_order")
-
-  event    Event                 @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  badge    BadgeDefinition?      @relation(fields: [badgeId], references: [id], onDelete: Restrict)
-  cosmetic CosmeticDefinition?   @relation(fields: [cosmeticId], references: [id], onDelete: Restrict)
-  grants   EventMilestoneGrant[]
-
-  @@id([eventId, id])
-  @@map("event_milestones")
-}
-
-/// The user's choice to join (docs/02: events are invitations).
-model EventParticipation {
-  userId   String   @map("user_id") @db.Uuid
-  eventId  String   @map("event_id")
-  joinedAt DateTime @map("joined_at")
-  /// A5.8: the participant's team, on events with teams (the smallest team on joining).
-  teamId   String?  @map("team_id")
-
-  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  event Event      @relation(fields: [eventId], references: [id], onDelete: Restrict)
-  team  EventTeam? @relation(fields: [eventId, teamId], references: [eventId, id], onDelete: Restrict)
-
-  @@id([userId, eventId])
-  @@map("event_participations")
-}
-
-/// A milestone reached by a participant: its rewards are granted once. The trait's tree is where
-/// it was placed (null until a growing tree exists to receive it).
-model EventMilestoneGrant {
-  userId      String   @map("user_id") @db.Uuid
-  eventId     String   @map("event_id")
-  milestoneId String   @map("milestone_id")
-  reachedAt   DateTime @map("reached_at")
-  traitYear   Int?     @map("trait_year")
-  traitMonth  Int?     @map("trait_month")
-
-  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  event     Event          @relation(fields: [eventId], references: [id], onDelete: Restrict)
-  milestone EventMilestone @relation(fields: [eventId, milestoneId], references: [eventId, id], onDelete: Restrict)
-
-  @@id([userId, eventId, milestoneId])
-  @@map("event_milestone_grants")
-}
-
-/// A5.8 A team of an event, for team ranking (spec §16.3). Content, like the event.
-model EventTeam {
-  eventId   String @map("event_id")
-  id        String
-  name      String
-  sortOrder Int    @default(0) @map("sort_order")
-
-  event          Event                @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  participations EventParticipation[]
-
-  @@id([eventId, id])
-  @@map("event_teams")
-}
-
 /// A5.9 Hemispheres for seasonal themes (docs/03 §10).
 enum Hemisphere {
   north
@@ -1477,83 +1336,6 @@ model SeasonalReward {
 
   @@id([themeId, id])
   @@map("seasonal_rewards")
-}
-
-/// A5.7 Community Tree stages (spec §12), in growing order.
-enum CommunityStage {
-  seedling
-  growing_tree
-  bloom
-  final_form
-
-  @@map("community_stage")
-}
-
-/// A5.7 The shared tree of an event (spec §12, docs/06 CommunityTree). It grows from the total
-/// focus minutes of the event's participants and never loses progress: a trigger refuses a lower
-/// total. The row is the one lock every contribution takes.
-model CommunityTree {
-  eventId      String @id @map("event_id")
-  name         String
-  artworkId    String @map("artwork_id")
-  /// The sum of the contribution ledger, kept with it in one transaction.
-  totalMinutes BigInt @default(0) @map("total_minutes")
-
-  event         Event                   @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  milestones    CommunityMilestone[]
-  contributions CommunityContribution[]
-
-  @@map("community_trees")
-}
-
-/// A community milestone and its shared reward. `reachedAt` is set once and never changes.
-model CommunityMilestone {
-  eventId          String         @map("event_id")
-  stage            CommunityStage
-  thresholdMinutes BigInt         @map("threshold_minutes")
-  badgeId          String?        @map("badge_id")
-  cosmeticId       String?        @map("cosmetic_id")
-  reachedAt        DateTime?      @map("reached_at")
-
-  tree     CommunityTree          @relation(fields: [eventId], references: [eventId], onDelete: Cascade)
-  badge    BadgeDefinition?       @relation(fields: [badgeId], references: [id], onDelete: Restrict)
-  cosmetic CosmeticDefinition?    @relation(fields: [cosmeticId], references: [id], onDelete: Restrict)
-  grants   CommunityRewardGrant[]
-
-  @@id([eventId, stage])
-  @@map("community_milestones")
-}
-
-/// The append-only contribution ledger: one row per counted session of a participant that started
-/// in the window. Deleting the account keeps the minutes anonymously (`userId` becomes null).
-model CommunityContribution {
-  id            BigInt   @id @default(autoincrement())
-  eventId       String   @map("event_id")
-  userId        String?  @map("user_id") @db.Uuid
-  sessionId     String   @map("session_id") @db.Uuid
-  minutes       Int
-  contributedAt DateTime @map("contributed_at")
-
-  tree CommunityTree @relation(fields: [eventId], references: [eventId], onDelete: Restrict)
-  user User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@unique([eventId, userId, sessionId])
-  @@map("community_contributions")
-}
-
-/// A participant's share of a reached milestone: granted once, celebrated once (docs/04).
-model CommunityRewardGrant {
-  userId       String         @map("user_id") @db.Uuid
-  eventId      String         @map("event_id")
-  stage        CommunityStage
-  grantedAt    DateTime       @map("granted_at")
-  celebratedAt DateTime?      @map("celebrated_at")
-
-  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  milestone CommunityMilestone @relation(fields: [eventId, stage], references: [eventId, stage], onDelete: Restrict)
-
-  @@id([userId, eventId, stage])
-  @@map("community_reward_grants")
 }
 
 enum AdminRole {

@@ -57,8 +57,6 @@ export interface RecapContent {
    * granted later never appears here. Empty in recaps archived before A4.2.
    */
   badges: RecapBadge[];
-  /** Future-safe: events (Phase 11). Empty for now. */
-  events: never[];
 }
 
 export interface RecapBadge {
@@ -124,7 +122,6 @@ export function parseRecapContent(value: unknown): RecapContent {
     'newRecords',
     'highlightedNotes',
     'badges',
-    'events',
   ];
   if (!isObject(value)) return fail('not an object');
   if (!hasOnly(value, keys)) fail('unexpected fields');
@@ -138,9 +135,7 @@ export function parseRecapContent(value: unknown): RecapContent {
   const notes = value['highlightedNotes'];
   if (!Array.isArray(notes) || !notes.every(isHighlightedNote)) fail('bad highlightedNotes');
   const badges = value['badges'];
-  if (!Array.isArray(badges) || !badges.every(isRecapBadge) || !Array.isArray(value['events'])) {
-    fail('bad badges or events');
-  }
+  if (!Array.isArray(badges) || !badges.every(isRecapBadge)) fail('bad badges');
   return value as unknown as RecapContent;
 }
 

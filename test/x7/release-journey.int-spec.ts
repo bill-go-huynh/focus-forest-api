@@ -12,12 +12,12 @@ import { normalize } from '../support/contract-normalize.js';
  * X7 Release gate (HTTP + PostgreSQL): the Phase 7 safety and privacy systems working together
  * on one community, over the real API.
  *
- * 1. Ana and Ben focus together in an event with a board; a bot scripts overlapping sessions.
+ * 1. Ana and Ben focus, on the global board; a bot scripts overlapping sessions.
  * 2. Staff see the bot's integrity flag with its evidence and exclude it: it leaves the board.
  * 3. The app reports an error; staff read it grouped, with nothing saying who.
  * 4. Someone guesses Ana's password: the limit refuses, and staff see the refusals counted.
  * 5. Ana downloads her data, then deletes her account: she leaves every board and Ben's
- *    followers, while the Community Tree keeps every minute, hers anonymous.
+ *    followers. (Events and the Community Tree were removed, owner 2026-10-22.)
  * 6. Every Phase 7 admin answer the admin app reads is captured (`release-contract.json`,
  *    byte-identical with focus-forest-admin `src/test/release-contract.json`). After an intended
  *    change: `X7_UPDATE_CONTRACT=1 npm run test:int -- test/x7`, then copy the file.
@@ -52,24 +52,10 @@ describe('X7 release gate (HTTP + PostgreSQL)', () => {
     const staff = async (auth: Record<string, string>, path: string) =>
       (await t.http().get(path).set(auth).expect(200)).body as Body;
 
-    await t.prisma.event.create({
-      data: {
-        id: 'november-gate',
-        name: 'November',
-        description: 'A month of focus.',
-        artworkId: 'november-gate',
-        status: 'active',
-        startsAt: new Date('2026-11-01T00:00:00Z'),
-        endsAt: new Date('2026-11-30T00:00:00Z'),
-        leaderboard: true,
-        communityTree: { create: { name: 'Oak', artworkId: 'oak' } },
-      },
-    });
     const person = async (name: string) => {
       const user = await t.signUp(`${name}@example.com`, 'UTC', '2026-09-01T00:00:00.000Z');
       await t.http().patch('/me/profile').set(user.auth).send({ username: name }).expect(200);
       await t.http().patch('/me/privacy').set(user.auth).send({ leaderboards: true }).expect(200);
-      await t.http().post('/events/november-gate/join').set(user.auth).expect(200);
       return user;
     };
     const ana = await person('ana');
@@ -120,7 +106,7 @@ describe('X7 release gate (HTTP + PostgreSQL)', () => {
       (
         await app<{ rows: { person: { username: string } }[] }>(
           viewer,
-          '/leaderboards?scope=event&eventId=november-gate',
+          '/leaderboards?scope=global&period=weekly',
         )
       ).rows.map((row) => row.person.username);
     expect((await board()).sort()).toEqual(['ana', 'ben', 'bot']);
@@ -208,29 +194,12 @@ describe('X7 release gate (HTTP + PostgreSQL)', () => {
     expect(exported.social.followers).toEqual([
       { userId: ben.userId, createdAt: expect.any(String) as string },
     ]);
-    const treeBefore = await t.prisma.communityTree.findUniqueOrThrow({
-      where: { eventId: 'november-gate' },
-    });
-    expect(treeBefore.totalMinutes).toBe(55n);
     await t.http().delete('/me').set(ana.auth).send({ password: PASSWORD }).expect(204);
 
-    // She leaves every board and Ben's followers; the tree keeps every minute, hers anonymous.
+    // She leaves every board and Ben's followers.
     await t.http().get('/me/profile').set(ana.auth).expect(401);
     expect(await board()).toEqual(['ben']);
     expect((await app<{ items: unknown[] }>(ben, '/me/followers')).items).toEqual([]);
-    expect(
-      (await t.prisma.communityTree.findUniqueOrThrow({ where: { eventId: 'november-gate' } }))
-        .totalMinutes,
-    ).toBe(55n);
-    expect(
-      (await t.prisma.communityContribution.findMany({ orderBy: { minutes: 'asc' } })).map(
-        (row) => [row.userId, row.minutes],
-      ),
-    ).toEqual([
-      [ben.userId, 25],
-      [null, 30],
-    ]);
-
     // 6. The capture.
     const replace = new Map<string, string>([
       [ana.userId, '00000000-0000-4000-8000-0000000007a1'],

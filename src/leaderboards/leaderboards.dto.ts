@@ -1,23 +1,18 @@
-import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsIn, IsOptional } from 'class-validator';
 
-export const LEADERBOARD_SCOPES = ['friends', 'global', 'event'] as const;
+export const LEADERBOARD_SCOPES = ['friends', 'global'] as const;
 export type LeaderboardScope = (typeof LEADERBOARD_SCOPES)[number];
-export type LeaderboardPeriodKind = 'weekly' | 'monthly' | 'event';
+export type LeaderboardPeriodKind = 'weekly' | 'monthly';
 
 export class LeaderboardQueryDto {
   /** Friends (mutual follows) by default: the most prominent board (docs/02). */
   @IsOptional()
-  @IsIn(LEADERBOARD_SCOPES, { message: 'scope must be friends, global, or event.' })
+  @IsIn(LEADERBOARD_SCOPES, { message: 'scope must be friends or global.' })
   scope?: LeaderboardScope;
 
   @IsOptional()
   @IsIn(['weekly', 'monthly'], { message: 'period must be weekly or monthly.' })
   period?: 'weekly' | 'monthly';
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(64)
-  eventId?: string;
 }
 
 export interface LeaderboardRowDto {
@@ -43,6 +38,4 @@ export interface LeaderboardDto {
   rows: LeaderboardRowDto[];
   /** The viewer's row, also when beyond the listed rows; null when not on the board. */
   you: LeaderboardRowDto | null;
-  /** Event boards with teams; null otherwise. */
-  teams: { id: string; name: string; rank: number; score: number; members: number }[] | null;
 }

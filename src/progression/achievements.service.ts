@@ -380,17 +380,13 @@ export class AchievementsService {
     const { session } = cause;
     // A discarded session changed nothing.
     if (!isCounted(session.status)) return achievementValues(input);
-    // One statement: the counted sessions of its day, its time of day, and its contribution.
-    const [row] = await client.$queryRaw<
-      { same_day: bigint; hour: number; contributed: boolean }[]
-    >`
+    // One statement: the counted sessions of its day and its time of day.
+    const [row] = await client.$queryRaw<{ same_day: bigint; hour: number }[]>`
       SELECT
         (SELECT COUNT(*) FROM focus_sessions o
           WHERE o.user_id = s.user_id AND o.local_date = s.local_date AND o.status <> 'discarded')
           AS same_day,
-        EXTRACT(HOUR FROM (s.started_at AT TIME ZONE 'UTC') AT TIME ZONE c.timezone)::int AS hour,
-        EXISTS (SELECT 1 FROM community_contributions cc
-          WHERE cc.user_id = s.user_id AND cc.session_id = s.id AND cc.minutes > 0) AS contributed
+        EXTRACT(HOUR FROM (s.started_at AT TIME ZONE 'UTC') AT TIME ZONE c.timezone)::int AS hour
       FROM focus_sessions s
       JOIN month_attribution_contexts c
         ON c.user_id = s.user_id AND c.year = s.year AND c.month = s.month
@@ -402,7 +398,6 @@ export class AchievementsService {
         countedOnSameDay: Number(row?.same_day ?? 1),
         startedBefore7: row !== undefined && row.hour < 7,
         startedAfter22: row !== undefined && row.hour >= 22,
-        contributedToCommunity: row?.contributed ?? false,
       }),
     );
   }
@@ -461,7 +456,7 @@ export class AchievementsService {
 
   /**
    * Every criterion's source, read once: lifetime counted focus, the streak, and one statement for
-   * Focus Together, the time of day of counted sessions, and Community Tree contributions.
+   * Focus Together and the time of day of counted sessions.
    */
   private async input(client: Client, userId: string): Promise<AchievementInput> {
     return {
@@ -476,19 +471,17 @@ export class AchievementsService {
    * - Time of day (2026-10-15): counted sessions started before 07:00 and at or after 22:00, in
    *   the local time of their month's time zone (docs/06 Time and attribution). started_at is
    *   stored as UTC without a zone: read as UTC, then in the month's zone.
-   * - Community (2026-10-15): counted sessions that added minutes to a Community Tree.
    */
   private async sessionSources(
     client: Client,
     userId: string,
-  ): Promise<Pick<AchievementInput, 'together' | 'timeOfDay' | 'community'>> {
+  ): Promise<Pick<AchievementInput, 'together' | 'timeOfDay'>> {
     const [row] = await client.$queryRaw<
       {
         sessions: bigint;
         with_friend: bigint;
         early: bigint;
         late: bigint;
-        contributions: bigint;
       }[]
     >`
       WITH together AS (${this.togetherQuery(userId, null)}),
@@ -501,14 +494,11 @@ export class AchievementsService {
       )
       SELECT together.sessions, together.with_friend,
         (SELECT COUNT(*) FROM local_hours WHERE hour < 7) AS early,
-        (SELECT COUNT(*) FROM local_hours WHERE hour >= 22) AS late,
-        (SELECT COUNT(DISTINCT session_id) FROM community_contributions
-          WHERE user_id = ${userId}::uuid AND minutes > 0) AS contributions
+        (SELECT COUNT(*) FROM local_hours WHERE hour >= 22) AS late
       FROM together`;
     return {
       together: { sessions: Number(row?.sessions ?? 0), withFriend: Number(row?.with_friend ?? 0) },
       timeOfDay: { early: Number(row?.early ?? 0), late: Number(row?.late ?? 0) },
-      community: { contributions: Number(row?.contributions ?? 0) },
     };
   }
 

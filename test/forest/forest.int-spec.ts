@@ -456,7 +456,6 @@ describe('personal forest, tree details, and recap (HTTP + PostgreSQL)', () => {
         mostProductiveWeek: { weekStart: '2026-10-12', focusedMinutes: 140 },
         highlightedNotes: [],
         badges: [],
-        events: [],
         ceremonySeenAt: null,
         recapSeenAt: null,
       });

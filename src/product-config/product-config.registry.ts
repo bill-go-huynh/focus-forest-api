@@ -225,7 +225,7 @@ export const productConfigRegistry = {
   // Phase 6 (A6.1): notification delivery (docs/02 Notifications, owner decisions 2026-10-11).
   'notifications.maxUnrequestedPerDay': {
     description:
-      'Informational notifications (events, social, badges, recaps) sent per local day at most; reminders the user set are not counted',
+      'Informational notifications (social, badges, recaps) sent per local day at most; reminders the user set are not counted',
     type: integer({ min: 0, max: 10 }),
   },
   'notifications.informationalHours': {
@@ -240,12 +240,6 @@ export const productConfigRegistry = {
     description:
       'Minutes after a focus lease ends during which notifications still wait, to cover pauses',
     type: integer({ min: 0, max: 240 }),
-  },
-
-  // Phase 6 (A6.3): live notifications.
-  'notifications.eventEndingSoonHours': {
-    description: 'Hours before an event ends when its participants are told it ends soon',
-    type: integer({ min: 1, max: 336 }),
   },
 
   // Phase 7 (A7.2): rate limits, each a number of requests in a fixed window of seconds.

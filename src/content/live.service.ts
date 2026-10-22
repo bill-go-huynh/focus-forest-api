@@ -12,32 +12,21 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import {
   type BadgeTerms,
   contentPackProblems,
-  type PackEvent,
   type PackTheme,
   themesOverlap,
 } from './content-pack.js';
 import { liveBodyProblems, lockedProblems, type LiveStatus } from './live-rules.js';
 
 /**
- * Live operations (A6.5; docs/09 later admin: events and missions, Community Tree, seasonal
- * content). Events and themes are written here instead of by content packs, under the same
- * checks (`contentPackProblems`, with the badges that exist). What people already took part in
- * stays as it was: once anyone joins an event, its start, missions, milestones, teams, and
- * Community Tree are locked and its end only moves later; once a theme starts, its start,
- * hemisphere, and rewards are locked. Every write is audited with its reason.
+ * Live operations (A6.5; docs/09 later admin: seasonal content). Themes are written here instead
+ * of by content packs, under the same checks (`contentPackProblems`, with the badges that exist).
+ * What people already took part in stays as it was: once a theme starts, its start, hemisphere,
+ * and rewards are locked and its end only moves later. Every write is audited with its reason.
  */
 
 type Tx = Prisma.TransactionClient;
 type Body = Record<string, unknown>;
 
-const EVENT_INCLUDE = {
-  missions: { orderBy: [{ sortOrder: 'asc' as const }, { id: 'asc' as const }] },
-  milestones: { orderBy: [{ sortOrder: 'asc' as const }, { id: 'asc' as const }] },
-  teams: { orderBy: [{ sortOrder: 'asc' as const }, { id: 'asc' as const }] },
-  communityTree: { include: { milestones: { orderBy: { thresholdMinutes: 'asc' as const } } } },
-  _count: { select: { participations: true } },
-} satisfies Prisma.EventInclude;
-type LoadedEvent = Prisma.EventGetPayload<{ include: typeof EVENT_INCLUDE }>;
 type LoadedTheme = Prisma.SeasonalThemeGetPayload<{ include: { rewards: true } }>;
 
 const SORT_STEP = 10;
@@ -49,286 +38,6 @@ export class LiveService {
     private readonly audit: AdminAuditService,
     private readonly clock: Clock,
   ) {}
-
-  // Events ------------------------------------------------------------------------------------
-
-  async events(): Promise<{ items: Body[] }> {
-    const events = await this.prisma.event.findMany({
-      orderBy: [{ startsAt: 'desc' }, { id: 'asc' }],
-      include: { _count: { select: { participations: true } } },
-    });
-    return {
-      items: events.map((event) => ({
-        id: event.id,
-        name: event.name,
-        status: event.status,
-        startsAt: event.startsAt.toISOString(),
-        endsAt: event.endsAt.toISOString(),
-        leaderboard: event.leaderboard,
-        participants: event._count.participations,
-        locked: event._count.participations > 0,
-      })),
-    };
-  }
-
-  async event(id: string): Promise<Body> {
-    return this.renderEvent(await this.loadEvent(this.prisma, id));
-  }
-
-  async createEvent(adminId: string, body: Body): Promise<Body> {
-    const { problems, values } = liveBodyProblems('event', 'create', body);
-    if (problems.length > 0) throw invalid(problems);
-    const event = values as unknown as PackEvent & { status: LiveStatus };
-    await this.prisma.$transaction(async (tx) => {
-      if (await tx.event.findUnique({ where: { id: event.id } })) throw exists('event', event.id);
-      const issues = contentPackProblems(
-        { badges: [], events: [event], themes: [] },
-        await this.badgeTerms(tx, eventBadgeIds(event), []),
-      );
-      if (issues.length > 0) throw invalid(issues);
-      await tx.event.create({
-        data: {
-          id: event.id,
-          name: event.name,
-          description: event.description,
-          artworkId: event.artworkId,
-          status: event.status,
-          startsAt: new Date(event.startsAt),
-          endsAt: new Date(event.endsAt),
-          entryMinSessions: event.entryMinSessions,
-          leaderboard: event.leaderboard,
-        },
-      });
-      await this.writeChildren(tx, event, ['teams', 'missions', 'milestones', 'communityTree']);
-      await this.audit.record(
-        {
-          adminId,
-          action: 'content.event.create',
-          targetType: 'event',
-          targetId: event.id,
-          reason: reasonOf(body),
-        },
-        tx,
-      );
-    });
-    return this.event(event.id);
-  }
-
-  async updateEvent(adminId: string, id: string, body: Body): Promise<Body> {
-    const { problems, values } = liveBodyProblems('event', 'update', body);
-    if (problems.length > 0) throw invalid(problems);
-    await this.prisma.$transaction(async (tx) => {
-      const loaded = await this.loadEvent(tx, id);
-      const current = packEvent(loaded);
-      const currentValues: Body = { ...current, status: loaded.status };
-      const changed = (name: string) =>
-        JSON.stringify(currentValues[name]) !== JSON.stringify(values[name]);
-      const names = Object.keys(values).filter(changed).sort();
-      const issues =
-        loaded._count.participations > 0 ? lockedProblems('event', current, values, changed) : [];
-      const merged = { ...current, ...values };
-      // Badges named by what this request writes must be badges; what stays may keep cosmetics.
-      const written = eventBadgeIds({ ...emptyEvent(), ...values });
-      const kept = eventBadgeIds({
-        ...current,
-        ...Object.fromEntries(
-          Object.keys(values).map((name) => [name, emptyEvent()[name as keyof PackEvent]]),
-        ),
-      });
-      issues.push(
-        ...contentPackProblems(
-          { badges: [], events: [merged], themes: [] },
-          await this.badgeTerms(tx, written, kept),
-        ),
-      );
-      if (issues.length > 0) throw invalid(issues);
-      if (names.length === 0) return;
-
-      const fields = [
-        'name',
-        'description',
-        'artworkId',
-        'status',
-        'startsAt',
-        'endsAt',
-        'entryMinSessions',
-        'leaderboard',
-      ];
-      await tx.event.update({
-        where: { id },
-        data: Object.fromEntries(
-          names
-            .filter((name) => fields.includes(name))
-            .map((name) => [
-              name,
-              name.endsWith('At') ? new Date(String(values[name])) : values[name],
-            ]),
-        ),
-      });
-      const children = names.filter((name) =>
-        ['teams', 'missions', 'milestones', 'communityTree'].includes(name),
-      );
-      if (children.length > 0) {
-        // Order matters for the foreign keys: milestones before missions are replaced.
-        if (children.includes('milestones'))
-          await tx.eventMilestone.deleteMany({ where: { eventId: id } });
-        if (children.includes('missions'))
-          await tx.eventMission.deleteMany({ where: { eventId: id } });
-        if (children.includes('teams')) await tx.eventTeam.deleteMany({ where: { eventId: id } });
-        if (children.includes('communityTree'))
-          await tx.communityTree.deleteMany({ where: { eventId: id } });
-        await this.writeChildren(tx, merged, children);
-      }
-      await this.audit.record(
-        {
-          adminId,
-          action: 'content.event.update',
-          targetType: 'event',
-          targetId: id,
-          reason: reasonOf(body),
-          details: { fields: names.join(',') },
-        },
-        tx,
-      );
-    });
-    return this.event(id);
-  }
-
-  async deleteEvent(adminId: string, id: string, reason: unknown): Promise<void> {
-    const why = checkedReason(reason);
-    try {
-      await this.prisma.$transaction(async (tx) => {
-        const loaded = await this.loadEvent(tx, id);
-        if (loaded._count.participations > 0)
-          throw inUse('People have taken part in this event. Retire it instead.');
-        await tx.event.delete({ where: { id } });
-        await this.audit.record(
-          {
-            adminId,
-            action: 'content.event.delete',
-            targetType: 'event',
-            targetId: id,
-            reason: why,
-          },
-          tx,
-        );
-      });
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
-        throw inUse('Something still refers to this event. Retire it instead.');
-      }
-      throw error;
-    }
-  }
-
-  private async writeChildren(tx: Tx, event: PackEvent, which: string[]): Promise<void> {
-    if (which.includes('teams') && event.teams.length > 0) {
-      await tx.eventTeam.createMany({
-        data: event.teams.map((team, i) => ({
-          eventId: event.id,
-          ...team,
-          sortOrder: (i + 1) * SORT_STEP,
-        })),
-      });
-    }
-    if (which.includes('missions') && event.missions.length > 0) {
-      await tx.eventMission.createMany({
-        data: event.missions.map((mission, i) => ({
-          eventId: event.id,
-          ...mission,
-          sortOrder: (i + 1) * SORT_STEP,
-        })),
-      });
-    }
-    if (which.includes('milestones') && event.milestones.length > 0) {
-      await tx.eventMilestone.createMany({
-        data: event.milestones.map((milestone, i) => ({
-          eventId: event.id,
-          id: milestone.id,
-          name: milestone.name,
-          requiredMissions: milestone.requiredMissions,
-          badgeId: milestone.badgeId,
-          traitId: milestone.trait ? `event:${event.id}` : null,
-          sortOrder: (i + 1) * SORT_STEP,
-        })),
-      });
-    }
-    if (which.includes('communityTree') && event.communityTree) {
-      await tx.communityTree.create({
-        data: {
-          eventId: event.id,
-          name: event.communityTree.name,
-          artworkId: event.communityTree.artworkId,
-          milestones: {
-            create: event.communityTree.milestones.map((m) => ({
-              stage: m.stage,
-              thresholdMinutes: m.thresholdMinutes,
-              badgeId: m.badgeId,
-            })),
-          },
-        },
-      });
-    }
-  }
-
-  private async loadEvent(client: Tx, id: string): Promise<LoadedEvent> {
-    const event = await client.event.findUnique({ where: { id }, include: EVENT_INCLUDE });
-    if (!event) throw notFound('event', id);
-    return event;
-  }
-
-  private async renderEvent(event: LoadedEvent): Promise<Body> {
-    const tree = event.communityTree;
-    const contributors = tree
-      ? ((
-          await this.prisma.$queryRaw<{ count: bigint }[]>`
-            SELECT COUNT(DISTINCT user_id) AS count FROM community_contributions
-            WHERE event_id = ${event.id} AND user_id IS NOT NULL`
-        )[0]?.count ?? 0n)
-      : 0n;
-    return {
-      id: event.id,
-      name: event.name,
-      description: event.description,
-      artworkId: event.artworkId,
-      status: event.status,
-      startsAt: event.startsAt.toISOString(),
-      endsAt: event.endsAt.toISOString(),
-      entryMinSessions: event.entryMinSessions,
-      leaderboard: event.leaderboard,
-      participants: event._count.participations,
-      locked: event._count.participations > 0,
-      teams: event.teams.map((team) => ({ id: team.id, name: team.name })),
-      missions: event.missions.map((m) => ({
-        id: m.id,
-        measure: m.measure,
-        target: m.target,
-        dailyMinutes: m.dailyMinutes,
-        name: m.name,
-        description: m.description,
-      })),
-      milestones: event.milestones.map((m) => ({
-        id: m.id,
-        name: m.name,
-        requiredMissions: m.requiredMissions,
-        badgeId: m.badgeId,
-        cosmeticId: m.cosmeticId,
-        traitId: m.traitId,
-      })),
-      communityTree: tree && {
-        name: tree.name,
-        artworkId: tree.artworkId,
-        totalMinutes: Number(tree.totalMinutes),
-        contributors: Number(contributors),
-        milestones: tree.milestones.map((m) => ({
-          stage: m.stage,
-          thresholdMinutes: Number(m.thresholdMinutes),
-          badgeId: m.badgeId,
-          reachedAt: m.reachedAt?.toISOString() ?? null,
-        })),
-      },
-    };
-  }
 
   // Themes ------------------------------------------------------------------------------------
 
@@ -346,7 +55,7 @@ export class LiveService {
   }
 
   async createTheme(adminId: string, body: Body): Promise<Body> {
-    const { problems, values } = liveBodyProblems('theme', 'create', body);
+    const { problems, values } = liveBodyProblems('create', body);
     if (problems.length > 0) throw invalid(problems);
     const theme = values as unknown as PackTheme & { status: LiveStatus };
     await this.prisma.$transaction(async (tx) => {
@@ -393,7 +102,7 @@ export class LiveService {
   }
 
   async updateTheme(adminId: string, id: string, body: Body): Promise<Body> {
-    const { problems, values } = liveBodyProblems('theme', 'update', body);
+    const { problems, values } = liveBodyProblems('update', body);
     if (problems.length > 0) throw invalid(problems);
     await this.prisma.$transaction(async (tx) => {
       const loaded = await this.loadTheme(tx, id);
@@ -403,7 +112,7 @@ export class LiveService {
         JSON.stringify(currentValues[name]) !== JSON.stringify(values[name]);
       const names = Object.keys(values).filter(changed).sort();
       const started = this.clock.now() >= loaded.startsAt;
-      const issues = started ? lockedProblems('theme', current, values, changed) : [];
+      const issues = started ? lockedProblems(current, values, changed) : [];
       const merged = { ...current, ...values };
       const status = (values['status'] ?? loaded.status) as LiveStatus;
       const written = 'rewards' in values ? merged.rewards.map((r) => r.badgeId) : [];
@@ -480,7 +189,7 @@ export class LiveService {
     kept: string[],
   ): Promise<string[]> {
     const issues = contentPackProblems(
-      { badges: [], events: [], themes: [theme] },
+      { badges: [], themes: [theme] },
       await this.badgeTerms(tx, written, kept),
     );
     if (status !== 'retired') {
@@ -577,7 +286,7 @@ export class LiveService {
   // Shared ------------------------------------------------------------------------------------
 
   /**
-   * The terms of the rewards an event or theme names. What this request writes must be a badge
+   * The terms of the rewards a theme names. What this request writes must be a badge
    * (owner decision: badge rewards); what it keeps may also be a cosmetic an older pack chose.
    */
   private async badgeTerms(
@@ -607,69 +316,6 @@ export class LiveService {
     }
     return terms;
   }
-}
-
-/** The event as a content-pack event, the way the checks read it. */
-function packEvent(event: LoadedEvent): PackEvent {
-  return {
-    id: event.id,
-    name: event.name,
-    description: event.description,
-    artworkId: event.artworkId,
-    startsAt: event.startsAt.toISOString(),
-    endsAt: event.endsAt.toISOString(),
-    entryMinSessions: event.entryMinSessions,
-    leaderboard: event.leaderboard,
-    teams: event.teams.map((team) => ({ id: team.id, name: team.name })),
-    missions: event.missions.map((m) => ({
-      id: m.id,
-      measure: m.measure,
-      target: m.target,
-      dailyMinutes: m.dailyMinutes,
-      name: m.name,
-      description: m.description,
-    })),
-    milestones: event.milestones.map((m) => ({
-      id: m.id,
-      name: m.name,
-      requiredMissions: m.requiredMissions,
-      badgeId: m.badgeId ?? m.cosmeticId,
-      trait: m.traitId !== null,
-    })),
-    communityTree: event.communityTree && {
-      name: event.communityTree.name,
-      artworkId: event.communityTree.artworkId,
-      milestones: event.communityTree.milestones.map((m) => ({
-        stage: m.stage,
-        thresholdMinutes: Number(m.thresholdMinutes),
-        badgeId: (m.badgeId ?? m.cosmeticId)!,
-      })),
-    },
-  };
-}
-
-function emptyEvent(): PackEvent {
-  return {
-    id: '',
-    name: '',
-    description: '',
-    artworkId: '',
-    startsAt: '',
-    endsAt: '',
-    entryMinSessions: 0,
-    leaderboard: false,
-    teams: [],
-    missions: [],
-    milestones: [],
-    communityTree: null,
-  };
-}
-
-function eventBadgeIds(event: PackEvent): string[] {
-  return [
-    ...event.milestones.flatMap((m) => (m.badgeId ? [m.badgeId] : [])),
-    ...(event.communityTree?.milestones.map((m) => m.badgeId) ?? []),
-  ];
 }
 
 function packTheme(theme: LoadedTheme): PackTheme {

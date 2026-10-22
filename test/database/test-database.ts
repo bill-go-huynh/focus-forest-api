@@ -1,7 +1,4 @@
 import { execFileSync } from 'node:child_process';
-import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
-
 import { PrismaPg } from '@prisma/adapter-pg';
 
 import { PrismaClient } from '../../src/generated/prisma/client.js';
@@ -34,21 +31,25 @@ export function createTestPrismaClient(url: string = testDatabaseUrl()): PrismaC
   return new PrismaClient({ adapter: new PrismaPg({ connectionString: url }) });
 }
 
-/** Drops everything in the test database, then applies all migrations from scratch. */
+/**
+ * Drops everything in the test database, then applies all migrations from scratch, and keeps a
+ * copy of the content the migrations left (`snapshotContent`).
+ */
 export async function migrateFreshTestDatabase(url: string = testDatabaseUrl()): Promise<void> {
   const prisma = createTestPrismaClient(url);
   try {
+    await prisma.$executeRawUnsafe(`DROP SCHEMA IF EXISTS ${SNAPSHOT_SCHEMA} CASCADE`);
     await prisma.$executeRawUnsafe('DROP SCHEMA IF EXISTS public CASCADE');
     await prisma.$executeRawUnsafe('CREATE SCHEMA public');
+    // The local CLI binary, not `npx`, which adds seconds of package resolution.
+    execFileSync('node_modules/.bin/prisma', ['migrate', 'deploy'], {
+      env: { ...process.env, DATABASE_URL: url },
+      stdio: 'pipe',
+    });
+    await snapshotContent(prisma);
   } finally {
     await prisma.$disconnect();
   }
-
-  // The local CLI binary, not `npx`, which adds seconds of package resolution.
-  execFileSync('node_modules/.bin/prisma', ['migrate', 'deploy'], {
-    env: { ...process.env, DATABASE_URL: url },
-    stdio: 'pipe',
-  });
 }
 
 /** Empties every table except the migration history, and restarts identity sequences. */
@@ -68,37 +69,39 @@ export async function resetTestDatabase(prisma: PrismaClient): Promise<void> {
   await seedContent(prisma);
 }
 
-const MIGRATIONS = 'prisma/migrations';
+/**
+ * The content definitions migrations ship (progression catalog, A4.1), in foreign-key order.
+ * Reference data, not configuration: integration tests start without configuration.
+ */
+export const CONTENT_TABLES = [
+  'badge_definitions',
+  'achievement_definitions',
+  'tree_species',
+  'cosmetic_definitions',
+] as const;
+
+/** Where the migrated content is kept, outside `public`, so a reset never empties it. */
+const SNAPSHOT_SCHEMA = 'content_snapshot';
 
 /**
- * The content seed statements of every migration, in order: the SQL between `-- Content seed`
- * and `-- End of content seed.` (progression definitions, A4.1). Content is reference data a migration ships,
- * so an emptied test database gets it back, as a migrated database has it.
+ * Copies the content tables as the migrations left them, so an emptied test database gets
+ * exactly that content back, as a migrated database has it: seeds and later changes (such as
+ * the content removed with events, 2026-10-22) alike.
  */
-export function contentSeedStatements(): string[] {
-  return readdirSync(MIGRATIONS)
-    .filter((name) => !name.endsWith('.toml'))
-    .sort()
-    .flatMap((name) => {
-      const sql = readFileSync(join(MIGRATIONS, name, 'migration.sql'), 'utf8');
-      const start = sql.indexOf('-- Content seed');
-      if (start < 0) return [];
-      const end = sql.indexOf('-- End of content seed.', start);
-      if (end < 0) throw new Error(`${name}: a content seed needs its end marker.`);
-      return sql
-        .slice(start, end)
-        .split(/;\s*$/m)
-        .map((statement) =>
-          statement
-            .split('\n')
-            .filter((line) => !line.trim().startsWith('--'))
-            .join('\n')
-            .trim(),
-        )
-        .filter((statement) => statement.length > 0);
-    });
+async function snapshotContent(prisma: PrismaClient): Promise<void> {
+  await prisma.$executeRawUnsafe(`CREATE SCHEMA ${SNAPSHOT_SCHEMA}`);
+  for (const table of CONTENT_TABLES) {
+    await prisma.$executeRawUnsafe(
+      `CREATE TABLE ${SNAPSHOT_SCHEMA}."${table}" AS TABLE public."${table}"`,
+    );
+  }
 }
 
+/** Puts the migrated content back into emptied content tables. */
 export async function seedContent(prisma: PrismaClient): Promise<void> {
-  for (const statement of contentSeedStatements()) await prisma.$executeRawUnsafe(statement);
+  for (const table of CONTENT_TABLES) {
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO public."${table}" SELECT * FROM ${SNAPSHOT_SCHEMA}."${table}"`,
+    );
+  }
 }

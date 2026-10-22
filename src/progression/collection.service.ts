@@ -62,7 +62,7 @@ export interface CollectionSection {
 }
 
 export interface CollectionResponse {
-  /** In a fixed product order; later phases add sections (events, seasons) without redesign. */
+  /** In a fixed product order; later phases add sections without redesign. */
   sections: CollectionSection[];
 }
 
@@ -124,7 +124,7 @@ export class CollectionService {
         achievement ? { achievement, value: values[achievement.criterion] } : null,
       );
     };
-    // Event and season content is earned by taking part, never shown before it is owned (no FOMO).
+    // Season content is earned by taking part, never shown before it is owned (no FOMO).
     const reachable = (source: ContentSource, achievementId: string | null) =>
       source === 'system' ||
       (source === 'achievement' && achievementId !== null && earnable.has(achievementId));

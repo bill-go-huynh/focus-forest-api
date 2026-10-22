@@ -467,15 +467,6 @@
           "rarity": "common",
           "artworkId": "first-session",
           "earnedAt": "2026-10-14T08:31:10.000Z"
-        },
-        {
-          "id": "community-contributor",
-          "name": "Community Contributor",
-          "description": "Helped a Community Tree grow.",
-          "category": "social",
-          "rarity": "rare",
-          "artworkId": "community-contributor",
-          "earnedAt": "2026-10-14T08:31:10.000Z"
         }
       ],
       "newlyUnlockedSpecies": [
@@ -499,33 +490,7 @@
           "unlockedAt": "2026-10-14T08:31:10.000Z"
         }
       ]
-    },
-    "events": [
-      {
-        "eventId": "autumn-study",
-        "missions": [
-          {
-            "id": "one-hour",
-            "value": 30,
-            "target": 60,
-            "completed": false
-          },
-          {
-            "id": "together",
-            "value": 0,
-            "target": 1,
-            "completed": false
-          }
-        ],
-        "community": {
-          "minutes": 30,
-          "totalMinutes": 30,
-          "reachedStages": []
-        },
-        "newlyCompletedMissionIds": [],
-        "newlyReachedMilestoneIds": []
-      }
-    ]
+    }
   },
   "roomCompleted": {
     "room": {
@@ -588,171 +553,6 @@
         }
       ]
     }
-  },
-  "event": {
-    "id": "autumn-study",
-    "name": "Autumn Study",
-    "description": "A week of steady autumn focus.",
-    "artworkId": "autumn-study",
-    "phase": "live",
-    "startsAt": "2026-10-13T00:00:00.000Z",
-    "endsAt": "2026-10-22T00:00:00.000Z",
-    "joined": true,
-    "communityTree": {
-      "stage": "seedling",
-      "totalMinutes": 80
-    },
-    "missions": [
-      {
-        "id": "one-hour",
-        "name": "Focus 1 hour",
-        "description": "One hour of focus.",
-        "measure": "focus_minutes",
-        "target": 60,
-        "dailyMinutes": 0,
-        "value": 30,
-        "completed": false
-      },
-      {
-        "id": "together",
-        "name": "Focus together once",
-        "description": "One Focus Together session.",
-        "measure": "focus_together_sessions",
-        "target": 1,
-        "dailyMinutes": 0,
-        "value": 1,
-        "completed": true
-      }
-    ],
-    "milestones": [
-      {
-        "id": "first-leaf",
-        "name": "First leaf",
-        "requiredMissions": 1,
-        "reached": true,
-        "rewards": {
-          "badge": null,
-          "cosmetic": {
-            "id": "maple-lanterns",
-            "name": "Maple Lanterns",
-            "description": "Lanterns from the Autumn Study event.",
-            "type": "decoration",
-            "rarity": "rare",
-            "artworkId": "maple-lanterns"
-          },
-          "traitId": "event:autumn-study"
-        }
-      }
-    ]
-  },
-  "events": {
-    "items": [
-      {
-        "id": "autumn-study",
-        "name": "Autumn Study",
-        "description": "A week of steady autumn focus.",
-        "artworkId": "autumn-study",
-        "phase": "live",
-        "startsAt": "2026-10-13T00:00:00.000Z",
-        "endsAt": "2026-10-22T00:00:00.000Z",
-        "joined": true,
-        "communityTree": {
-          "stage": "seedling",
-          "totalMinutes": 80
-        },
-        "missions": [
-          {
-            "id": "one-hour",
-            "name": "Focus 1 hour",
-            "description": "One hour of focus.",
-            "measure": "focus_minutes",
-            "target": 60,
-            "dailyMinutes": 0,
-            "value": 30,
-            "completed": false
-          },
-          {
-            "id": "together",
-            "name": "Focus together once",
-            "description": "One Focus Together session.",
-            "measure": "focus_together_sessions",
-            "target": 1,
-            "dailyMinutes": 0,
-            "value": 1,
-            "completed": true
-          }
-        ],
-        "milestones": [
-          {
-            "id": "first-leaf",
-            "name": "First leaf",
-            "requiredMissions": 1,
-            "reached": true,
-            "rewards": {
-              "badge": null,
-              "cosmetic": {
-                "id": "maple-lanterns",
-                "name": "Maple Lanterns",
-                "description": "Lanterns from the Autumn Study event.",
-                "type": "decoration",
-                "rarity": "rare",
-                "artworkId": "maple-lanterns"
-              },
-              "traitId": "event:autumn-study"
-            }
-          }
-        ]
-      }
-    ]
-  },
-  "community": {
-    "eventId": "autumn-study",
-    "name": "The Garden Oak",
-    "artworkId": "garden-oak",
-    "stage": "seedling",
-    "totalMinutes": 80,
-    "participants": 2,
-    "joined": true,
-    "yourMinutes": 30,
-    "milestones": [
-      {
-        "stage": "seedling",
-        "thresholdMinutes": 60,
-        "reached": true,
-        "reachedAt": "2026-10-14T08:51:10.000Z",
-        "rewards": {
-          "badge": null,
-          "cosmetic": {
-            "id": "garden-lights",
-            "name": "Garden Lights",
-            "description": "Lights from the shared garden.",
-            "type": "decoration",
-            "rarity": "rare",
-            "artworkId": "garden-lights"
-          }
-        }
-      },
-      {
-        "stage": "bloom",
-        "thresholdMinutes": 600,
-        "reached": false,
-        "reachedAt": null,
-        "rewards": {
-          "badge": null,
-          "cosmetic": {
-            "id": "garden-lights",
-            "name": "Garden Lights",
-            "description": "Lights from the shared garden.",
-            "type": "decoration",
-            "rarity": "rare",
-            "artworkId": "garden-lights"
-          }
-        }
-      }
-    ],
-    "celebrate": [
-      "seedling"
-    ]
   },
   "challenges": {
     "current": [
@@ -863,12 +663,7 @@
           "maxTier": 5
         }
       },
-      "traits": [
-        {
-          "id": "event:autumn-study",
-          "earnedAt": "2026-10-14T08:51:10.000Z"
-        }
-      ],
+      "traits": [],
       "vitality": "healthy"
     },
     "goals": {
@@ -934,17 +729,6 @@
       "focusedMilliseconds": 1800000,
       "sessionCount": 1,
       "activeDays": 1
-    },
-    "event": {
-      "id": "autumn-study",
-      "name": "Autumn Study",
-      "artworkId": "autumn-study",
-      "phase": "live",
-      "startsAt": "2026-10-13T00:00:00.000Z",
-      "endsAt": "2026-10-22T00:00:00.000Z",
-      "joined": true,
-      "missionsCompleted": 1,
-      "missionsTotal": 2
     }
   },
   "boardFriends": {
@@ -989,8 +773,7 @@
       },
       "score": 79,
       "you": true
-    },
-    "teams": null
+    }
   },
   "boardGlobal": {
     "scope": "global",
@@ -1034,53 +817,7 @@
       },
       "score": 79,
       "you": true
-    },
-    "teams": null
-  },
-  "boardEvent": {
-    "scope": "event",
-    "period": {
-      "kind": "event",
-      "startDate": "2026-10-13",
-      "endDate": "2026-10-21"
-    },
-    "optedIn": true,
-    "rows": [
-      {
-        "rank": 1,
-        "person": {
-          "id": "00000000-0000-4000-8000-0000000005a2",
-          "username": "linh",
-          "displayName": null,
-          "avatarUrl": null
-        },
-        "score": 65,
-        "you": false
-      },
-      {
-        "rank": 2,
-        "person": {
-          "id": "00000000-0000-4000-8000-0000000005a1",
-          "username": "mai",
-          "displayName": null,
-          "avatarUrl": null
-        },
-        "score": 61,
-        "you": true
-      }
-    ],
-    "you": {
-      "rank": 2,
-      "person": {
-        "id": "00000000-0000-4000-8000-0000000005a1",
-        "username": "mai",
-        "displayName": null,
-        "avatarUrl": null
-      },
-      "score": 61,
-      "you": true
-    },
-    "teams": null
+    }
   },
   "blocks": {
     "items": [

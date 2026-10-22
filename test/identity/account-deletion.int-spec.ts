@@ -92,31 +92,6 @@ describe('account deletion and export (A7.1)', () => {
         },
       ],
     });
-    // Ana grew a shared Community Tree with Ben.
-    await t.prisma.event.create({
-      data: {
-        id: 'november',
-        name: 'November',
-        description: 'A month of focus.',
-        artworkId: 'november',
-        status: 'active',
-        startsAt: new Date('2026-11-01T00:00:00Z'),
-        endsAt: new Date('2026-11-30T00:00:00Z'),
-        communityTree: { create: { name: 'Oak', artworkId: 'oak', totalMinutes: 80 } },
-      },
-    });
-    await t.prisma.communityContribution.createMany({
-      data: [
-        { eventId: 'november', userId: ana.userId, sessionId, minutes: 30, contributedAt: now },
-        {
-          eventId: 'november',
-          userId: ben.userId,
-          sessionId: randomUUID(),
-          minutes: 50,
-          contributedAt: now,
-        },
-      ],
-    });
     return { ana, ben, cai, sessionId };
   }
 
@@ -176,9 +151,9 @@ describe('account deletion and export (A7.1)', () => {
       expect((data['moderation'] as Record<string, Body[]>)['reportsFiled']).toEqual([
         expect.objectContaining({ category: 'behavior', details: 'Spam in rooms.' }),
       ]);
-      expect((data['together'] as Record<string, Body[]>)['communityContributions']).toEqual([
-        expect.objectContaining({ eventId: 'november', minutes: 30 }),
-      ]);
+      // Events and the Community Tree were removed (owner, 2026-10-22): nothing to export.
+      expect(Object.keys(data['together'] as Body)).not.toContain('communityContributions');
+      expect(Object.keys(data['together'] as Body)).not.toContain('events');
       expect((data['notifications'] as Record<string, Body[]>)['devices']).toEqual([
         {
           platform: 'ios',
@@ -246,18 +221,6 @@ describe('account deletion and export (A7.1)', () => {
         .post('/auth/sign-in')
         .send({ email: 'ana@example.com', password: PASSWORD })
         .expect(401);
-      // The Community Tree keeps its 80 minutes; her 30 are no longer hers.
-      const contributions = await t.prisma.communityContribution.findMany({
-        orderBy: { minutes: 'asc' },
-      });
-      expect(contributions.map((c) => [c.userId, c.minutes])).toEqual([
-        [null, 30],
-        [ben.userId, 50],
-      ]);
-      expect(
-        (await t.prisma.communityTree.findUniqueOrThrow({ where: { eventId: 'november' } }))
-          .totalMinutes,
-      ).toBe(80n);
       // The report she filed stays for the moderators, without her.
       expect(
         (await t.prisma.report.findFirstOrThrow({ where: { targetId: cai.userId } })).reporterId,

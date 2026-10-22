@@ -3,7 +3,7 @@ import type { Theme } from '../generated/prisma/client.js';
 /**
  * Defaults for a user who has not changed anything. The only place they are defined.
  * - theme: follows the system setting (docs/01_DESIGN_SYSTEM.md §10)
- * - sound, haptics: on, so completion is noticeable face-down (docs/02_UX_PRINCIPLES.md → Timer)
+ * - sound: on, so completion is noticeable face-down (docs/02_UX_PRINCIPLES.md → Timer)
  * - reducedMotion: off in-app; the system setting is still respected (docs/11_ACCESSIBILITY.md)
  * - shareUsageData: on for the Core Loop Checkpoint (CR.1, user decision 2026-10-08), with a
  *   toggle and a disclosure in Settings; revisit before a public beta (consent)
@@ -13,13 +13,11 @@ import type { Theme } from '../generated/prisma/client.js';
 export const DEFAULT_DISPLAY_PREFERENCES: {
   theme: Theme;
   sound: boolean;
-  haptics: boolean;
   reducedMotion: boolean;
   shareUsageData: boolean;
 } = {
   theme: 'system',
   sound: true,
-  haptics: true,
   reducedMotion: false,
   shareUsageData: true,
 };

@@ -46,7 +46,6 @@ async function signIn(email: string): Promise<Auth> {
 }
 interface World {
   id: number;
-  eventId: string;
   accounts: { persona: string; email: string; userId: string }[];
 }
 async function makeWorld(auth: Auth): Promise<World> {
@@ -102,8 +101,13 @@ describe('demo tools (DM.1)', () => {
     await t.http().post('/admin/demo/worlds').set(support).send({}).expect(403);
   });
 
-  it('makes a world of five accounts and an event, and lists it', async () => {
+  it('makes a world of six accounts, and lists it', async () => {
     const world = await makeWorld(auth);
+    // Events and the Community Tree were removed (owner, 2026-10-22): no event, no event badges.
+    expect(world).not.toHaveProperty('eventId');
+    expect(
+      await t.prisma.badgeDefinition.count({ where: { id: { startsWith: 'demo-world-' } } }),
+    ).toBe(0);
     expect(world.accounts.map((a) => a.persona)).toEqual([
       'main',
       'comeback',
@@ -198,7 +202,7 @@ describe('demo tools (DM.1)', () => {
     expect(streak.body).toMatchObject({ current: 6 });
   });
 
-  it('turns one 5-minute session into a Mature Tree, 50 Hours, a 7-day streak, and a Community Tree milestone', async () => {
+  it('turns one 5-minute session into a Mature Tree, 50 Hours, and a 7-day streak', async () => {
     const world = await makeWorld(auth);
     const main = await signIn(account(world, 'main').email);
     await t.http().get('/me/home').set(main).expect(200);
@@ -208,12 +212,7 @@ describe('demo tools (DM.1)', () => {
     const badges = JSON.stringify(result.progression);
     expect(badges).toContain('focus-hours:50');
     expect(badges).toContain('focus-streak:7');
-    const tree = await t
-      .http()
-      .get(`/events/${world.eventId}/community-tree`)
-      .set(main)
-      .expect(200);
-    expect(JSON.stringify(tree.body)).toContain('reached');
+    expect(result).not.toHaveProperty('events');
   });
 
   it('gives the comeback account a quiet tree that wakes with a session', async () => {
@@ -261,7 +260,6 @@ describe('demo tools (DM.1)', () => {
 
     for (const category of [
       'badgeUnlocked',
-      'eventStart',
       'friendInvite',
       'focusRoomInvite',
       'challengeUpdate',
@@ -276,6 +274,18 @@ describe('demo tools (DM.1)', () => {
         category,
         expect.objectContaining({ status: 'sent' }),
       ]);
+    }
+  });
+
+  it('has no event notices to send (owner, 2026-10-22)', async () => {
+    const world = await makeWorld(auth);
+    for (const category of ['eventStart', 'eventEndingSoon']) {
+      await t
+        .http()
+        .post(`/admin/demo/worlds/${world.id}/notify`)
+        .set(auth)
+        .send({ persona: 'main', category })
+        .expect(400);
     }
   });
 

@@ -12,18 +12,13 @@ export type ContentStatus = (typeof CONTENT_STATUSES)[number];
 
 /**
  * How content is acquired: `system` (everyone owns it, such as the signature species),
- * `achievement`, `event` (Phase 14), or `season` (Phase 17).
+ * `achievement`, or `season` (Phase 17). Events were removed (owner, 2026-10-22).
  */
-export const CONTENT_SOURCES = ['system', 'achievement', 'event', 'season'] as const;
+export const CONTENT_SOURCES = ['system', 'achievement', 'season'] as const;
 export type ContentSource = (typeof CONTENT_SOURCES)[number];
 
-/** Sources whose system exists: events from A5.6; seasons still wait for their module. */
-export const ACQUIRABLE_SOURCES: readonly ContentSource[] = [
-  'system',
-  'achievement',
-  'event',
-  'season',
-];
+/** Sources whose system exists. */
+export const ACQUIRABLE_SOURCES: readonly ContentSource[] = ['system', 'achievement', 'season'];
 
 export const CONTENT_AVAILABILITIES = ['permanent', 'limited'] as const;
 export type ContentAvailability = (typeof CONTENT_AVAILABILITIES)[number];
@@ -68,11 +63,10 @@ export const ACHIEVEMENT_CRITERIA = [
   'longest_streak_days',
   'focus_together_sessions',
   'focus_together_with_friend',
-  // Owner decision 2026-10-15 (docs/06 Badge): time-based badges and Community Contributor.
+  // Owner decision 2026-10-15 (docs/06 Badge): time-based badges.
   'sessions_before_7',
   'sessions_after_22',
   'full_weekends',
-  'community_contributions',
 ] as const;
 export type AchievementCriterion = (typeof ACHIEVEMENT_CRITERIA)[number];
 
@@ -87,7 +81,6 @@ const UNITS: Record<AchievementCriterion, CriterionUnit> = {
   sessions_before_7: 'sessions',
   sessions_after_22: 'sessions',
   full_weekends: 'weekends',
-  community_contributions: 'sessions',
 };
 
 export function criterionUnit(criterion: AchievementCriterion): CriterionUnit {

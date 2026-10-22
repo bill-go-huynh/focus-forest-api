@@ -7,7 +7,6 @@
   "preferences": {
     "theme": "system",
     "sound": true,
-    "haptics": true,
     "reducedMotion": false,
     "shareUsageData": true,
     "notifications": {
@@ -22,12 +21,6 @@
       "streakReminder": {
         "enabled": false,
         "time": null
-      },
-      "eventStart": {
-        "enabled": true
-      },
-      "eventEndingSoon": {
-        "enabled": false
       },
       "friendInvite": {
         "enabled": true
@@ -160,21 +153,12 @@
   },
   "pushes": [
     {
-      "title": "November Focus has begun",
-      "body": "Join whenever you like. Your usual focus counts toward its missions.",
+      "title": "lukas invited you to focus",
+      "body": "The room \"Morning focus\" is gathering. Join if you have time.",
       "data": {
-        "link": "/together/events/november-focus",
-        "category": "eventStart",
+        "link": "/together/room/00000000-0000-4000-8000-0000000006b4",
+        "category": "focusRoomInvite",
         "recipient": "00000000-0000-4000-8000-0000000006a1"
-      }
-    },
-    {
-      "title": "November Focus has begun",
-      "body": "Join whenever you like. Your usual focus counts toward its missions.",
-      "data": {
-        "link": "/together/events/november-focus",
-        "category": "eventStart",
-        "recipient": "00000000-0000-4000-8000-0000000006a2"
       }
     },
     {

@@ -323,10 +323,10 @@ describe('A4.2 achievements, badges, and showcase (HTTP + PostgreSQL)', () => {
     });
 
     // Time-based badges are evaluated since the owner decision of 2026-10-15
-    // (test/progression/time-community-badges.int-spec.ts).
-    it('never grants planned, Event, or special-category badges', async () => {
+    // (test/progression/time-badges.int-spec.ts).
+    it('never grants planned, seasonal, or special-category badges', async () => {
       const ada = await t.signUp('ada@example.com');
-      await testAchievement('event-badge', { category: 'event', source: 'event' });
+      await testAchievement('event-badge', { category: 'event', source: 'season' });
       await testAchievement('planned-badge', { status: 'planned' });
       await testAchievement('rare-category', { category: 'rare' });
       await testAchievement('rare-rarity', { category: 'focus', rarity: 'rare' });
@@ -504,10 +504,9 @@ describe('A4.2 achievements, badges, and showcase (HTTP + PostgreSQL)', () => {
         'early-bird',
         'night-owl',
         'weekend-warrior',
-        // A5.4: Focus Together; then Community Contributor (2026-10-15).
+        // A5.4: Focus Together.
         'focus-together:first',
         'focus-buddy',
-        'community-contributor',
       ]);
       expect(list[0]).toEqual({
         id: 'first-session',

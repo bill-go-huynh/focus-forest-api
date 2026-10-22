@@ -10,8 +10,6 @@ const EXAMPLES: NotificationCopyInput[] = [
   { category: 'dailyGoalReminder', goalMinutes: 30 },
   { category: 'scheduledFocusReminder' },
   { category: 'streakReminder', streakDays: 6 },
-  { category: 'eventStart', eventName: 'Autumn Study Event' },
-  { category: 'eventEndingSoon', eventName: 'Autumn Study Event' },
   { category: 'friendInvite', friendName: 'Mai' },
   { category: 'focusRoomInvite', friendName: 'Mai', roomName: 'Morning reading' },
   { category: 'challengeUpdate', kind: 'completed' },
@@ -36,17 +34,17 @@ describe('notification copy (docs/02 rule 4, docs/11 Notification control)', () 
   });
 
   it('names what it is about', () => {
-    expect(notificationCopy(EXAMPLES[3]!).title).toContain('Autumn Study Event');
-    expect(notificationCopy(EXAMPLES[6]!).title).toContain('Mai');
-    expect(notificationCopy(EXAMPLES[6]!).body).toContain('Morning reading');
-    expect(notificationCopy(EXAMPLES[10]!).title).toContain('October');
+    expect(notificationCopy(EXAMPLES[7]!).title).toContain('Study Oak Seedling');
+    expect(notificationCopy(EXAMPLES[4]!).title).toContain('Mai');
+    expect(notificationCopy(EXAMPLES[4]!).body).toContain('Morning reading');
+    expect(notificationCopy(EXAMPLES[8]!).title).toContain('October');
     expect(notificationCopy(EXAMPLES[0]!).body).toContain('30 minutes');
   });
 
   it('shortens long names so the text stays readable', () => {
     const { title } = notificationCopy({
-      category: 'eventStart',
-      eventName: 'A very long event name that keeps going and going and going',
+      category: 'badgeUnlocked',
+      badgeName: 'A very long badge name that keeps going and going and going',
     });
     expect(title.length).toBeLessThanOrEqual(50);
     expect(title).toContain('…');

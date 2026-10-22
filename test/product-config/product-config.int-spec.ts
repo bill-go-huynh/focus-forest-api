@@ -43,7 +43,7 @@ describe('product configuration (PostgreSQL)', () => {
     await close();
   });
 
-  it('keeps every earlier version and activates the latest (version 12, Phase 7 client errors)', async () => {
+  it('keeps every earlier version and activates the latest (version 13, events removed)', async () => {
     await migrateFreshTestDatabase();
     const seeded = createTestPrismaClient();
     try {
@@ -174,13 +174,23 @@ describe('product configuration (PostgreSQL)', () => {
       });
       expect(integrity.note).toMatch(/integrity/i);
 
-      const config = await productionService.active();
-      expect(config.version).toBe(12);
-      const stored = await seeded.productConfigVersion.findUniqueOrThrow({
+      const clientErrors = await seeded.productConfigVersion.findUniqueOrThrow({
         where: { version: 12 },
       });
+      expect(clientErrors.values).toEqual({
+        ...CURRENT_CONFIG_VALUES,
+        ...LIVE_NOTIFICATION_CONFIG_VALUES,
+      });
+      expect(clientErrors.note).toMatch(/crash and error reports/i);
+
+      // Version 13: events removed (owner, 2026-10-22), with their "ending soon" hours.
+      const config = await productionService.active();
+      expect(config.version).toBe(13);
+      const stored = await seeded.productConfigVersion.findUniqueOrThrow({
+        where: { version: 13 },
+      });
       expect(stored.values).toEqual(CURRENT_CONFIG_VALUES);
-      expect(stored.note).toMatch(/crash and error reports/i);
+      expect(stored.note).toMatch(/events removed/i);
       for (const key of Object.keys(
         CURRENT_CONFIG_VALUES,
       ) as (keyof typeof CURRENT_CONFIG_VALUES)[]) {

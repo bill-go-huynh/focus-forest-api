@@ -1,4 +1,4 @@
-import { assertTestDatabaseUrl, contentSeedStatements } from './test-database.js';
+import { assertTestDatabaseUrl, CONTENT_TABLES } from './test-database.js';
 
 describe('assertTestDatabaseUrl', () => {
   it('accepts a database whose name ends with _test', () => {
@@ -21,29 +21,13 @@ describe('assertTestDatabaseUrl', () => {
   });
 });
 
-describe('contentSeedStatements', () => {
-  it('takes only marked content seeds: the progression catalog, never configuration', () => {
-    const statements = contentSeedStatements();
-    expect(statements.length).toBeGreaterThan(0);
-    // Content definitions only: inserted, or (A5.4) a planned badge made active.
-    const statement = /^(INSERT INTO|UPDATE) "([a-z_]+)"/;
-    for (const sql of statements) expect(sql).toMatch(statement);
-    expect(statements.map((s) => statement.exec(s)?.slice(1).join(' '))).toEqual([
-      'INSERT INTO tree_species',
-      'INSERT INTO badge_definitions',
-      'INSERT INTO achievement_definitions',
-      // A4.3: the species (bases, then variants) and the cosmetic catalog.
-      'INSERT INTO tree_species',
-      'INSERT INTO tree_species',
-      'INSERT INTO cosmetic_definitions',
-      // A5.4: the Focus Together badges become earnable.
-      'UPDATE badge_definitions',
-      'INSERT INTO achievement_definitions',
-      // Final review Q1 and Q2: the time-based badges, Community Contributor made active.
-      'INSERT INTO badge_definitions',
-      'UPDATE badge_definitions',
-      'INSERT INTO achievement_definitions',
+describe('content tables', () => {
+  it('are the progression catalog in foreign-key order, never configuration', () => {
+    expect([...CONTENT_TABLES]).toEqual([
+      'badge_definitions',
+      'achievement_definitions',
+      'tree_species',
+      'cosmetic_definitions',
     ]);
-    expect(statements.join('\n')).not.toMatch(/product_config/);
   });
 });

@@ -212,55 +212,10 @@
         "owners": 0
       },
       {
-        "id": "community-contributor",
-        "category": "social",
-        "rarity": "rare",
-        "source": "achievement",
-        "availability": "permanent",
-        "availableFrom": null,
-        "availableUntil": null,
-        "status": "active",
-        "name": "Community Contributor",
-        "description": "Helped a Community Tree grow.",
-        "artworkId": "community-contributor",
-        "sortOrder": 120,
-        "owners": 0
-      },
-      {
-        "id": "november-sprint:oak",
-        "category": "event",
-        "rarity": "common",
-        "source": "event",
-        "availability": "limited",
-        "availableFrom": "2026-11-01T00:00:00.000Z",
-        "availableUntil": "2026-12-31T00:00:00.000Z",
-        "status": "active",
-        "name": "november-sprint:oak",
-        "description": "The november-sprint:oak badge.",
-        "artworkId": "november-sprint-oak",
-        "sortOrder": 300,
-        "owners": 0
-      },
-      {
-        "id": "november-sprint:steady",
-        "category": "event",
-        "rarity": "common",
-        "source": "event",
-        "availability": "limited",
-        "availableFrom": "2026-11-01T00:00:00.000Z",
-        "availableUntil": "2026-12-31T00:00:00.000Z",
-        "status": "active",
-        "name": "november-sprint:steady",
-        "description": "The november-sprint:steady badge.",
-        "artworkId": "november-sprint-steady",
-        "sortOrder": 300,
-        "owners": 0
-      },
-      {
         "id": "october-marathon",
-        "category": "event",
+        "category": "rare",
         "rarity": "common",
-        "source": "event",
+        "source": "season",
         "availability": "limited",
         "availableFrom": "2026-10-01T00:00:00.000Z",
         "availableUntil": "2026-10-31T00:00:00.000Z",
@@ -310,72 +265,14 @@
       }
     ]
   },
-  "eventLocked": {
-    "statusCode": 422,
-    "error": "Unprocessable Entity",
-    "message": "missions is locked: people have taken part.",
-    "code": "invalid_content",
-    "problems": [
-      "missions is locked: people have taken part."
-    ]
-  },
-  "event": {
-    "id": "november-sprint",
-    "name": "The November Sprint",
-    "description": "Steady focus through November.",
-    "artworkId": "november-sprint",
-    "status": "active",
-    "startsAt": "2026-11-01T00:00:00.000Z",
-    "endsAt": "2026-11-21T00:00:00.000Z",
-    "entryMinSessions": 0,
-    "leaderboard": true,
-    "participants": 1,
-    "locked": true,
-    "teams": [],
-    "missions": [
-      {
-        "id": "three-hours",
-        "measure": "focus_minutes",
-        "target": 180,
-        "dailyMinutes": 0,
-        "name": "Focus 3 hours",
-        "description": "Three hours of focus."
-      }
-    ],
-    "milestones": [
-      {
-        "id": "steady",
-        "name": "Steady",
-        "requiredMissions": 1,
-        "badgeId": "november-sprint:steady",
-        "cosmeticId": null,
-        "traitId": null
-      }
-    ],
-    "communityTree": {
-      "name": "The November Oak",
-      "artworkId": "november-oak",
-      "totalMinutes": 300,
-      "contributors": 1,
-      "milestones": [
-        {
-          "stage": "seedling",
-          "thresholdMinutes": 240,
-          "badgeId": "november-sprint:oak",
-          "reachedAt": "2026-11-02T15:05:00.000Z"
-        }
-      ]
-    }
-  },
   "board": {
-    "scope": "event",
+    "scope": "global",
     "period": {
-      "kind": "event",
-      "startDate": "2026-11-01",
-      "endDate": "2026-11-20"
+      "kind": "weekly",
+      "startDate": "2026-11-02",
+      "endDate": "2026-11-08"
     },
-    "rows": [],
-    "teams": null
+    "rows": []
   },
   "exclusions": {
     "items": []
@@ -744,7 +641,6 @@
         "end": 21,
         "start": 9
       },
-      "notifications.eventEndingSoonHours": 48,
       "notifications.maxUnrequestedPerDay": 2,
       "notifications.focusLeaseGraceMinutes": 30
     }

@@ -16,9 +16,9 @@ describe('trait identifiers', () => {
   });
 
   it('keeps unknown or future identifiers as they are', () => {
-    expect(parseTraitId('event:lantern-2027')).toEqual({
+    expect(parseTraitId('lantern:2027')).toEqual({
       kind: 'unknown',
-      id: 'event:lantern-2027',
+      id: 'lantern:2027',
     });
     expect(parseTraitId('monthly-focus-hours:many')).toEqual({
       kind: 'unknown',

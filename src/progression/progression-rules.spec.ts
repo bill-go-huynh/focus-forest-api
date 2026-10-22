@@ -54,10 +54,6 @@ describe('acquirableAt: whether content can be acquired now (never whether it st
   it('opens season content from A5.9, within its window', () => {
     expect(acquirableAt(definition({ source: 'season' }), at)).toEqual({ acquirable: true });
   });
-
-  it('opens event content from A5.6, within its window', () => {
-    expect(acquirableAt(definition({ source: 'event' }), at)).toEqual({ acquirable: true });
-  });
 });
 
 describe('content identifiers', () => {
@@ -85,7 +81,6 @@ describe('achievement criteria', () => {
       'sessions_before_7',
       'sessions_after_22',
       'full_weekends',
-      'community_contributions',
     ]);
     expect(ACHIEVEMENT_CRITERIA.map(criterionUnit)).toEqual([
       'sessions',
@@ -96,7 +91,6 @@ describe('achievement criteria', () => {
       'sessions',
       'sessions',
       'weekends',
-      'sessions',
     ]);
   });
 });

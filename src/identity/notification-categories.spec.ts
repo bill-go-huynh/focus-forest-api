@@ -5,13 +5,11 @@ import {
 } from './notification-categories.js';
 
 describe('notification categories', () => {
-  it('are exactly the ten categories of spec §18', () => {
+  it('are the eight categories of spec §18 without the event notices (owner, 2026-10-22)', () => {
     expect([...NOTIFICATION_CATEGORIES]).toEqual([
       'dailyGoalReminder',
       'scheduledFocusReminder',
       'streakReminder',
-      'eventStart',
-      'eventEndingSoon',
       'friendInvite',
       'focusRoomInvite',
       'challengeUpdate',

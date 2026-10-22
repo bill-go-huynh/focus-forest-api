@@ -103,7 +103,7 @@ describe('Phase 2 API contract across modules (HTTP + PostgreSQL)', () => {
       progression?: unknown;
       events?: unknown;
     };
-    expect(events).toEqual([]);
+    expect(events).toBeUndefined();
     expect(growth).toMatchObject({ counted: true });
     expect(progression).toMatchObject({ newlyEarnedBadges: [{ id: 'first-session' }] });
     expect(page.items).toStrictEqual([

@@ -114,7 +114,7 @@ describe('session note (HTTP + PostgreSQL)', () => {
         progression?: unknown;
         events?: unknown;
       };
-      expect(events).toEqual([]);
+      expect(events).toBeUndefined();
       expect(growth).toMatchObject({ counted: true });
       expect(progression).toMatchObject({ newlyEarnedBadges: [{ id: 'first-session' }] });
       expect(asSession(res)).toStrictEqual({ ...sessionFields, note: 'Finished chapter 3' });

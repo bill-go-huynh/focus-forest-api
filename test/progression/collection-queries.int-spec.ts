@@ -96,7 +96,7 @@ describe('A4.4 collection queries (HTTP + PostgreSQL)', () => {
     expect(large.statements).toBe(small.statements);
     expect(large.body.sections.map((s) => [s.kind, s.total])).toEqual([
       ['species', 109],
-      ['badges', 115],
+      ['badges', 114],
       ['cosmetics', 105],
     ]);
     expect((await read()).body).toEqual(large.body);

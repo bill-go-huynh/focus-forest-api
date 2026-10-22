@@ -1,16 +1,14 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
 import { Clock } from '../common/clock.js';
 import { daysBetween, type LocalDate } from '../common/local-date.js';
 import { dbDate, localDateFromDb } from '../consistency/db.js';
 import { dailyGoalMinutesOn, type DailyGoalVersion } from '../consistency/goals.js';
-import { unprocessable } from '../consistency/http-errors.js';
 import { UserTodayService } from '../consistency/user-today.service.js';
-import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ProductConfigService } from '../product-config/product-config.service.js';
 import { localDateOf } from '../sessions/attribution/calendar.js';
-import { VisibilityService, type BoardCandidate } from '../social/visibility.service.js';
+import { VisibilityService } from '../social/visibility.service.js';
 import { fairScore, monthPeriod, rankRows, weekPeriod, type Period } from './leaderboard-rules.js';
 import type {
   LeaderboardDto,
@@ -21,10 +19,9 @@ import type {
 
 /** A board as staff see it (A6.5): rows without `you`, and no viewer's own row. */
 export interface StaffBoardDto {
-  scope: 'global' | 'event';
+  scope: 'global';
   period: LeaderboardDto['period'];
   rows: Omit<LeaderboardRowDto, 'you'>[];
-  teams: LeaderboardDto['teams'];
 }
 
 /** At most this many rows; the viewer's own row is always answered on its own. */
@@ -33,8 +30,6 @@ export const LEADERBOARD_ROWS = 50;
 interface Window {
   kind: LeaderboardPeriodKind;
   period: Period;
-  /** Event boards count the sessions that started in the event window, as missions do. */
-  startedIn: { startsAt: Date; endsAt: Date } | null;
 }
 
 /**
@@ -55,20 +50,10 @@ export class LeaderboardsService {
 
   async board(
     viewerId: string,
-    query: { scope: LeaderboardScope; period: 'weekly' | 'monthly'; eventId?: string },
+    query: { scope: LeaderboardScope; period: 'weekly' | 'monthly' },
   ): Promise<LeaderboardDto> {
-    if (query.scope === 'event' && !query.eventId) {
-      throw new BadRequestException('An event board needs an eventId.');
-    }
-    const event = query.scope === 'event' ? await this.boardEvent(viewerId, query.eventId!) : null;
-    const window = event
-      ? await this.eventWindow(viewerId, event)
-      : await this.window(viewerId, query.period);
-    const candidates = await this.visibility.boardCandidates(
-      viewerId,
-      query.scope,
-      event?.id ?? null,
-    );
+    const window = await this.window(viewerId, query.period);
+    const candidates = await this.visibility.boardCandidates(viewerId, query.scope);
     const scores = await this.scores(
       candidates.map((c) => c.id),
       window,
@@ -106,49 +91,23 @@ export class LeaderboardsService {
       optedIn,
       rows: rows.slice(0, LEADERBOARD_ROWS),
       you: rows.find((row) => row.you) ?? null,
-      teams: event ? await this.teams(event.id, candidates, scores) : null,
     };
   }
 
   /**
-   * A6.5: a global or event board as staff see it (docs/09: view leaderboards). There is no
-   * viewer: nobody is hidden by a block, and local dates are UTC dates.
+   * A6.5: the global board as staff see it (docs/09: view leaderboards). There is no viewer:
+   * nobody is hidden by a block, and local dates are UTC dates.
    */
   async staffBoard(query: {
-    scope: 'global' | 'event';
+    scope: 'global';
     period: 'weekly' | 'monthly';
-    eventId?: string;
   }): Promise<StaffBoardDto> {
-    let window: Window;
-    let eventId: string | null = null;
-    if (query.scope === 'event') {
-      const event = await this.prisma.event.findUnique({ where: { id: query.eventId ?? '' } });
-      if (!event?.leaderboard) {
-        throw new NotFoundException({
-          statusCode: 404,
-          error: 'Not Found',
-          message: 'This leaderboard does not exist.',
-          code: 'leaderboard_not_found',
-        });
-      }
-      eventId = event.id;
-      window = {
-        kind: 'event',
-        period: {
-          startDate: localDateOf(event.startsAt, 'UTC'),
-          endDate: localDateOf(new Date(event.endsAt.getTime() - 1), 'UTC'),
-        },
-        startedIn: { startsAt: event.startsAt, endsAt: event.endsAt },
-      };
-    } else {
-      const today = localDateOf(this.clock.now(), 'UTC');
-      window = {
-        kind: query.period,
-        period: query.period === 'weekly' ? weekPeriod(today) : monthPeriod(today),
-        startedIn: null,
-      };
-    }
-    const candidates = await this.visibility.boardCandidates(null, query.scope, eventId);
+    const today = localDateOf(this.clock.now(), 'UTC');
+    const window: Window = {
+      kind: query.period,
+      period: query.period === 'weekly' ? weekPeriod(today) : monthPeriod(today),
+    };
+    const candidates = await this.visibility.boardCandidates(null, query.scope);
     const scores = await this.scores(
       candidates.map((c) => c.id),
       window,
@@ -175,29 +134,7 @@ export class LeaderboardsService {
         },
         score: row.score,
       })),
-      teams: eventId ? await this.teams(eventId, candidates, scores) : null,
     };
-  }
-
-  /** An event the viewer can see (A5.6 rule) whose board is on. */
-  private async boardEvent(viewerId: string, eventId: string) {
-    const event = await this.prisma.event.findUnique({
-      where: { id: eventId },
-      include: { participations: { where: { userId: viewerId } } },
-    });
-    const visible =
-      event &&
-      (event.status === 'active' ||
-        (event.status === 'retired' && event.participations.length > 0));
-    if (!visible || !event.leaderboard) {
-      throw new NotFoundException({
-        statusCode: 404,
-        error: 'Not Found',
-        message: 'This leaderboard does not exist.',
-        code: 'leaderboard_not_found',
-      });
-    }
-    return event;
   }
 
   private async window(viewerId: string, kind: 'weekly' | 'monthly'): Promise<Window> {
@@ -205,29 +142,6 @@ export class LeaderboardsService {
     return {
       kind,
       period: kind === 'weekly' ? weekPeriod(today) : monthPeriod(today),
-      startedIn: null,
-    };
-  }
-
-  /** The event window's local days, in the viewer's time zone. */
-  private async eventWindow(
-    viewerId: string,
-    event: { startsAt: Date; endsAt: Date },
-  ): Promise<Window> {
-    const viewer = await this.prisma.user.findUniqueOrThrow({
-      where: { id: viewerId },
-      select: { timezone: true },
-    });
-    if (!viewer.timezone) {
-      throw unprocessable('timezone_required', 'Set your time zone to use goals and streaks.');
-    }
-    return {
-      kind: 'event',
-      period: {
-        startDate: localDateOf(event.startsAt, viewer.timezone),
-        endDate: localDateOf(new Date(event.endsAt.getTime() - 1), viewer.timezone),
-      },
-      startedIn: { startsAt: event.startsAt, endsAt: event.endsAt },
     };
   }
 
@@ -236,14 +150,12 @@ export class LeaderboardsService {
     if (ids.length === 0) return new Map();
     const { startDate, endDate } = window.period;
     const periodDays = daysBetween(startDate, endDate) + 1;
-    const started = window.startedIn;
     const [days, goals, rests, recoveries, config] = await Promise.all([
       this.prisma.$queryRaw<{ user_id: string; local_date: Date; milliseconds: bigint }[]>`
         SELECT user_id::text, local_date, SUM(focused_milliseconds)::bigint AS milliseconds
         FROM focus_sessions
         WHERE user_id = ANY(${ids}::uuid[]) AND status <> 'discarded'
           AND local_date BETWEEN ${dbDate(startDate)}::date AND ${dbDate(endDate)}::date
-          ${started ? Prisma.sql`AND started_at >= ${started.startsAt} AND started_at < ${started.endsAt}` : Prisma.empty}
         GROUP BY user_id, local_date`,
       this.prisma.dailyGoalSetting.findMany({
         where: { userId: { in: ids } },
@@ -302,42 +214,5 @@ export class LeaderboardsService {
       );
     }
     return scores;
-  }
-
-  /**
-   * Team ranking: the rounded mean score of each team's opted-in, active members, whoever is
-   * viewing (a team is an aggregate that names nobody). Null when the event has no teams.
-   */
-  private async teams(
-    eventId: string,
-    candidates: readonly BoardCandidate[],
-    scores: ReadonlyMap<string, number>,
-  ): Promise<LeaderboardDto['teams']> {
-    const teams = await this.prisma.eventTeam.findMany({
-      where: { eventId },
-      orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
-      include: { participations: { select: { userId: true } } },
-    });
-    if (teams.length === 0) return null;
-    const onBoard = new Set(candidates.map((c) => c.id));
-    const ranked = rankRows(
-      teams.map((team) => {
-        const members = team.participations.filter((p) => onBoard.has(p.userId));
-        const sum = members.reduce((total, p) => total + (scores.get(p.userId) ?? 0), 0);
-        return {
-          id: team.id,
-          name: team.name,
-          members: members.length,
-          score: members.length === 0 ? 0 : Math.round(sum / members.length),
-        };
-      }),
-    );
-    return ranked.map((team) => ({
-      id: team.id,
-      name: team.name,
-      rank: team.rank,
-      score: team.score,
-      members: team.members,
-    }));
   }
 }

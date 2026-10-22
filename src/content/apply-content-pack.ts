@@ -2,18 +2,17 @@ import type { PrismaClient } from '../generated/prisma/client.js';
 import { type ContentPack, contentPackProblems } from './content-pack.js';
 
 export interface ContentPackResult {
-  /** What this run added: badges by count, events and themes by id. */
-  added: { badges: number; events: string[]; themes: string[] };
+  /** What this run added: badges by count, themes by id. */
+  added: { badges: number; themes: string[] };
   /** What was already there and stays as it is. */
-  kept: { badges: number; events: string[]; themes: string[] };
+  kept: { badges: number; themes: string[] };
 }
 
 const SORT_STEP = 10;
 
 /**
- * Adds the pack's missing content in one transaction. A badge, an event (with its missions,
- * milestones, teams, and Community Tree), or a theme (with its rewards) that already exists is
- * kept as it is, whatever the pack says: content the owner edited since stays edited, and a rerun
+ * Adds the pack's missing content in one transaction. A badge or a theme (with its rewards) that
+ * already exists is kept as it is, whatever the pack says: content the owner edited since stays edited, and a rerun
  * changes nothing. A pack with problems is refused before anything is written.
  */
 export async function applyContentPack(
@@ -51,66 +50,6 @@ export async function applyContentPack(
       })),
     });
 
-    const existingEvents = new Set(
-      (
-        await tx.event.findMany({
-          where: { id: { in: pack.events.map((event) => event.id) } },
-          select: { id: true },
-        })
-      ).map((event) => event.id),
-    );
-    const newEvents = pack.events.filter((event) => !existingEvents.has(event.id));
-    for (const event of newEvents) {
-      await tx.event.create({
-        data: {
-          id: event.id,
-          name: event.name,
-          description: event.description,
-          artworkId: event.artworkId,
-          status: 'active',
-          startsAt: new Date(event.startsAt),
-          endsAt: new Date(event.endsAt),
-          entryMinSessions: event.entryMinSessions,
-          sortOrder: (pack.events.indexOf(event) + 1) * SORT_STEP,
-          leaderboard: event.leaderboard,
-          teams: {
-            create: event.teams.map((team, i) => ({ ...team, sortOrder: (i + 1) * SORT_STEP })),
-          },
-          missions: {
-            create: event.missions.map((mission, i) => ({
-              ...mission,
-              sortOrder: (i + 1) * SORT_STEP,
-            })),
-          },
-          milestones: {
-            create: event.milestones.map((milestone, i) => ({
-              id: milestone.id,
-              name: milestone.name,
-              requiredMissions: milestone.requiredMissions,
-              badgeId: milestone.badgeId,
-              traitId: milestone.trait ? `event:${event.id}` : null,
-              sortOrder: (i + 1) * SORT_STEP,
-            })),
-          },
-          ...(event.communityTree && {
-            communityTree: {
-              create: {
-                name: event.communityTree.name,
-                artworkId: event.communityTree.artworkId,
-                milestones: {
-                  create: event.communityTree.milestones.map((milestone) => ({
-                    stage: milestone.stage,
-                    thresholdMinutes: milestone.thresholdMinutes,
-                    badgeId: milestone.badgeId,
-                  })),
-                },
-              },
-            },
-          }),
-        },
-      });
-    }
-
     const existingThemes = new Set(
       (
         await tx.seasonalTheme.findMany({
@@ -144,10 +83,9 @@ export async function applyContentPack(
 
     const ids = (list: { id: string }[]) => list.map((item) => item.id);
     return {
-      added: { badges: newBadges.length, events: ids(newEvents), themes: ids(newThemes) },
+      added: { badges: newBadges.length, themes: ids(newThemes) },
       kept: {
         badges: pack.badges.length - newBadges.length,
-        events: ids(pack.events.filter((event) => existingEvents.has(event.id))),
         themes: ids(pack.themes.filter((theme) => existingThemes.has(theme.id))),
       },
     };

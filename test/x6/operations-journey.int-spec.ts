@@ -10,8 +10,8 @@ import { normalize } from '../support/contract-normalize.js';
  * X6 Operations integration (HTTP + PostgreSQL): the admin runs live content and configuration
  * over the real API, and the app sees exactly that.
  *
- * 1. A content admin creates badges, an event with missions and a Community Tree, and a winter
- *    theme; the app serves them; once someone joins, what they joined is locked.
+ * 1. A content admin creates badges and a winter theme; the app serves the theme in its season.
+ *    (Events and the Community Tree were removed, owner 2026-10-22.)
  * 2. An admin activates a configuration version with a lower daily soft cap. Archived trees and
  *    the month in progress keep the version they grew under; next month's tree uses it.
  * 3. A compensation grant appears in the person's collection.
@@ -37,11 +37,11 @@ async function signIn(email: string): Promise<Auth> {
   return { Authorization: `Bearer ${(res.body as { accessToken: string }).accessToken}` };
 }
 
-const badge = (id: string, source: 'event' | 'season', from: string, until: string) => ({
+const badge = (id: string, from: string, until: string) => ({
   id,
-  category: source === 'event' ? 'event' : 'rare',
+  category: 'rare',
   rarity: 'common',
-  source,
+  source: 'season',
   availability: 'limited',
   availableFrom: from,
   availableUntil: until,
@@ -52,44 +52,6 @@ const badge = (id: string, source: 'event' | 'season', from: string, until: stri
   sortOrder: 300,
   reason: 'November content',
 });
-
-const EVENT = {
-  id: 'november-sprint',
-  name: 'November Sprint',
-  description: 'Steady focus through November.',
-  artworkId: 'november-sprint',
-  status: 'active',
-  startsAt: '2026-11-01T00:00:00.000Z',
-  endsAt: '2026-11-21T00:00:00.000Z',
-  entryMinSessions: 0,
-  leaderboard: true,
-  teams: [],
-  missions: [
-    {
-      id: 'three-hours',
-      measure: 'focus_minutes',
-      target: 180,
-      dailyMinutes: 0,
-      name: 'Focus 3 hours',
-      description: 'Three hours of focus.',
-    },
-  ],
-  milestones: [
-    {
-      id: 'steady',
-      name: 'Steady',
-      requiredMissions: 1,
-      badgeId: 'november-sprint:steady',
-      trait: false,
-    },
-  ],
-  communityTree: {
-    name: 'The November Oak',
-    artworkId: 'november-oak',
-    milestones: [{ stage: 'seedling', thresholdMinutes: 240, badgeId: 'november-sprint:oak' }],
-  },
-  reason: 'November event',
-};
 
 const THEME = {
   id: 'winter-x6',
@@ -172,68 +134,33 @@ describe('X6 operations integration (HTTP + PostgreSQL)', () => {
       password: PASSWORD,
     });
 
-    // 1. November: the content admin creates the badges, the event, and the winter theme.
+    // 1. November: the content admin creates the badges and the winter theme.
     await t.setNow('2026-11-02T09:00:00.000Z');
     let content = await signIn('content@example.com');
     for (const body of [
-      badge(
-        'november-sprint:steady',
-        'event',
-        '2026-11-01T00:00:00.000Z',
-        '2026-12-31T00:00:00.000Z',
-      ),
-      badge('november-sprint:oak', 'event', '2026-11-01T00:00:00.000Z', '2026-12-31T00:00:00.000Z'),
-      badge('season:winter-x6', 'season', '2026-12-01T00:00:00.000Z', '2027-04-01T00:00:00.000Z'),
-      badge('october-marathon', 'event', '2026-10-01T00:00:00.000Z', '2026-10-31T00:00:00.000Z'),
+      badge('season:winter-x6', '2026-12-01T00:00:00.000Z', '2027-04-01T00:00:00.000Z'),
+      badge('october-marathon', '2026-10-01T00:00:00.000Z', '2026-10-31T00:00:00.000Z'),
     ]) {
       await staff(content, 'post', '/admin/content/badges', body, 201);
     }
-    // October's event is over: its badge is retired (an outage kept Ana from earning it).
+    // October is over: its badge is retired (an outage kept Ana from earning it).
     await staff(content, 'patch', '/admin/content/badges/october-marathon', {
       status: 'retired',
       reason: 'October is over',
     });
-    await staff(content, 'post', '/admin/live/events', EVENT, 201);
     await staff(content, 'post', '/admin/live/themes', THEME, 201);
     c['catalog'] = await staff(content, 'get', '/admin/content/badges');
     c['themes'] = await staff(content, 'get', '/admin/live/themes');
 
-    // The app serves the event; Ana joins it, and focuses 5 hours.
-    const events = await app<{ items: { id: string }[] }>(ana, '/events');
-    expect(events.items.map((event) => event.id)).toContain('november-sprint');
-    await t.http().post('/events/november-sprint/join').set(ana.auth).expect(200);
+    // Ana focuses 5 hours.
     await t.setNow('2026-11-02T15:05:00.000Z');
     await t.submit(ana, '2026-11-02T10:00:00.000Z', 300).expect(201);
     // Under the active rules (soft cap 240, 40% beyond): 240 + 60 × 40% = 264.
     expect(await growthMinutes(ana)).toBe(264);
 
-    // What Ana joined is locked; the name stays open.
+    // Admin tokens are short-lived: sign in again after the clock moved.
     content = await signIn('content@example.com');
-    const locked = await staff(
-      content,
-      'patch',
-      '/admin/live/events/november-sprint',
-      { missions: [{ ...EVENT.missions[0], target: 120 }], reason: 'Shorter mission' },
-      422,
-    );
-    expect(locked['problems']).toEqual(['missions is locked: people have taken part.']);
-    c['eventLocked'] = locked;
-    await staff(content, 'patch', '/admin/live/events/november-sprint', {
-      name: 'The November Sprint',
-      reason: 'Clearer name',
-    });
-    c['event'] = await staff(content, 'get', '/admin/live/events/november-sprint');
-    expect(c['event']).toMatchObject({
-      name: 'The November Sprint',
-      participants: 1,
-      locked: true,
-      communityTree: { totalMinutes: 300, contributors: 1 },
-    });
-    c['board'] = await staff(
-      content,
-      'get',
-      '/admin/live/leaderboards?scope=event&eventId=november-sprint',
-    );
+    c['board'] = await staff(content, 'get', '/admin/live/leaderboards?scope=global&period=weekly');
     c['exclusions'] = await staff(content, 'get', '/admin/live/leaderboard-exclusions');
 
     // 2. The admin lowers the daily soft cap in a new configuration version and activates it.

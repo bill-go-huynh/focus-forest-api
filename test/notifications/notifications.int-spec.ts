@@ -56,7 +56,7 @@ describe('notification foundation (A6.1)', () => {
       })
       .expect(200);
 
-  /** Someone with a device and the event categories on. */
+  /** Someone with a device and the badge and challenge categories on. */
   async function person(email = 'ana@example.com', timeZone = 'UTC') {
     const user = await t.signUp(email, timeZone);
     await device(user, `ExponentPushToken[${email.split('@')[0]}]`).expect(200);
@@ -241,7 +241,7 @@ describe('notification foundation (A6.1)', () => {
     it('refuses copy written for another category', async () => {
       const ana = await person();
       await expect(
-        notifications.enqueue(t.prisma, notice(ana, { category: 'eventStart' })),
+        notifications.enqueue(t.prisma, notice(ana, { category: 'challengeUpdate' })),
       ).rejects.toThrow(/copy/);
     });
 

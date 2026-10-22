@@ -1,13 +1,12 @@
 import { ConsistencyHarness } from '../support/consistency-harness.js';
 
 /**
- * Time-based badges and Community Contributor (owner decision 2026-10-15; docs/06 Badge; spec
- * §9.1), over HTTP and PostgreSQL:
+ * Time-based badges (owner decision 2026-10-15; docs/06 Badge; spec §9.1), over HTTP and
+ * PostgreSQL:
  * - Early Bird: 10 counted sessions started before 07:00;
  * - Night Owl: 10 counted sessions started at or after 22:00;
- * - Weekend Warrior: counted focus on both days of 4 weekends;
- * - Community Contributor: an event participant's first counted session that adds minutes to a
- *   Community Tree.
+ * - Weekend Warrior: counted focus on both days of 4 weekends.
+ * Community Contributor was removed with the Community Tree (owner, 2026-10-22).
  * Times are local to the session's month (Mai is in Ho Chi Minh City, UTC+7, so 06:30 there is
  * 23:30 UTC the day before). Each badge is reported by the session that earned it.
  */
@@ -22,7 +21,7 @@ const hcm = (local: string) =>
   new Date(Date.parse(`${local}:00.000Z`) - 7 * 60 * MIN).toISOString();
 const day = (n: number) => `2026-10-${String(n).padStart(2, '0')}`;
 
-describe('time-based badges and Community Contributor (HTTP + PostgreSQL)', () => {
+describe('time-based badges (HTTP + PostgreSQL)', () => {
   beforeAll(() => t.start());
   afterAll(() => t.stop());
   beforeEach(async () => {
@@ -87,40 +86,6 @@ describe('time-based badges and Community Contributor (HTTP + PostgreSQL)', () =
     expect(await focus(user, hcm('2026-11-01T10:00'))).toContain('weekend-warrior');
   });
 
-  it('Community Contributor: the first session that grows a Community Tree, only as a participant', async () => {
-    await t.prisma.event.create({
-      data: {
-        id: 'shared-garden',
-        name: 'Shared Garden',
-        description: 'A week of growing one tree together.',
-        artworkId: 'shared-garden',
-        status: 'active',
-        startsAt: new Date('2026-10-15T00:00:00Z'),
-        endsAt: new Date('2026-10-22T00:00:00Z'),
-        communityTree: { create: { name: 'The Garden Oak', artworkId: 'garden-oak' } },
-      },
-    });
-    const user = await mai();
-    const bystander = await t.signUp('kai@example.com', 'UTC', '2026-09-01T00:00:00.000Z');
-
-    // Before the event, and without joining it, focus grows no shared tree.
-    expect(await focus(user, '2026-10-14T03:00:00.000Z')).not.toContain('community-contributor');
-    await t.setNow('2026-10-15T01:00:00.000Z');
-    await t.http().post('/events/shared-garden/join').set(user.auth).expect(200);
-    expect(await focus(bystander, '2026-10-15T02:00:00.000Z')).not.toContain(
-      'community-contributor',
-    );
-    // A discarded session adds nothing.
-    expect(await focus(user, '2026-10-15T04:00:00.000Z', 3)).not.toContain('community-contributor');
-    // The participant's first counted session in the window grows the tree: earned, reported.
-    expect(await focus(user, '2026-10-15T05:00:00.000Z')).toContain('community-contributor');
-    expect(await focus(user, '2026-10-16T05:00:00.000Z')).not.toContain('community-contributor');
-    const owned = await t.prisma.userBadge.findMany({
-      where: { badgeId: 'community-contributor' },
-    });
-    expect(owned.map((row) => row.userId)).toEqual([user.userId]);
-  });
-
   it('are listed in their categories with every other earnable badge', async () => {
     const user = await mai();
     const body = (await t.http().get('/me/achievements').set(user.auth).expect(200)).body as {
@@ -131,7 +96,11 @@ describe('time-based badges and Community Contributor (HTTP + PostgreSQL)', () =
       'early-bird': 'time_based',
       'night-owl': 'time_based',
       'weekend-warrior': 'time_based',
-      'community-contributor': 'social',
     });
+    // Removed with the Community Tree (owner, 2026-10-22).
+    expect(categories).not.toHaveProperty('community-contributor');
+    expect(
+      await t.prisma.badgeDefinition.findUnique({ where: { id: 'community-contributor' } }),
+    ).toBeNull();
   });
 });

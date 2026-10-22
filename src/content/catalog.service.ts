@@ -298,12 +298,6 @@ export class CatalogService {
         });
         if (achievement) used.push({ type: 'achievement', id: achievement.id });
       }
-      for (const m of await this.prisma.eventMilestone.findMany({ where: { [key]: id } })) {
-        used.push({ type: 'event', id: m.eventId });
-      }
-      for (const m of await this.prisma.communityMilestone.findMany({ where: { [key]: id } })) {
-        used.push({ type: 'community', id: m.eventId });
-      }
       for (const r of await this.prisma.seasonalReward.findMany({ where: { [key]: id } })) {
         used.push({ type: 'season', id: r.themeId });
       }

@@ -14,8 +14,6 @@ import { AdminAuditService } from '../admin/admin-audit.service.js';
 import { ChallengesService } from '../challenges/challenges.service.js';
 import { Clock } from '../common/clock.js';
 import { lockUser } from '../consistency/db.js';
-import { LiveService } from '../content/live.service.js';
-import { EventsService } from '../events/events.service.js';
 import { PasswordHasher } from '../identity/password-hasher.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import type { NotificationCopyInput } from '../notifications/notification-copy.js';
@@ -39,12 +37,12 @@ import { SessionsService } from '../sessions/sessions.service.js';
  * DEMO_TOOLS=on (meant for a demo server), for the admin role, every action audited.
  *
  * The server keeps one real clock and much of the product is one-shot (archived trees, the
- * ceremony, ownership, Community Tree totals), so nothing is ever rewound: each demo makes a
+ * ceremony, ownership), so nothing is ever rewound: each demo makes a
  * fresh world, with history written the way the product writes it (sessions under the user's
  * lock, month contexts from the attribution service, past months closed by the closure service),
  * poised so one real session on the phone shows the moment.
  *
- * Services other modules do not export (rooms, challenges, social graph, live content) are
+ * Services other modules do not export (rooms, challenges, social graph, sessions) are
  * resolved from the app, so the demo adds no exports to the product's modules.
  */
 
@@ -78,8 +76,6 @@ export const DEMO_CATEGORIES = [
   'dailyGoalReminder',
   'scheduledFocusReminder',
   'streakReminder',
-  'eventStart',
-  'eventEndingSoon',
   'friendInvite',
   'focusRoomInvite',
   'challengeUpdate',
@@ -110,7 +106,6 @@ const signInOf = (hasPassword: boolean): Pick<DemoAccount, 'signIn' | 'password'
     : { signIn: 'google', password: null };
 export interface DemoWorld {
   id: number;
-  eventId: string;
   accounts: DemoAccount[];
 }
 export interface DemoNotifyResult {
@@ -123,7 +118,6 @@ export interface DemoNotifyResult {
 /** The address a persona gets when the admin enters none. */
 const emailOf = (world: number, persona: DemoPersona) =>
   persona === 'main' ? `demo${world}@${DOMAIN}` : `demo${world}-${persona}@${DOMAIN}`;
-const eventIdOf = (world: number) => `demo-world-${world}`;
 
 /** A local date and time in the demo time zone, as an instant. */
 function instant(localDate: string, hour: number, minute: number): Date {
@@ -145,7 +139,6 @@ export class DemoService implements OnApplicationBootstrap {
     private readonly closure: MonthClosureService,
     private readonly achievements: AchievementsService,
     private readonly reactions: ReactionsService,
-    private readonly events: EventsService,
     private readonly notifications: NotificationsService,
     private readonly config: ProductConfigService,
     private readonly audit: AdminAuditService,
@@ -170,9 +163,6 @@ export class DemoService implements OnApplicationBootstrap {
   }
   private get graph() {
     return this.modules.get(SocialGraphService, { strict: false });
-  }
-  private get content() {
-    return this.modules.get(LiveService, { strict: false });
   }
   private get sessions() {
     return this.modules.get(SessionsService, { strict: false });
@@ -207,7 +197,6 @@ export class DemoService implements OnApplicationBootstrap {
       .sort(([a], [b]) => b - a)
       .map(([id, accounts]) => ({
         id,
-        eventId: eventIdOf(id),
         accounts: DEMO_PERSONAS.flatMap((p) => accounts.filter((a) => a.persona === p)),
       }));
     return { items };
@@ -309,18 +298,6 @@ export class DemoService implements OnApplicationBootstrap {
       await this.reactions.add(id(friend), id('main'), { type: 'forest', key: '' }, kinds[i]!);
     }
 
-    // The event and its Community Tree: the first milestone sits 5 minutes past what the
-    // participants' sessions in its window add up to, so one 5-minute session crosses it.
-    const eventStart = instant(addDays(today, -1), 0, 0);
-    const backfill = histories
-      .filter(([persona]) => persona === 'main' || friends.includes(persona))
-      .flatMap(([, sessions]) => sessions)
-      .filter((s) => instant(s.localDate, s.startHour, s.startMinute) >= eventStart)
-      .reduce((total, s) => total + s.minutes, 0);
-    await this.createEvent(adminId, world, eventStart, backfill + 5);
-    for (const participant of [...friends, 'main' as const]) {
-      await this.events.join(id(participant), eventIdOf(world));
-    }
     // A waiting room Mai opened, the presenter invited, Khoa already ready (owner, 2026-10-22).
     await this.waitingRoom(id('main'), id('friend-mai'), id('friend-khoa'));
 
@@ -331,7 +308,7 @@ export class DemoService implements OnApplicationBootstrap {
       targetId: String(world),
       reason,
     });
-    return { id: world, eventId: eventIdOf(world), accounts };
+    return { id: world, accounts };
   }
 
   /** Each persona's address: the one entered (trimmed, lowercased) or the generated one. */
@@ -461,67 +438,6 @@ export class DemoService implements OnApplicationBootstrap {
     return ids;
   }
 
-  private async createEvent(
-    adminId: string,
-    world: number,
-    startsAt: Date,
-    firstMilestone: number,
-  ) {
-    const id = eventIdOf(world);
-    const endsAt = new Date(startsAt.getTime() + 15 * DAY);
-    const stages = ['seedling', 'growing_tree', 'bloom', 'final_form'] as const;
-    for (const stage of stages) {
-      await this.prisma.badgeDefinition.create({
-        data: {
-          id: `${id}:${stage.replace('_', '-')}`,
-          category: 'event',
-          rarity: 'common',
-          source: 'event',
-          availability: 'limited',
-          status: 'active',
-          availableFrom: startsAt,
-          availableUntil: new Date(endsAt.getTime() + 7 * DAY),
-          name: `Demo Grove ${stage.replace('_', ' ')}`,
-          description: 'Grew the demo Community Tree together.',
-          artworkId: `${id}-${stage.replace('_', '-')}`,
-        },
-      });
-    }
-    await this.content.createEvent(adminId, {
-      id,
-      name: `Demo Grove ${world}`,
-      description: 'A demo event: everyone’s focus grows one shared tree.',
-      artworkId: 'demo-grove',
-      status: 'active',
-      startsAt: startsAt.toISOString(),
-      endsAt: endsAt.toISOString(),
-      entryMinSessions: 0,
-      leaderboard: false,
-      teams: [],
-      missions: [
-        {
-          id: 'two-hours',
-          measure: 'focus_minutes',
-          target: 120,
-          dailyMinutes: 0,
-          name: 'Focus 2 hours',
-          description: 'Two hours of focus during the event.',
-        },
-      ],
-      milestones: [],
-      communityTree: {
-        name: 'The Demo Grove',
-        artworkId: 'demo-grove',
-        milestones: stages.map((stage, i) => ({
-          stage,
-          thresholdMinutes: firstMilestone + i * 300,
-          badgeId: `${id}:${stage.replace('_', '-')}`,
-        })),
-      },
-      reason: `Demo world ${world}`,
-    });
-  }
-
   private async worldOrThrow(world: number): Promise<DemoWorld> {
     const found = (await this.worlds()).items.find((w) => w.id === world);
     if (!found) throw new NotFoundException('There is no such demo world.');
@@ -588,9 +504,9 @@ export class DemoService implements OnApplicationBootstrap {
         userId,
         category,
         dedupeKey: `demo:${randomUUID()}`,
-        subject: this.subject(category, world, now, time),
-        copy: this.copy(category, world, now),
-        link: this.link(category, world, now),
+        subject: this.subject(category, now, time),
+        copy: this.copy(category, now),
+        link: this.link(category, now),
         requested: true,
         notBefore: now,
         expiresAt: new Date(now.getTime() + 60 * MIN),
@@ -691,7 +607,7 @@ export class DemoService implements OnApplicationBootstrap {
 
   /**
    * Adds a session that just finished, through the real submission (growth, badges, streak,
-   * events, challenges), and sends its result to the phone, which celebrates it as its own.
+   * challenges), and sends its result to the phone, which celebrates it as its own.
    */
   async addSession(
     adminId: string,
@@ -793,18 +709,12 @@ export class DemoService implements OnApplicationBootstrap {
     return `${String(local.getUTCHours()).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
   }
 
-  private subject(
-    category: DemoCategory,
-    world: DemoWorld,
-    now: Date,
-    time: string,
-  ): string | null {
+  private subject(category: DemoCategory, now: Date, time: string): string | null {
     if (isReminder(category)) return `${localToday(now)} ${time}`;
-    if (category === 'eventStart' || category === 'eventEndingSoon') return world.eventId;
     return null;
   }
 
-  private copy(category: DemoCategory, world: DemoWorld, now: Date): NotificationCopyInput {
+  private copy(category: DemoCategory, now: Date): NotificationCopyInput {
     switch (category) {
       case 'dailyGoalReminder':
         return { category, goalMinutes: 30 };
@@ -812,11 +722,8 @@ export class DemoService implements OnApplicationBootstrap {
         return { category };
       case 'streakReminder':
         return { category, streakDays: 6 };
-      case 'eventStart':
-      case 'eventEndingSoon':
-        return { category, eventName: `Demo Grove ${world.id}` };
       case 'badgeUnlocked':
-        return { category, badgeName: 'Community Contributor' };
+        return { category, badgeName: 'Early Bird' };
       case 'monthlyRecapReady': {
         const last = lastMonth(now);
         return { category, year: last.year, month: last.month };
@@ -826,10 +733,7 @@ export class DemoService implements OnApplicationBootstrap {
     }
   }
 
-  private link(category: DemoCategory, world: DemoWorld, now: Date): string {
-    if (category === 'eventStart' || category === 'eventEndingSoon') {
-      return `/together/events/${world.eventId}`;
-    }
+  private link(category: DemoCategory, now: Date): string {
     if (category === 'badgeUnlocked') return '/profile/achievements';
     if (category === 'monthlyRecapReady') {
       const last = lastMonth(now);

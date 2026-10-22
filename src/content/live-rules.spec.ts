@@ -14,11 +14,11 @@ const THEME = {
 };
 
 const problems = (body: Record<string, unknown>, mode: 'create' | 'update' = 'create') =>
-  liveBodyProblems('theme', mode, body).problems;
+  liveBodyProblems(mode, body).problems;
 
 describe('live body checks', () => {
   it('accepts a complete theme and trims its text', () => {
-    const { problems: found, values } = liveBodyProblems('theme', 'create', {
+    const { problems: found, values } = liveBodyProblems('create', {
       ...THEME,
       name: ' Winter ',
     });
@@ -67,54 +67,6 @@ describe('live body checks', () => {
     ]);
     expect(problems({ name: 'Deep winter', reason: 'Copy' }, 'update')).toEqual([]);
   });
-
-  it('checks event bodies with their nested missions and Community Tree', () => {
-    const event = {
-      id: 'sprint',
-      name: 'Sprint',
-      description: 'A week.',
-      artworkId: 'sprint',
-      status: 'active',
-      startsAt: '2026-12-01T00:00:00.000Z',
-      endsAt: '2026-12-08T00:00:00.000Z',
-      entryMinSessions: 0,
-      leaderboard: false,
-      teams: [],
-      missions: [
-        {
-          id: 'hour',
-          measure: 'focus_minutes',
-          target: 60,
-          dailyMinutes: 0,
-          name: 'An hour',
-          description: 'One hour.',
-        },
-      ],
-      milestones: [{ id: 'one', name: 'One', requiredMissions: 1, badgeId: null, trait: true }],
-      communityTree: null,
-      reason: 'Sprint',
-    };
-    expect(liveBodyProblems('event', 'create', event).problems).toEqual([]);
-    expect(
-      liveBodyProblems('event', 'create', {
-        ...event,
-        missions: [{ ...event.missions[0], measure: 'pages' }],
-      }).problems[0],
-    ).toContain('missions[0].measure must be one of');
-    expect(
-      liveBodyProblems('event', 'create', {
-        ...event,
-        communityTree: {
-          name: 'Oak',
-          artworkId: 'oak',
-          milestones: [{ stage: 'huge', thresholdMinutes: 1, badgeId: 'b' }],
-        },
-      }).problems[0],
-    ).toContain('communityTree.milestones[0].stage');
-    expect(liveBodyProblems('event', 'create', { ...event, leaderboard: 'yes' }).problems).toEqual([
-      'leaderboard must be true or false.',
-    ]);
-  });
 });
 
 describe('locked fields', () => {
@@ -123,35 +75,20 @@ describe('locked fields', () => {
 
   it('keeps what people took part in, and lets copy and status change', () => {
     expect(
-      lockedProblems('event', current, { missions: [], startsAt: 'x', name: 'New' }, always),
-    ).toEqual([
-      'missions is locked: people have taken part.',
-      'startsAt is locked: people have taken part.',
-    ]);
-    expect(
-      lockedProblems(
-        'theme',
-        current,
-        { rewards: [], hemisphere: 'south', status: 'retired' },
-        always,
-      ),
+      lockedProblems(current, { rewards: [], hemisphere: 'south', status: 'retired' }, always),
     ).toEqual([
       'rewards is locked: the theme has started.',
       'hemisphere is locked: the theme has started.',
     ]);
     // An unchanged value is not a change.
-    expect(lockedProblems('event', current, { missions: [] }, () => false)).toEqual([]);
+    expect(lockedProblems(current, { rewards: [] }, () => false)).toEqual([]);
   });
 
   it('moves the end only later', () => {
-    expect(
-      lockedProblems('event', current, { endsAt: '2027-02-28T00:00:00.000Z' }, always),
-    ).toEqual(['endsAt can only move later: people have taken part.']);
-    expect(
-      lockedProblems('event', current, { endsAt: '2027-03-01T00:00:00.000Z' }, always),
-    ).toEqual([]);
-    expect(
-      lockedProblems('theme', current, { endsAt: '2027-03-05T00:00:00.000Z' }, always),
-    ).toEqual([]);
+    expect(lockedProblems(current, { endsAt: '2027-02-28T00:00:00.000Z' }, always)).toEqual([
+      'endsAt can only move later: the theme has started.',
+    ]);
+    expect(lockedProblems(current, { endsAt: '2027-03-01T00:00:00.000Z' }, always)).toEqual([]);
+    expect(lockedProblems(current, { endsAt: '2027-03-05T00:00:00.000Z' }, always)).toEqual([]);
   });
 });

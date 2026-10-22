@@ -34,9 +34,9 @@ const rows = (items: readonly object[]) => items.map((item) => plain(item) as Ro
  * everything stored about them, and deletion at once, confirmed by their password.
  *
  * Deletion removes the user row; the database cascades every row the person owns (sessions,
- * notes, trees, rewards, follows, blocks, reactions, devices, tokens, rooms, challenges, events).
- * Shared records keep only what others need, without the person: Community Tree contributions
- * and totals (anonymous), reports they filed (for moderators), challenges they created. There is
+ * notes, trees, rewards, follows, blocks, reactions, devices, tokens, rooms, challenges).
+ * Shared records keep only what others need, without the person: reports they filed (for
+ * moderators), challenges they created. There is
  * no admin audit entry: nobody but the person acted.
  */
 @Injectable()
@@ -150,10 +150,6 @@ export class AccountService {
       invitesReceived,
       invitesSent,
       challenges,
-      events,
-      contributions,
-      milestoneGrants,
-      communityGrants,
       devices,
       notifications,
       analytics,
@@ -237,13 +233,6 @@ export class AccountService {
       p.roomInvite.findMany({ where: { inviteeId: userId } }),
       p.roomInvite.findMany({ where: { inviterId: userId } }),
       p.challengeParticipant.findMany(where),
-      p.eventParticipation.findMany(where),
-      p.communityContribution.findMany({
-        ...where,
-        select: { eventId: true, sessionId: true, minutes: true, contributedAt: true },
-      }),
-      p.eventMilestoneGrant.findMany(where),
-      p.communityRewardGrant.findMany(where),
       p.pushDevice.findMany({
         ...where,
         select: { platform: true, appVersion: true, registeredAt: true, lastSeenAt: true },
@@ -337,10 +326,6 @@ export class AccountService {
         roomInvitesReceived: rows(invitesReceived),
         roomInvitesSent: rows(invitesSent),
         challenges: rows(challenges),
-        events: rows(events),
-        communityContributions: rows(contributions),
-        eventMilestones: rows(milestoneGrants),
-        communityRewards: rows(communityGrants),
       },
       notifications: { devices: rows(devices), sent: rows(notifications) },
       analytics,

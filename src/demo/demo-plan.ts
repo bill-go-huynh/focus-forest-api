@@ -9,7 +9,7 @@
  *   hours (3,000) and makes the streak 7: the presenter shows it live (owner, 2026-10-22).
  * - Comeback presenter: nothing for the last 3 days (Resting quietly; a session wakes it).
  * - Recovery presenter: 4 days in a row, then yesterday missed (a session today opens the offer).
- * - Three friends: together 290 minutes yesterday, the Community Tree's backfill.
+ * - Three friends: together 290 minutes yesterday, after a week of focus (the leaderboard).
  */
 
 export interface PlannedSession {
@@ -90,7 +90,7 @@ export function worldPlan(today: string): WorldPlan {
     ...[5, 4, 3, 2].map((n) => at(ago(n), 45)),
   ];
 
-  // Each friend focuses the week before, and yesterday (in the Community Tree's window).
+  // Each friend focuses the week before, and yesterday.
   const friend = (week: number, yesterday: number, hour: number) => [
     ...[6, 5, 4, 3, 2].map((n) => at(ago(n), week, hour)),
     at(ago(1), yesterday, hour),

@@ -1,7 +1,7 @@
 /**
  * Milestone traits are earned details on one month's tree, named by stable identifiers
  * ("<kind>:<value>"). The renderer decides what each looks like and ignores identifiers it does
- * not know, so new kinds (event traits, later phases) need no contract change.
+ * not know, so new kinds need no contract change.
  */
 export const TRAIT_KINDS = ['monthly-focus-hours', 'streak-days'] as const;
 

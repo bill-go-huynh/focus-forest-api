@@ -6,8 +6,8 @@ import { applyContentPack } from './apply-content-pack.js';
 import { LAUNCH_CONTENT } from './launch-content.js';
 
 /**
- * `DATABASE_URL=… npm run content:seed`: adds the launch content (events, Community Tree, seasonal
- * themes, and their badges) that is missing. Safe to rerun: existing content is never changed.
+ * `DATABASE_URL=… npm run content:seed`: adds the launch content (seasonal themes and their badges)
+ * that is missing. Safe to rerun: existing content is never changed.
  * Needs a build first (`npm run build`).
  */
 async function main(): Promise<void> {
@@ -20,8 +20,8 @@ async function main(): Promise<void> {
     const list = (ids: string[]) => (ids.length > 0 ? ids.join(', ') : 'none');
     process.stdout.write(
       [
-        `Added ${added.badges} badges, events: ${list(added.events)}, themes: ${list(added.themes)}.`,
-        `Kept as they are: ${kept.badges} badges, events: ${list(kept.events)}, themes: ${list(kept.themes)}.`,
+        `Added ${added.badges} badges, themes: ${list(added.themes)}.`,
+        `Kept as they are: ${kept.badges} badges, themes: ${list(kept.themes)}.`,
         '',
       ].join('\n'),
     );

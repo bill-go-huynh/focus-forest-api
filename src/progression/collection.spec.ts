@@ -56,13 +56,8 @@ describe('collection visibility: owned forever, otherwise only what can be obtai
     ]) {
       expect(isVisible(hidden, { owned: false, reachable: true }, now)).toBe(false);
     }
-    // A5.6: event content is acquirable during its event, but never reachable from the
+    // A5.9: season content is acquirable during its theme, but never reachable from the
     // collection: it stays out of sight until owned (no FOMO).
-    expect(isVisible(item({ source: 'event' }), { owned: false, reachable: false }, now)).toBe(
-      false,
-    );
-    expect(isVisible(item({ source: 'event' }), { owned: true, reachable: false }, now)).toBe(true);
-    // A5.9: season content too.
     expect(isVisible(item({ source: 'season' }), { owned: false, reachable: false }, now)).toBe(
       false,
     );
@@ -121,12 +116,7 @@ describe('unlock hints: structured truth, never copy or criterion names', () => 
     const hints = CONTENT_SOURCES.map((source) =>
       unlockOf(item({ source }), source === 'achievement' ? { achievement, value: 0 } : null),
     );
-    expect(hints.map((hint) => hint?.type ?? null)).toEqual([
-      null,
-      'achievement',
-      'event',
-      'season',
-    ]);
+    expect(hints.map((hint) => hint?.type ?? null)).toEqual([null, 'achievement', 'season']);
   });
 });
 

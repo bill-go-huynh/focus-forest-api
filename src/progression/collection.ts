@@ -24,7 +24,7 @@ export interface CollectionDefinition extends Acquisition {
 /**
  * Whether an item belongs in the user's collection: owned (whatever its status or window now),
  * or acquirable now and `reachable` (its achievement can be earned). Planned, retired, ended,
- * not-yet-open, and event or season content the user does not own stays out of sight.
+ * not-yet-open, and season content the user does not own stays out of sight.
  */
 export function isVisible(
   definition: CollectionDefinition,
@@ -54,7 +54,7 @@ export function availabilityOf(definition: Acquisition, now: Date): CollectionAv
   };
 }
 
-/** How a locked item is obtained. Event and season hints gain detail with their phases. */
+/** How a locked item is obtained. Season hints gain detail with their phase. */
 export type UnlockHint =
   | {
       type: 'achievement';
@@ -67,7 +67,6 @@ export type UnlockHint =
       /** Null when the achievement does not show progress. */
       current: number | null;
     }
-  | { type: 'event' }
   | { type: 'season' };
 
 export interface HintAchievement {
@@ -98,8 +97,6 @@ export function unlockOf(
         current: a.progressVisible ? value : null,
       };
     }
-    case 'event':
-      return { type: 'event' };
     case 'season':
       return { type: 'season' };
     default: {

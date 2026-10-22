@@ -238,23 +238,6 @@
         "completed": false,
         "earnedAt": null,
         "progressVisible": false
-      },
-      {
-        "id": "community-contributor",
-        "badge": {
-          "id": "community-contributor",
-          "name": "Community Contributor",
-          "description": "Helped a Community Tree grow.",
-          "category": "social",
-          "rarity": "rare",
-          "artworkId": "community-contributor"
-        },
-        "unit": "sessions",
-        "current": 0,
-        "target": 1,
-        "completed": false,
-        "earnedAt": null,
-        "progressVisible": false
       }
     ]
   },
@@ -632,7 +615,7 @@
       {
         "kind": "badges",
         "owned": 5,
-        "total": 15,
+        "total": 14,
         "items": [
           {
             "kind": "badge",
@@ -993,35 +976,6 @@
               "achievementId": "focus-buddy",
               "name": "Focus Buddy",
               "description": "Focused together with a friend.",
-              "unit": "sessions",
-              "target": 1,
-              "current": null
-            },
-            "category": "social",
-            "showcasePosition": null
-          },
-          {
-            "kind": "badge",
-            "id": "community-contributor",
-            "name": "Community Contributor",
-            "description": "Helped a Community Tree grow.",
-            "rarity": "rare",
-            "artworkId": "community-contributor",
-            "owned": false,
-            "ownedAt": null,
-            "source": "achievement",
-            "availability": {
-              "status": "active",
-              "limited": false,
-              "availableFrom": null,
-              "availableUntil": null,
-              "obtainableNow": true
-            },
-            "unlock": {
-              "type": "achievement",
-              "achievementId": "community-contributor",
-              "name": "Community Contributor",
-              "description": "Helped a Community Tree grow.",
               "unit": "sessions",
               "target": 1,
               "current": null
@@ -1392,8 +1346,7 @@
           "unlockedAt": "2026-10-01T12:00:00.000Z"
         }
       ]
-    },
-    "events": []
+    }
   },
   "sessionReplay": {
     "id": "00000000-0000-4000-8000-000000000401",
@@ -1482,8 +1435,7 @@
           "unlockedAt": "2026-10-01T12:00:00.000Z"
         }
       ]
-    },
-    "events": []
+    }
   },
   "speciesLocked": {
     "items": [
@@ -1852,7 +1804,7 @@
       {
         "kind": "badges",
         "owned": 6,
-        "total": 15,
+        "total": 14,
         "items": [
           {
             "kind": "badge",
@@ -2205,35 +2157,6 @@
               "achievementId": "focus-buddy",
               "name": "Focus Buddy",
               "description": "Focused together with a friend.",
-              "unit": "sessions",
-              "target": 1,
-              "current": null
-            },
-            "category": "social",
-            "showcasePosition": null
-          },
-          {
-            "kind": "badge",
-            "id": "community-contributor",
-            "name": "Community Contributor",
-            "description": "Helped a Community Tree grow.",
-            "rarity": "rare",
-            "artworkId": "community-contributor",
-            "owned": false,
-            "ownedAt": null,
-            "source": "achievement",
-            "availability": {
-              "status": "active",
-              "limited": false,
-              "availableFrom": null,
-              "availableUntil": null,
-              "obtainableNow": true
-            },
-            "unlock": {
-              "type": "achievement",
-              "achievementId": "community-contributor",
-              "name": "Community Contributor",
-              "description": "Helped a Community Tree grow.",
               "unit": "sessions",
               "target": 1,
               "current": null

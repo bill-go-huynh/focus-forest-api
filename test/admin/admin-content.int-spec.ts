@@ -218,8 +218,8 @@ describe('admin content catalog (A6.4)', () => {
       progressVisible: true,
       reason: 'New achievement',
     };
-    // An event badge is not earned by an achievement; a badge has at most one achievement.
-    await post(auth, 'badges', { ...BADGE, id: 'lantern-night', source: 'event' }).expect(201);
+    // A seasonal badge is not earned by an achievement; a badge has at most one achievement.
+    await post(auth, 'badges', { ...BADGE, id: 'lantern-night', source: 'season' }).expect(201);
     expect(await problems('achievements', { ...achievement, badgeId: 'lantern-night' })).toEqual([
       'badgeId: the badge lantern-night is not earned by an achievement.',
     ]);
@@ -267,7 +267,9 @@ describe('admin content catalog (A6.4)', () => {
           .body as { problems: string[] }
       ).problems,
     ).toContainEqual(expect.stringContaining('id'));
-    await patch(auth, 'badges', 'deep-diver', { source: 'event', reason: 'Move' }).expect(422);
+    await patch(auth, 'badges', 'deep-diver', { source: 'season', reason: 'Move' }).expect(422);
+    // Events were removed (owner, 2026-10-22): no new event content.
+    await post(auth, 'badges', { ...BADGE, id: 'event-night', source: 'event' }).expect(422);
     await patch(auth, 'badges', 'missing', { name: 'X', reason: 'Nothing' }).expect(404);
     expect(await audit()).toEqual([
       ['content.badge.create', 'deep-diver', 'New long-session badge', { status: 'active' }],
@@ -365,7 +367,7 @@ describe('admin content catalog (A6.4)', () => {
       id: 'ghost-oak',
       baseSpeciesId: 'nowhere',
       rarity: 'rare',
-      source: 'event',
+      source: 'season',
       achievementId: null,
       availability: 'permanent',
       availableFrom: null,
@@ -380,7 +382,7 @@ describe('admin content catalog (A6.4)', () => {
       id: 'lantern-row',
       type: 'decoration',
       rarity: 'common',
-      source: 'event',
+      source: 'season',
       achievementId: null,
       availability: 'limited',
       availableFrom: '2026-11-01T00:00:00.000Z',
@@ -390,7 +392,7 @@ describe('admin content catalog (A6.4)', () => {
       description: 'Lanterns along the path.',
       artworkId: 'lantern-row',
       sortOrder: 60,
-      reason: 'Event decoration',
+      reason: 'Seasonal decoration',
     }).expect(201);
     expect(await get(auth, 'cosmetics/lantern-row')).toMatchObject({
       availableUntil: '2026-12-01T00:00:00.000Z',

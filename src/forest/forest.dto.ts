@@ -104,8 +104,6 @@ export type TreeDetailsDto =
       highlightedNotes: HighlightedNoteDto[];
       /** The badges earned this month, as the recap snapshot them at archive (A4.2). */
       badges: EarnedBadgeDto[];
-      /** Future-safe: joined events (Phase 11). Empty for now. */
-      events: never[];
     }
   | ({ kind: 'growing'; year: number; month: number } & CurrentTreeResponse)
   | { kind: 'resting'; year: number; month: number };

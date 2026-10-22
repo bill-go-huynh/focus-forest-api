@@ -17,7 +17,6 @@ export class LeaderboardsController {
     return this.leaderboards.board(user.userId, {
       scope: query.scope ?? 'friends',
       period: query.period ?? 'weekly',
-      ...(query.eventId !== undefined && { eventId: query.eventId }),
     });
   }
 }

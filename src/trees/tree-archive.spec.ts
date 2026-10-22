@@ -50,7 +50,6 @@ const recap: RecapContent = {
     { sessionId: '0f8fad5b-d9cb-469f-a165-70867728950e', note: 'Finished the proof' },
   ],
   badges: [],
-  events: [],
 };
 
 describe('archived tree snapshot', () => {

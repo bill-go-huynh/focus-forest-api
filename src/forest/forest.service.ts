@@ -157,7 +157,6 @@ export class ForestService {
       // The notes and badges as they were at archive, the same as the recap's.
       highlightedNotes: content.highlightedNotes,
       badges: await this.badges(content.badges),
-      events: [],
     };
   }
 

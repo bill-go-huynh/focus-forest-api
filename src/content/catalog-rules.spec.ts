@@ -4,7 +4,7 @@ const COSMETIC = {
   id: 'lantern-row',
   type: 'decoration',
   rarity: 'common',
-  source: 'event',
+  source: 'season',
   achievementId: null,
   availability: 'permanent',
   availableFrom: null,
@@ -14,7 +14,7 @@ const COSMETIC = {
   description: 'Lanterns along the path.',
   artworkId: 'lantern-row',
   sortOrder: 60,
-  reason: 'Event decoration',
+  reason: 'Seasonal decoration',
 };
 
 const problemsOf = (body: Record<string, unknown>, mode: 'create' | 'update' = 'create') =>
@@ -41,8 +41,12 @@ describe('catalog body checks', () => {
     expect(problemsOf({ ...COSMETIC, id: 'Lantern' })).toEqual([
       'id must be lowercase words joined by "-", with an optional ":part".',
     ]);
-    expect(problemsOf({ ...COSMETIC, id: 'event:lantern-row' })).toEqual([]);
+    expect(problemsOf({ ...COSMETIC, id: 'season:lantern-row' })).toEqual([]);
     expect(problemsOf({ ...COSMETIC, type: 'hat' })[0]).toContain('type must be one of');
+    // Events were removed (owner, 2026-10-22): no new event content.
+    expect(problemsOf({ ...COSMETIC, source: 'event' })).toEqual([
+      'source must be one of: achievement, season.',
+    ]);
     expect(problemsOf({ ...COSMETIC, name: 'x'.repeat(61) })[0]).toContain('1 to 60');
     expect(problemsOf({ ...COSMETIC, name: 'x'.repeat(60) })).toEqual([]);
     expect(problemsOf({ ...COSMETIC, description: 'x'.repeat(281) })[0]).toContain('1 to 280');

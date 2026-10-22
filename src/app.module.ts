@@ -8,7 +8,6 @@ import { ClockModule } from './common/clock.js';
 import { validateEnv } from './config/env.validation.js';
 import { ConsistencyModule } from './consistency/consistency.module.js';
 import { ContentModule } from './content/content.module.js';
-import { EventsModule } from './events/events.module.js';
 import { LeaderboardsModule } from './leaderboards/leaderboards.module.js';
 import { MonitoringModule } from './monitoring/monitoring.module.js';
 import { SafetyModule } from './safety/safety.module.js';
@@ -56,7 +55,6 @@ import { DemoModule } from './demo/demo.module.js';
     ModerationModule,
     RoomsModule,
     ChallengesModule,
-    EventsModule,
     LeaderboardsModule,
     SeasonsModule,
     NotificationsModule,

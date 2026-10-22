@@ -3,8 +3,6 @@ export const NOTIFICATION_CATEGORIES = [
   'dailyGoalReminder',
   'scheduledFocusReminder',
   'streakReminder',
-  'eventStart',
-  'eventEndingSoon',
   'friendInvite',
   'focusRoomInvite',
   'challengeUpdate',

@@ -8,7 +8,7 @@ import { instantAt, localDayAfter, localMinutesOf } from './local-time.js';
  * 1. Never to a suspended or banned person, never in a category they have not turned on.
  * 2. Never when it is no longer timely or relevant, or when there is no device.
  * 3. Never during focus: it waits for the session to end (docs/02).
- * 4. Informational notices (events, social, badges, recaps) only inside the day window, and at
+ * 4. Informational notices (social, badges, recaps) only inside the day window, and at
  *    most `maxUnrequestedPerDay` a local day; beyond it they are dropped, not saved for later.
  *    Reminders the person set themselves are requested: they keep their time and are not counted.
  */

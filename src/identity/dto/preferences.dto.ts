@@ -41,8 +41,6 @@ export class NotificationPreferencesDto implements Partial<
   @Setting(ReminderSettingDto) dailyGoalReminder?: ReminderSettingDto;
   @Setting(ReminderSettingDto) scheduledFocusReminder?: ReminderSettingDto;
   @Setting(ReminderSettingDto) streakReminder?: ReminderSettingDto;
-  @Setting(NotificationSettingDto) eventStart?: NotificationSettingDto;
-  @Setting(NotificationSettingDto) eventEndingSoon?: NotificationSettingDto;
   @Setting(NotificationSettingDto) friendInvite?: NotificationSettingDto;
   @Setting(NotificationSettingDto) focusRoomInvite?: NotificationSettingDto;
   @Setting(NotificationSettingDto) challengeUpdate?: NotificationSettingDto;
@@ -59,10 +57,6 @@ export class UpdatePreferencesDto {
   @ValidateIf(isSent('sound'))
   @IsBoolean({ message: 'sound must be true or false.' })
   sound?: boolean;
-
-  @ValidateIf(isSent('haptics'))
-  @IsBoolean({ message: 'haptics must be true or false.' })
-  haptics?: boolean;
 
   @ValidateIf(isSent('reducedMotion'))
   @IsBoolean({ message: 'reducedMotion must be true or false.' })
@@ -91,7 +85,6 @@ export interface ReminderSettingResponse extends NotificationSettingResponse {
 export interface PreferencesResponse {
   theme: Theme;
   sound: boolean;
-  haptics: boolean;
   reducedMotion: boolean;
   shareUsageData: boolean;
   notifications: Record<

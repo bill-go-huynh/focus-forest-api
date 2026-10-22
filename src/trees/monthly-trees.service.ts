@@ -218,37 +218,6 @@ export class MonthlyTreesService {
   }
 
   /**
-   * A5.6: puts an event trait on a growing tree: the given month's, or the one growing at `at`
-   * (the month context containing it). Never on an archived tree, and never creates a tree: when
-   * there is none, nothing is placed and the caller keeps it for later. Idempotent.
-   */
-  async placeTrait(
-    client: Client,
-    userId: string,
-    traitId: string,
-    at: Date,
-    month?: { year: number; month: number },
-  ): Promise<{ year: number; month: number } | null> {
-    const target =
-      month ??
-      (await client.monthAttributionContext.findFirst({
-        where: { userId, startsAt: { lte: at }, endsAt: { gt: at } },
-        select: { year: true, month: true },
-      }));
-    if (!target) return null;
-    const tree = await client.monthlyTree.findUnique({
-      where: { userId_year_month: { userId, year: target.year, month: target.month } },
-      select: { status: true },
-    });
-    if (tree?.status !== 'growing') return null;
-    await client.monthlyTreeTrait.createMany({
-      data: [{ userId, year: target.year, month: target.month, traitId, earnedAt: at }],
-      skipDuplicates: true,
-    });
-    return { year: target.year, month: target.month };
-  }
-
-  /**
    * Chooses the current month's species (A4.3; docs/03_TREE_SYSTEM.md §9): an owned, selectable
    * species, while the tree is a growing Seed. Ownership is reconciled first, so a user who
    * already qualifies needs no earlier read (A4.4.G). The tree is resolved as viewing it does (created

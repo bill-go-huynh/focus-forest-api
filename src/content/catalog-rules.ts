@@ -16,7 +16,7 @@ export type CatalogKind = (typeof CATALOG_KINDS)[number];
 const RARITIES = ['common', 'rare', 'legendary'] as const;
 const STATUSES = ['planned', 'active', 'retired'] as const;
 const AVAILABILITIES = ['permanent', 'limited'] as const;
-const ADMIN_SOURCES = ['achievement', 'event', 'season'] as const;
+const ADMIN_SOURCES = ['achievement', 'season'] as const;
 const BADGE_CATEGORIES = ['focus', 'consistency', 'time_based', 'social', 'event', 'rare'] as const;
 const COSMETIC_TYPES = [
   'background',
@@ -35,7 +35,6 @@ const CRITERIA = [
   'sessions_before_7',
   'sessions_after_22',
   'full_weekends',
-  'community_contributions',
 ] as const;
 
 type Field =

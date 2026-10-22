@@ -126,7 +126,6 @@ describe('A4.1 progression foundation (HTTP + PostgreSQL)', () => {
         'weekend-warrior',
         'focus-together:first',
         'focus-buddy',
-        'community-contributor',
       ]);
       // A4.3 seeds the other species in its own migration; the signature species stays first.
       expect(species[0]?.id).toBe('signature');
@@ -153,7 +152,6 @@ describe('A4.1 progression foundation (HTTP + PostgreSQL)', () => {
         'early-bird': ['sessions_before_7', 10],
         'night-owl': ['sessions_after_22', 10],
         'weekend-warrior': ['full_weekends', 4],
-        'community-contributor': ['community_contributions', 1],
       });
       // Every active badge from an achievement has one; planned ones need none yet.
       const granting = new Set(achievements.map((a) => a.badgeId));
@@ -162,8 +160,8 @@ describe('A4.1 progression foundation (HTTP + PostgreSQL)', () => {
       }
     });
 
-    // A4.1 defined the Social badges as planned; A5.4 makes the Focus Together ones earnable,
-    // and the owner decision of 2026-10-15 the Community Tree one.
+    // A4.1 defined the Social badges as planned; A5.4 makes the Focus Together ones earnable.
+    // Community Contributor was removed with the Community Tree (owner, 2026-10-22).
     it('makes every Social badge earnable, each by its own achievement', async () => {
       const social = await t.prisma.badgeDefinition.findMany({
         where: { category: 'social' },
@@ -172,13 +170,12 @@ describe('A4.1 progression foundation (HTTP + PostgreSQL)', () => {
       expect(social.map((b) => [b.id, b.status])).toEqual([
         ['focus-together:first', 'active'],
         ['focus-buddy', 'active'],
-        ['community-contributor', 'active'],
       ]);
       expect(
         await t.prisma.achievementDefinition.count({
           where: { badgeId: 'community-contributor' },
         }),
-      ).toBe(1);
+      ).toBe(0);
     });
 
     it('rejects invalid identifiers, values, and references', async () => {
@@ -415,7 +412,8 @@ describe('A4.1 progression foundation (HTTP + PostgreSQL)', () => {
 
     it('has no growth rules of its own: every species shares the tree’s one framework', async () => {
       const columns = await t.prisma.$queryRaw<{ column_name: string }[]>`
-        SELECT column_name FROM information_schema.columns WHERE table_name = 'tree_species'
+        SELECT column_name FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'tree_species'
         ORDER BY column_name`;
       expect(columns.map((c) => c.column_name)).toEqual([
         'achievement_id',
@@ -454,7 +452,7 @@ describe('A4.1 progression foundation (HTTP + PostgreSQL)', () => {
       expect(after.tree).toEqual(before.tree);
       const columns = await t.prisma.$queryRaw<{ table_name: string; column_name: string }[]>`
         SELECT table_name, column_name FROM information_schema.columns
-        WHERE table_name IN ('user_badges', 'user_species', 'user_cosmetics')
+        WHERE table_schema = 'public' AND table_name IN ('user_badges', 'user_species', 'user_cosmetics')
         ORDER BY table_name, column_name`;
       expect(columns.map((c) => `${c.table_name}.${c.column_name}`)).toEqual([
         'user_badges.badge_id',

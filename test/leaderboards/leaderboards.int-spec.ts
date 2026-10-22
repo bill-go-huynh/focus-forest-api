@@ -5,7 +5,7 @@ import { ConsistencyHarness } from '../support/consistency-harness.js';
 /**
  * A5.8 Leaderboards (spec §16, docs/02 Leaderboards, docs/06 Leaderboard, docs/12 Phase 16): fair
  * scores that never rank raw hours alone, opt-in visibility, friends by default, weekly and
- * monthly periods, and event boards with team ranking.
+ * monthly periods. Event boards and teams were removed with events (owner, 2026-10-22).
  */
 
 const t = new ConsistencyHarness('2026-10-18T12:00:00.000Z');
@@ -28,7 +28,6 @@ interface Board {
   optedIn: boolean;
   rows: Row[];
   you: Row | null;
-  teams: { id: string; name: string; rank: number; score: number; members: number }[] | null;
 }
 
 /** A user who has opted in, with a 30-minute daily goal since September. */
@@ -300,111 +299,12 @@ describe('Leaderboards (A5.8, HTTP + PostgreSQL)', () => {
       await t.http().get('/leaderboards?scope=world').set(ada.auth).expect(400);
       await t.http().get('/leaderboards?period=daily').set(ada.auth).expect(400);
       await t.http().get('/leaderboards?scope=event').set(ada.auth).expect(400);
-    });
-  });
-
-  describe('event boards', () => {
-    async function teamEvent(over: { leaderboard?: boolean; teams?: boolean } = {}) {
-      await t.prisma.event.create({
-        data: {
-          id: 'team-sprint',
-          name: 'Team Sprint',
-          description: 'Three days, two teams.',
-          artworkId: 'team-sprint',
-          status: 'active',
-          startsAt: new Date('2026-10-13T00:00:00Z'),
-          endsAt: new Date('2026-10-15T06:00:00Z'),
-          leaderboard: over.leaderboard ?? true,
-          ...(over.teams !== false && {
-            teams: {
-              create: [
-                { id: 'oaks', name: 'Oaks', sortOrder: 1 },
-                { id: 'pines', name: 'Pines', sortOrder: 2 },
-              ],
-            },
-          }),
-        },
-      });
-    }
-    const eventBoard = (user: User) => board(user, '?scope=event&eventId=team-sprint');
-
-    it('rank participants over the event window, with balanced teams', async () => {
-      await teamEvent();
-      await t.setNow('2026-10-12T12:00:00.000Z');
-      const ada = await person('ada');
-      const bob = await person('bob');
-      const cyd = await person('cyd');
-      const dan = await person('dan', { optIn: false });
-      const eve = await person('eve');
-      for (const user of [ada, bob, cyd, dan]) {
-        await t.http().post('/events/team-sprint/join').set(user.auth).expect(200);
-      }
-      // Joining fills the smallest team first: ada oaks, bob pines, cyd oaks, dan pines.
-      const teams = await t.prisma.eventParticipation.findMany({
-        orderBy: { joinedAt: 'asc' },
-        select: { userId: true, teamId: true },
-      });
-      expect(new Map(teams.map((p) => [p.userId, p.teamId]))).toEqual(
-        new Map([
-          [ada.userId, 'oaks'],
-          [bob.userId, 'pines'],
-          [cyd.userId, 'oaks'],
-          [dan.userId, 'pines'],
-        ]),
-      );
-      await t.focus(ada, [
-        ['2026-10-12', 30],
-        ['2026-10-13', 30],
-        ['2026-10-14', 30],
-        ['2026-10-15', 30],
-      ]);
-      await t.focus(bob, [['2026-10-13', 30]]);
-      await t.focus(dan, [['2026-10-13', 30]]);
-      await steadyWeek(eve);
-      await t.setNow('2026-10-18T12:00:00.000Z');
-
-      const seen = await eventBoard(bob);
-      expect(seen.period).toEqual({
-        kind: 'event',
-        startDate: '2026-10-13',
-        endDate: '2026-10-15',
-      });
-      // Three days, 13 to 15 October; ada's session at 08:00 on the 15th started after the end.
-      // ada 1000 × 2 × 0.85 ÷ 3 → 567; bob one day → 283. Cyd has nothing yet.
-      expect(names(seen)).toEqual([
-        [1, 'ada', 567],
-        [2, 'bob', 283],
-      ]);
-      // Teams: the mean of opted-in members (Cyd's 0 included; Dan is not part of any board).
-      expect(seen.teams).toEqual([
-        { id: 'oaks', name: 'Oaks', rank: 1, score: 284, members: 2 },
-        { id: 'pines', name: 'Pines', rank: 2, score: 283, members: 1 },
-      ]);
-    });
-
-    it('exist only for events with a board that the user can see', async () => {
-      await teamEvent({ leaderboard: false, teams: false });
-      const ada = await person('ada');
-      const res = await t
+      await t
         .http()
-        .get('/leaderboards?scope=event&eventId=team-sprint')
+        .get('/leaderboards?scope=global&eventId=team-sprint')
         .set(ada.auth)
-        .expect(404);
-      expect(res.body).toMatchObject({ code: 'leaderboard_not_found' });
-      await t.http().get('/leaderboards?scope=event&eventId=nowhere').set(ada.auth).expect(404);
-      await t.prisma.event.update({
-        where: { id: 'team-sprint' },
-        data: { leaderboard: true },
-      });
-      expect((await eventBoard(ada)).teams).toBeNull();
-      // A retired event's board stays readable for its participants only.
-      await t.prisma.eventParticipation.create({
-        data: { userId: ada.userId, eventId: 'team-sprint', joinedAt: new Date('2026-10-13') },
-      });
-      const bob = await person('bob');
-      await t.prisma.event.update({ where: { id: 'team-sprint' }, data: { status: 'retired' } });
-      await eventBoard(ada);
-      await t.http().get('/leaderboards?scope=event&eventId=team-sprint').set(bob.auth).expect(404);
+        .expect(400);
+      expect(Object.keys(await board(ada, '?scope=global'))).not.toContain('teams');
     });
   });
 

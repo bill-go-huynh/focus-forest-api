@@ -17,7 +17,6 @@ interface NotificationSetting {
 interface PreferencesBody {
   theme: 'system' | 'light' | 'dark';
   sound: boolean;
-  haptics: boolean;
   reducedMotion: boolean;
   shareUsageData: boolean;
   notifications: Record<string, NotificationSetting>;
@@ -29,7 +28,6 @@ const offTimed = { enabled: false, time: null };
 const DEFAULTS: PreferencesBody = {
   theme: 'system',
   sound: true,
-  haptics: true,
   reducedMotion: false,
   // CR.1: usage data is shared by default for the checkpoint, and can be turned off.
   shareUsageData: true,
@@ -37,8 +35,6 @@ const DEFAULTS: PreferencesBody = {
     dailyGoalReminder: offTimed,
     scheduledFocusReminder: offTimed,
     streakReminder: offTimed,
-    eventStart: off,
-    eventEndingSoon: off,
     friendInvite: off,
     focusRoomInvite: off,
     challengeUpdate: off,
@@ -90,7 +86,7 @@ describe('preferences (HTTP + PostgreSQL)', () => {
       .send(body as object);
 
   describe('defaults', () => {
-    it('gives a new user the documented defaults: system theme, sound and haptics on, usage data shared, every notification off', async () => {
+    it('gives a new user the documented defaults: system theme, sound on, usage data shared, every notification off', async () => {
       const token = await signUp();
       expect(asPreferences(await get(token).expect(200))).toEqual(DEFAULTS);
     });
@@ -106,7 +102,6 @@ describe('preferences (HTTP + PostgreSQL)', () => {
       ['theme', 'dark'],
       ['theme', 'light'],
       ['sound', false],
-      ['haptics', false],
       ['reducedMotion', true],
       ['shareUsageData', false],
     ])('updates %s on its own, leaving everything else unchanged', async (key, value) => {
@@ -136,7 +131,8 @@ describe('preferences (HTTP + PostgreSQL)', () => {
       ['an unknown theme', { theme: 'sepia' }],
       ['a null theme', { theme: null }],
       ['a non-boolean sound', { sound: 'yes' }],
-      ['a null haptics', { haptics: null }],
+      // The haptics preference was removed (owner, 2026-10-22).
+      ['a haptics preference', { haptics: false }],
       ['a non-boolean reducedMotion', { reducedMotion: 1 }],
       ['a null shareUsageData', { shareUsageData: null }],
       ['an unknown preference', { fontSize: 'large' }],
@@ -209,10 +205,12 @@ describe('preferences (HTTP + PostgreSQL)', () => {
 
     it.each([
       ['an unknown category', { weeklyDigest: { enabled: true } }, 'weeklyDigest'],
+      // Event notices were removed with events (owner, 2026-10-22).
+      ['a removed event category', { eventStart: { enabled: true } }, 'eventStart'],
       ['a time on a category that has none', { badgeUnlocked: { time: '09:00' } }, 'time'],
       [
         'an unknown field in a category',
-        { eventStart: { enabled: true, sound: 'chime' } },
+        { friendInvite: { enabled: true, sound: 'chime' } },
         'sound',
       ],
       ['a non-boolean enabled', { friendInvite: { enabled: 'true' } }, 'enabled'],

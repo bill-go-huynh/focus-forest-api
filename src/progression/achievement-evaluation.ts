@@ -36,13 +36,11 @@ export interface AchievementInput {
    * the local time of their month's time zone (the session's own attribution).
    */
   timeOfDay: { early: number; late: number };
-  /** Owner decision 2026-10-15: counted sessions that added minutes to a Community Tree. */
-  community: { contributions: number };
 }
 
 /**
  * Categories whose criteria exist. Social is evaluated from A5.4 (Focus Together), time-based from
- * the owner decision of 2026-10-15; event badges come from event milestones, and special badges
+ * the owner decision of 2026-10-15; seasonal badges come from seasonal themes, and special badges
  * are never evaluated, even if activated. A category, never a rarity: category "rare" and rarity
  * "rare" are unrelated.
  */
@@ -98,7 +96,6 @@ export function achievementValues(input: AchievementInput): AchievementValues {
     sessions_before_7: input.timeOfDay.early,
     sessions_after_22: input.timeOfDay.late,
     full_weekends: fullWeekends(input.history.activeDates),
-    community_contributions: input.community.contributions,
   };
 }
 
@@ -121,7 +118,6 @@ export interface RemovedSession {
   countedOnSameDay: number;
   startedBefore7: boolean;
   startedAfter22: boolean;
-  contributedToCommunity: boolean;
 }
 
 export function withoutSession(input: AchievementInput, session: RemovedSession): AchievementInput {
@@ -141,9 +137,6 @@ export function withoutSession(input: AchievementInput, session: RemovedSession)
     timeOfDay: {
       early: input.timeOfDay.early - (session.startedBefore7 ? 1 : 0),
       late: input.timeOfDay.late - (session.startedAfter22 ? 1 : 0),
-    },
-    community: {
-      contributions: input.community.contributions - (session.contributedToCommunity ? 1 : 0),
     },
   };
 }

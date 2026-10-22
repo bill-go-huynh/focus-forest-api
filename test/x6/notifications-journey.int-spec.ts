@@ -84,20 +84,17 @@ describe('X6 notifications integration (HTTP + PostgreSQL + worker)', () => {
     };
 
     // Mai in Ho Chi Minh City (UTC+7), Lukas in Berlin (UTC+1 in November), Linh in Ho Chi Minh
-    // City with event starts turned off.
+    // City with room invitations left off.
     const mai = await person('mai', 'Asia/Ho_Chi_Minh', {
       dailyGoalReminder: { enabled: true, time: '20:00' },
-      eventStart: { enabled: true },
       friendInvite: { enabled: true },
       focusRoomInvite: { enabled: true },
     });
     const lukas = await person('lukas', 'Europe/Berlin', {
       dailyGoalReminder: { enabled: true, time: '20:00' },
-      eventStart: { enabled: true },
     });
     const linh = await person('linh', 'Asia/Ho_Chi_Minh', {
       dailyGoalReminder: { enabled: true, time: '18:00' },
-      eventStart: { enabled: false },
       friendInvite: { enabled: true },
     });
     c['deviceRegistered'] = mai.device;
@@ -109,19 +106,6 @@ describe('X6 notifications integration (HTTP + PostgreSQL + worker)', () => {
       await send(a.user, 'put', `/me/following/${b.user.userId}`);
       await send(b.user, 'put', `/me/following/${a.user.userId}`);
     }
-
-    // An event that begins at 10:00 UTC.
-    await t.prisma.event.create({
-      data: {
-        id: 'november-focus',
-        name: 'November Focus',
-        description: 'A month of steady focus.',
-        artworkId: 'november-focus',
-        status: 'active',
-        startsAt: new Date(`${DAY}T10:00:00Z`),
-        endsAt: new Date('2026-11-30T00:00:00Z'),
-      },
-    });
 
     // The worker runs every recurring job and every due notification, a quarter hour at a time.
     await jobs.startRecurring(t.clock.now());
@@ -138,9 +122,20 @@ describe('X6 notifications integration (HTTP + PostgreSQL + worker)', () => {
     };
     const pushed = () => t.push.messages.map((m) => `${m.to.slice(18, -1)} ${m.data.category}`);
 
-    // 10:00: the event begins. Linh turned event starts off.
+    // 10:00: Lukas opens a room and invites Mai (her first notice today), then leaves it.
+    await runUntil(`${DAY}T09:45:00.000Z`);
+    await t.setNow(`${DAY}T10:00:00.000Z`);
+    const morning = (await send(
+      lukas.user,
+      'post',
+      '/rooms',
+      { name: 'Morning focus', durationMinutes: 25, maxParticipants: 4, visibility: 'private' },
+      201,
+    )) as { id: string };
+    await send(lukas.user, 'post', `/rooms/${morning.id}/invites`, { userIds: [mai.user.userId] });
     await runUntil(`${DAY}T10:00:00.000Z`);
-    expect(pushed()).toEqual(['mai eventStart', 'lukas eventStart']);
+    await send(lukas.user, 'post', `/rooms/${morning.id}/leave`);
+    expect(pushed()).toEqual(['mai focusRoomInvite']);
 
     // 10:20: Lukas invites Mai to a challenge (her second notice today).
     await t.setNow(`${DAY}T10:20:00.000Z`);
@@ -157,7 +152,7 @@ describe('X6 notifications integration (HTTP + PostgreSQL + worker)', () => {
       endsAt: `${DAY}T13:25:00.000Z`,
     });
     await runUntil(`${DAY}T10:30:00.000Z`);
-    expect(pushed().slice(2)).toEqual(['mai friendInvite']);
+    expect(pushed().slice(1)).toEqual(['mai friendInvite']);
 
     // 10:40: Linh opens a room and invites Mai: a third notice for Mai today, so it is dropped.
     await t.setNow(`${DAY}T10:40:00.000Z`);
@@ -197,13 +192,13 @@ describe('X6 notifications integration (HTTP + PostgreSQL + worker)', () => {
     // Linh's 18:00 reminder (11:00 UTC) and the invitation wait while she focuses; Mai's 20:00
     // reminder (13:00 UTC) arrives though she reached today's limit: she asked for it.
     await runUntil(`${DAY}T13:15:00.000Z`);
-    expect(pushed().slice(3)).toEqual(['mai dailyGoalReminder']);
+    expect(pushed().slice(2)).toEqual(['mai dailyGoalReminder']);
 
     // 13:25: Linh's focus ends. The invitation arrives; her reminder expired at 13:00.
     await t.setNow(`${DAY}T13:25:00.000Z`);
     await send(linh.user, 'delete', '/me/focus/active', undefined, 204);
     await runUntil(`${DAY}T13:30:00.000Z`);
-    expect(pushed().slice(4)).toEqual(['linh friendInvite']);
+    expect(pushed().slice(3)).toEqual(['linh friendInvite']);
 
     // 18:40: Lukas and Mai focus together; Lukas's 20:00 reminder (19:00 UTC) waits for it.
     await t.setNow(`${DAY}T18:40:00.000Z`);
@@ -218,14 +213,14 @@ describe('X6 notifications integration (HTTP + PostgreSQL + worker)', () => {
     await send(lukas.user, 'put', `/rooms/${together.id}/ready`);
     await send(mai.user, 'put', `/rooms/${together.id}/ready`);
     await runUntil(`${DAY}T19:00:00.000Z`);
-    expect(pushed()).toHaveLength(5);
+    expect(pushed()).toHaveLength(4);
 
     // 19:10: Lukas leaves; the app ends his focus, and his reminder arrives.
     await t.setNow(`${DAY}T19:10:00.000Z`);
     await send(lukas.user, 'post', `/rooms/${together.id}/leave`);
     await send(lukas.user, 'delete', '/me/focus/active', undefined, 204);
     await runUntil(`${DAY}T19:15:00.000Z`);
-    expect(pushed().slice(5)).toEqual(['lukas dailyGoalReminder']);
+    expect(pushed().slice(4)).toEqual(['lukas dailyGoalReminder']);
 
     // What became of every notice.
     const rows = await t.prisma.notificationOutbox.findMany({
@@ -236,11 +231,13 @@ describe('X6 notifications integration (HTTP + PostgreSQL + worker)', () => {
       rows
         .filter((row) => row.user.username === name && row.category === category)
         .map((row) => [row.status, row.reason]);
-    expect(outcome('mai', 'focusRoomInvite')).toEqual([['skipped', 'daily_limit']]);
+    expect(outcome('mai', 'focusRoomInvite')).toEqual([
+      ['sent', null],
+      ['skipped', 'daily_limit'],
+    ]);
     expect(outcome('linh', 'dailyGoalReminder')).toEqual([['skipped', 'expired']]);
-    expect(outcome('linh', 'eventStart')).toEqual([]);
     expect(outcome('linh', 'focusRoomInvite')).toEqual([['skipped', 'category_off']]);
-    expect(rows.filter((row) => row.status === 'sent')).toHaveLength(6);
+    expect(rows.filter((row) => row.status === 'sent')).toHaveLength(5);
 
     // Calm copy, and links the app opens.
     for (const message of t.push.messages) {
@@ -248,8 +245,7 @@ describe('X6 notifications integration (HTTP + PostgreSQL + worker)', () => {
       expect(isKnownLink(message.data.link)).toBe(true);
     }
     expect(t.push.messages.map((m) => m.data.link)).toEqual([
-      '/together/events/november-focus',
-      '/together/events/november-focus',
+      `/together/room/${morning.id}`,
       expect.stringMatching(/^\/together\/challenges\/[0-9a-f-]{36}$/),
       '/',
       expect.stringMatching(/^\/together\/challenges\/[0-9a-f-]{36}$/),
@@ -265,6 +261,8 @@ describe('X6 notifications integration (HTTP + PostgreSQL + worker)', () => {
       [room.id, '00000000-0000-4000-8000-0000000006b1'],
       [together.id, '00000000-0000-4000-8000-0000000006b2'],
       [lunch.id, '00000000-0000-4000-8000-0000000006b3'],
+      [morning.id, '00000000-0000-4000-8000-0000000006b4'],
+      [`/together/room/${morning.id}`, '/together/room/00000000-0000-4000-8000-0000000006b4'],
     ]);
     const challengeIds = t.push.messages
       .map((m) => m.data.link.match(/^\/together\/challenges\/(.+)$/)?.[1])
