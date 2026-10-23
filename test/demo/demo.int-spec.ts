@@ -254,6 +254,25 @@ describe('demo tools (DM.1)', () => {
     expect((following.body as { items: unknown[] }).items).toHaveLength(3);
   });
 
+  it('says when Expo accepted a push but could not deliver it (owner, 2026-10-23)', async () => {
+    const world = await makeWorld(auth);
+    const main = await signIn(account(world, 'main').email);
+    await t
+      .http()
+      .put(`/me/devices/${encodeURIComponent('ExponentPushToken[undelivered]')}`)
+      .set(main)
+      .send({ platform: 'android' })
+      .expect(200);
+    t.push.receiptErrorFor('ExponentPushToken[undelivered]', 'InvalidCredentials');
+    const res = await t
+      .http()
+      .post(`/admin/demo/worlds/${world.id}/notify`)
+      .set(auth)
+      .send({ persona: 'main', category: 'monthlyRecapReady' })
+      .expect(201);
+    expect(res.body).toMatchObject({ status: 'failed', reason: 'InvalidCredentials' });
+  });
+
   it('sends any notification at once, through the real pipeline, and says what became of it', async () => {
     const world = await makeWorld(auth);
     const main = await signIn(account(world, 'main').email);

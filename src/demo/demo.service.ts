@@ -13,10 +13,11 @@ import { randomUUID } from 'node:crypto';
 import { AdminAuditService } from '../admin/admin-audit.service.js';
 import { ChallengesService } from '../challenges/challenges.service.js';
 import { MonthlyTreesService } from '../trees/monthly-trees.service.js';
+import { PushTransport } from '../notifications/push-transport.js';
 import { Clock } from '../common/clock.js';
 import { lockUser } from '../consistency/db.js';
 import { PasswordHasher } from '../identity/password-hasher.js';
-import { NotificationsService } from '../notifications/notifications.service.js';
+import { NotificationsService, PUSH_RECEIPTS_JOB } from '../notifications/notifications.service.js';
 import type { NotificationCopyInput } from '../notifications/notification-copy.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ProductConfigService } from '../product-config/product-config.service.js';
@@ -129,6 +130,9 @@ const localToday = (now: Date) =>
   new Date(now.getTime() + OFFSET_HOURS * 60 * MIN).toISOString().slice(0, 10);
 const addDays = (date: string, days: number) =>
   new Date(Date.parse(`${date}T00:00:00Z`) + days * DAY).toISOString().slice(0, 10);
+
+/** How long Expo gets to know whether FCM took a push (none in tests: the fake knows at once). */
+const RECEIPT_WAIT_MS = process.env['NODE_ENV'] === 'test' ? 0 : 5000;
 
 @Injectable()
 export class DemoService implements OnApplicationBootstrap {
@@ -549,6 +553,12 @@ export class DemoService implements OnApplicationBootstrap {
     });
     this.live.announce(userId, { type: 'refresh', reason: 'notification' });
     if (!row) return result('skipped', 'not_created', null);
+    if (row.status === 'sent') {
+      // Expo's receipt says whether FCM took it: "Sent" alone hid a push that never arrived
+      // (owner, 2026-10-23). A few seconds for Expo to know, then the first error is said.
+      const undelivered = await this.receiptError(since);
+      if (undelivered) return result('failed', undelivered, row.title);
+    }
     return result(row.status, row.reason, row.title);
   }
 
@@ -586,6 +596,28 @@ export class DemoService implements OnApplicationBootstrap {
       reason: `Demo world ${worldId}: ${ids.length} accounts${reason ? `. ${reason}` : ''}`,
     });
     return { deleted: true };
+  }
+
+  /** The first receipt error of the pushes sent since `since`, read after Expo has had a moment. */
+  private async receiptError(since: Date): Promise<string | null> {
+    const jobs = await this.prisma.job.findMany({
+      where: { kind: PUSH_RECEIPTS_JOB, createdAt: { gte: since } },
+      select: { payload: true },
+    });
+    const ids = jobs.flatMap(
+      (job) => (job.payload as { tickets?: { id: string }[] }).tickets?.map((t) => t.id) ?? [],
+    );
+    if (ids.length === 0) return null;
+    if (RECEIPT_WAIT_MS > 0) await new Promise((resolve) => setTimeout(resolve, RECEIPT_WAIT_MS));
+    try {
+      const receipts = await this.modules.get(PushTransport, { strict: false }).receipts(ids);
+      for (const receipt of Object.values(receipts)) {
+        if (receipt.status === 'error') return receipt.error;
+      }
+    } catch {
+      // Receipts not reachable now: the push still went out; nothing more to say.
+    }
+    return null;
   }
 
   /** A fresh waiting room for the presenter, in place of one that ran out. */
