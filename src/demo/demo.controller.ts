@@ -1,6 +1,7 @@
 import {
   Body,
   CanActivate,
+  Delete,
   Get,
   Injectable,
   NotFoundException,
@@ -82,6 +83,13 @@ export class CreateWorldDto {
   @ValidateNested()
   @Type(() => DemoEmailsDto)
   emails?: DemoEmailsDto;
+}
+
+export class DeleteWorldDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  reason?: string;
 }
 
 export class PersonaDto {
@@ -172,6 +180,16 @@ export class DemoController {
     @Body() body: PersonaDto,
   ): Promise<unknown> {
     return this.demo.react(admin.adminId, id, body.persona);
+  }
+
+  @UseGuards(DemoEnabledGuard)
+  @Delete('worlds/:id')
+  deleteWorld(
+    @CurrentAdmin() admin: AuthenticatedAdmin,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: DeleteWorldDto,
+  ): Promise<{ deleted: true }> {
+    return this.demo.deleteWorld(admin.adminId, id, body.reason);
   }
 
   @UseGuards(DemoEnabledGuard)

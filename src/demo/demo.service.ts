@@ -549,6 +549,25 @@ export class DemoService implements OnApplicationBootstrap {
     await this.rooms.invite(linh, room.id, [main]);
   }
 
+  /**
+   * Deletes a whole demo world (owner, 2026-10-23): its six accounts and, with them, everything
+   * they made (sessions, trees, follows, reactions, rooms, challenges, devices), as deleting an
+   * account does. Nothing outside the world changes, and its entered email is free again.
+   */
+  async deleteWorld(adminId: string, worldId: number, reason?: string): Promise<{ deleted: true }> {
+    const world = await this.worldOrThrow(worldId);
+    const ids = world.accounts.map((a) => a.userId);
+    await this.prisma.user.deleteMany({ where: { id: { in: ids } } });
+    await this.audit.record({
+      adminId,
+      action: 'demo.world.delete',
+      targetType: 'demo_world',
+      targetId: String(worldId),
+      reason: `Demo world ${worldId}: ${ids.length} accounts${reason ? `. ${reason}` : ''}`,
+    });
+    return { deleted: true };
+  }
+
   /** A fresh waiting room for the presenter, in place of one that ran out. */
   async openRoom(adminId: string, worldId: number): Promise<{ opened: true }> {
     const world = await this.worldOrThrow(worldId);

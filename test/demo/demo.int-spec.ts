@@ -339,6 +339,38 @@ describe('demo tools (DM.1)', () => {
     expect((followers.body as { items: unknown[] }).items).toHaveLength(5);
   });
 
+  it('deletes a whole world: every account and everything they made, nothing else (2026-10-23)', async () => {
+    const keep = await makeWorld(auth);
+    const world = await makeWorld(auth);
+    const main = await signIn(account(world, 'main').email);
+    await focusNow(main, 5);
+    const before = await t.prisma.user.count();
+
+    await t
+      .http()
+      .delete(`/admin/demo/worlds/${world.id}`)
+      .set(auth)
+      .send({ reason: 'Reset after the demo' })
+      .expect(200);
+
+    // Its six accounts are gone, with their sessions, rooms, follows and the rest.
+    expect(await t.prisma.user.count()).toBe(before - 6);
+    for (const a of world.accounts) {
+      expect(await t.prisma.user.findUnique({ where: { id: a.userId } })).toBeNull();
+    }
+    const listed = (await t.http().get('/admin/demo/worlds').set(auth).expect(200)).body as {
+      items: { id: number }[];
+    };
+    expect(listed.items.map((w) => w.id)).toEqual([keep.id]);
+    // Recorded, and the other world untouched.
+    expect(await t.prisma.adminAuditLog.count({ where: { action: 'demo.world.delete' } })).toBe(1);
+    expect(
+      await t.prisma.user.findUnique({ where: { id: account(keep, 'main').userId } }),
+    ).not.toBeNull();
+    // Deleting it again finds nothing.
+    await t.http().delete(`/admin/demo/worlds/${world.id}`).set(auth).expect(404);
+  });
+
   it('opens a fresh waiting room when asked, closing the old one', async () => {
     const world = await makeWorld(auth);
     const main = await signIn(account(world, 'main').email);
