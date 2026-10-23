@@ -12,6 +12,7 @@ import { randomUUID } from 'node:crypto';
 
 import { AdminAuditService } from '../admin/admin-audit.service.js';
 import { ChallengesService } from '../challenges/challenges.service.js';
+import { MonthlyTreesService } from '../trees/monthly-trees.service.js';
 import { Clock } from '../common/clock.js';
 import { lockUser } from '../consistency/db.js';
 import { PasswordHasher } from '../identity/password-hasher.js';
@@ -167,6 +168,9 @@ export class DemoService implements OnApplicationBootstrap {
   private get sessions() {
     return this.modules.get(SessionsService, { strict: false });
   }
+  private get trees() {
+    return this.modules.get(MonthlyTreesService, { strict: false });
+  }
   private get restDays() {
     return this.modules.get(RestDaysService, { strict: false });
   }
@@ -235,6 +239,10 @@ export class DemoService implements OnApplicationBootstrap {
     const passwordHash = await this.passwords.hash(DEMO_PASSWORD);
     const configVersion = (await this.config.active()).version;
     const joined = new Date(`${addDays(today, -110).slice(0, 8)}01T00:00:00Z`);
+    // Linh's forest starts earlier (owner, 2026-10-23): she joined with her first month.
+    const firstLinhMonth = Object.keys(plan.linhSpecies).sort()[0]!;
+    const linhJoined = new Date(`${firstLinhMonth}-01T00:00:00Z`);
+    const joinedOf = (persona: DemoPersona) => (persona === 'friend-linh' ? linhJoined : joined);
 
     const accounts: DemoAccount[] = [];
     for (const persona of DEMO_PERSONAS) {
@@ -248,7 +256,7 @@ export class DemoService implements OnApplicationBootstrap {
           displayName: profile.name,
           username: `demo${world}_${profile.username}`,
           timezone: DEMO_TIME_ZONE,
-          createdAt: joined,
+          createdAt: joinedOf(persona),
           demoAccount: { create: { world, persona } },
         },
       });
@@ -278,7 +286,8 @@ export class DemoService implements OnApplicationBootstrap {
         today,
         configVersion,
         leaveOpen: persona === 'main' ? lastMonth : null,
-        firstGoalFrom: joined,
+        firstGoalFrom: joinedOf(persona),
+        species: persona === 'friend-linh' ? plan.linhSpecies : {},
       });
       // Badges already earned arrive quietly, as they would have.
       await this.achievements.reconcile(id(persona));
@@ -360,6 +369,8 @@ export class DemoService implements OnApplicationBootstrap {
       configVersion: number;
       leaveOpen: string | null;
       firstGoalFrom: Date;
+      /** A species per month ("YYYY-MM"), set before the month closes. */
+      species: Record<string, string>;
     },
   ): Promise<void> {
     const topics = await this.createTopics(userId);
@@ -406,6 +417,15 @@ export class DemoService implements OnApplicationBootstrap {
                 configVersion: options.configVersion,
                 createdAt: endedAt,
               },
+            });
+          }
+          const species = options.species[month];
+          if (species) {
+            const [y, m] = month.split('-').map(Number) as [number, number];
+            await this.trees.ensureTree(tx, userId, { year: y, month: m });
+            await tx.monthlyTree.update({
+              where: { userId_year_month: { userId, year: y, month: m } },
+              data: { species },
             });
           }
           if (month !== current && month !== options.leaveOpen) {

@@ -81,13 +81,21 @@ describe('worldPlan', () => {
     expect(dates(plan.recovery)).not.toContain('2026-10-19');
   });
 
-  it('gives Linh, the second phone, a rich history: two full months and most days this month', () => {
-    // Owner, 2026-10-23: her Insights and forest look lived in on the emulator.
+  it('gives Linh, the second phone, a full forest: 8 past months, every badge, every species', () => {
+    // Owner, 2026-10-23: her Insights, forest and badges look complete on the emulator.
     const linh = plan.friends[2];
-    expect(sum(linh, '2026-08')).toBeGreaterThanOrEqual(1200);
-    expect(sum(linh, '2026-09')).toBeGreaterThanOrEqual(1800);
-    expect(dates(linh).filter((d) => d.startsWith('2026-10')).length).toBeGreaterThanOrEqual(12);
-    expect(new Set(linh.map((s) => s.startHour)).size).toBeGreaterThan(3);
+    const months = [...new Set(linh.map((s) => s.localDate.slice(0, 7)))];
+    expect(months).toHaveLength(9);
+    expect(linh.every((s) => s.localDate < TODAY)).toBe(true);
+    // 500 hours (Golden Sakura) and a 100-day streak (Ancient Pine).
+    expect(linh.reduce((t, s) => t + s.minutes, 0)).toBeGreaterThanOrEqual(30_000);
+    expect(longestRun(linh)).toBeGreaterThanOrEqual(100);
+    // Early Bird and Night Owl.
+    expect(linh.filter((s) => s.startHour < 7).length).toBeGreaterThanOrEqual(10);
+    expect(linh.filter((s) => s.startHour >= 22).length).toBeGreaterThanOrEqual(10);
+    // A different species each month, all nine of them.
+    expect(new Set(Object.values(plan.linhSpecies)).size).toBe(9);
+    expect(Object.keys(plan.linhSpecies).sort()).toEqual(months.sort());
   });
 
   it('never plans a session today or later', () => {

@@ -26,7 +26,25 @@ export interface WorldPlan {
   comeback: PlannedSession[];
   recovery: PlannedSession[];
   friends: [PlannedSession[], PlannedSession[], PlannedSession[]];
+  /** Linh's species for each month she has ("YYYY-MM" → species id): all nine, one per month. */
+  linhSpecies: Record<string, string>;
 }
+
+/** How many past months Linh's forest holds (owner, 2026-10-23). */
+export const LINH_MONTHS = 8;
+
+/** Every species, in the order Linh's months use them (oldest first). */
+const LINH_SPECIES = [
+  'signature',
+  'oak',
+  'sakura',
+  'pine',
+  'maple',
+  'bonsai',
+  'fantasy',
+  'golden-sakura',
+  'ancient-pine',
+];
 
 /** The streak needs 6 days of this month before today. */
 export const EARLIEST_DAY = 8;
@@ -98,22 +116,33 @@ export function worldPlan(today: string): WorldPlan {
     ...[6, 5, 4, 3, 2].map((n) => at(ago(n), week, hour)),
     at(ago(1), yesterday, hour),
   ];
-  // Linh is the second phone in the demo (owner, 2026-10-23): two full months in her forest and
-  // most days this month, at varied hours and lengths, so her Insights and forest look lived in.
-  const lengths = [45, 60, 90, 30, 120];
-  const hours = [7, 9, 14, 20, 16];
-  const thisMonth = Array.from({ length: dayOfMonth - 1 }, (_, i) => dayOfMonth - 1 - i)
-    .filter((n) => n % 4 !== 0)
-    .map((n) => at(ago(n), lengths[n % 5]!, hours[n % 5]));
-  const linh = [
-    ...everyOtherDay(monthStart(today, 2), 1260, 0, 150),
-    ...everyOtherDay(monthStart(today, 1), 1950, 0, 150),
-    ...thisMonth,
-  ];
+  // Linh is the second phone in the demo (owner, 2026-10-23): she focused every day for eight
+  // months, twice a day at varied lengths, so her forest, Insights and badges are complete:
+  // 500 hours, a 100-day streak, Early Bird and Night Owl, and a different species each month.
+  const mornings = [90, 120, 60, 100, 80];
+  const evenings = [60, 45, 90, 40, 70];
+  const first = monthStart(today, LINH_MONTHS);
+  const days = toDay(today) - toDay(first);
+  const linh = Array.from({ length: days }, (_, d) => {
+    const date = addDays(first, d);
+    const early = d % 9 === 0;
+    const late = d % 9 === 4;
+    return [
+      at(date, mornings[d % 5]!, early ? 6 : 8, early ? 15 : 30),
+      late ? at(date, 40, 22, 5) : at(date, evenings[d % 5]!, 19, 0),
+    ];
+  }).flat();
+  const linhSpecies = Object.fromEntries(
+    Array.from({ length: LINH_MONTHS + 1 }, (_, i) => [
+      monthStart(today, LINH_MONTHS - i).slice(0, 7),
+      LINH_SPECIES[i]!,
+    ]),
+  );
   return {
     main,
     comeback,
     recovery,
     friends: [friend(50, 120, 9), friend(80, 100, 14), linh],
+    linhSpecies,
   };
 }

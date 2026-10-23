@@ -332,6 +332,29 @@ describe('demo tools (DM.1)', () => {
     expect(JSON.stringify(invitations[0])).toContain('Linh');
   });
 
+  it('gives Linh a full forest: every badge and a different species each month', async () => {
+    // Owner, 2026-10-23: the second phone shows a complete account.
+    const world = await makeWorld(auth);
+    const linh = account(world, 'friend-linh').userId;
+    const badges = (await t.prisma.userBadge.findMany({ where: { userId: linh } })).map(
+      (b) => b.badgeId,
+    );
+    for (const id of [
+      'first-session',
+      'focus-hours:500',
+      'focus-streak:100',
+      'early-bird',
+      'night-owl',
+      'weekend-warrior',
+    ]) {
+      expect(badges).toContain(id);
+    }
+    const trees = await t.prisma.monthlyTree.findMany({ where: { userId: linh } });
+    expect(trees).toHaveLength(9);
+    expect(new Set(trees.map((tree) => tree.species)).size).toBe(9);
+    expect(trees.filter((tree) => tree.status === 'archived')).toHaveLength(8);
+  });
+
   it('has followers beyond the three friends', async () => {
     const world = await makeWorld(auth);
     const main = await signIn(account(world, 'main').email);
