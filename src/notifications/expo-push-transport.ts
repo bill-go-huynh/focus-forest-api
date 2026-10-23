@@ -14,6 +14,7 @@ const RECEIPT_CHUNK = 1000;
 interface ExpoResult {
   status: 'ok' | 'error';
   id?: string;
+  message?: string;
   details?: { error?: string };
 }
 
@@ -54,7 +55,12 @@ export class ExpoPushTransport extends PushTransport {
         receipts[id] =
           result.status === 'ok'
             ? { status: 'ok' }
-            : { status: 'error', error: result.details?.error ?? 'Unknown' };
+            : {
+                status: 'error',
+                error: result.details?.error ?? 'Unknown',
+                // Expo's own words (with FCM's answer), for the logs (owner, 2026-10-23).
+                ...(result.message ? { message: result.message } : {}),
+              };
       }
     }
     return receipts;

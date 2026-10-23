@@ -88,7 +88,7 @@ describe('ExpoPushTransport', () => {
     expect(calls[0]!.body).toEqual({ ids: ['a', 'b'] });
     expect(receipts).toEqual({
       a: { status: 'ok' },
-      b: { status: 'error', error: 'DeviceNotRegistered' },
+      b: { status: 'error', error: 'DeviceNotRegistered', message: 'gone' },
     });
   });
 

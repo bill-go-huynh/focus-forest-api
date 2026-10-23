@@ -13,7 +13,7 @@ export interface PushMessage {
 }
 
 export type PushTicket = { status: 'ok'; id: string } | { status: 'error'; error: string };
-export type PushReceipt = { status: 'ok' } | { status: 'error'; error: string };
+export type PushReceipt = { status: 'ok' } | { status: 'error'; error: string; message?: string };
 
 export abstract class PushTransport {
   /** One ticket per message, in order. */

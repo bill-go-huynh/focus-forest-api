@@ -280,7 +280,9 @@ export class NotificationsService implements OnModuleInit {
     for (const ticket of payload.tickets) {
       const receipt = receipts[ticket.id];
       if (receipt?.status === 'error') {
-        this.logger.warn(`Push not delivered: ${receipt.error} (ticket ${ticket.id})`);
+        this.logger.warn(
+          `Push not delivered: ${receipt.error} (ticket ${ticket.id})${receipt.message ? `: ${receipt.message}` : ''}`,
+        );
       }
     }
     const gone = payload.tickets

@@ -630,6 +630,14 @@ export class DemoService implements OnApplicationBootstrap {
         where: { token: { in: gone.map((ticket) => ticket.token) } },
       });
     }
+    for (const ticket of tickets) {
+      const receipt = receipts[ticket.id];
+      if (receipt?.status === 'error') {
+        new Logger('DemoTools').warn(
+          `Push not delivered: ${receipt.error}${receipt.message ? `: ${receipt.message}` : ''}`,
+        );
+      }
+    }
     const errors = tickets.map((ticket) => receipts[ticket.id]);
     if (errors.some((receipt) => !receipt || receipt.status === 'ok')) return null;
     const first = errors.find((receipt) => receipt?.status === 'error');
