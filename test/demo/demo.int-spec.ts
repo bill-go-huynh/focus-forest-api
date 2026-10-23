@@ -273,6 +273,31 @@ describe('demo tools (DM.1)', () => {
     expect(res.body).toMatchObject({ status: 'failed', reason: 'InvalidCredentials' });
   });
 
+  it('says Sent when the phone got it, and forgets a dead token from an old install', async () => {
+    const world = await makeWorld(auth);
+    const main = await signIn(account(world, 'main').email);
+    for (const token of ['ExponentPushToken[old-install]', 'ExponentPushToken[new-install]']) {
+      await t
+        .http()
+        .put(`/me/devices/${encodeURIComponent(token)}`)
+        .set(main)
+        .send({ platform: 'android' })
+        .expect(200);
+    }
+    t.push.receiptErrorFor('ExponentPushToken[old-install]', 'DeviceNotRegistered');
+    const res = await t
+      .http()
+      .post(`/admin/demo/worlds/${world.id}/notify`)
+      .set(auth)
+      .send({ persona: 'main', category: 'monthlyRecapReady' })
+      .expect(201);
+    expect(res.body).toMatchObject({ status: 'sent' });
+    const tokens = (
+      await t.prisma.pushDevice.findMany({ where: { userId: account(world, 'main').userId } })
+    ).map((d) => d.token);
+    expect(tokens).toEqual(['ExponentPushToken[new-install]']);
+  });
+
   it('sends any notification at once, through the real pipeline, and says what became of it', async () => {
     const world = await makeWorld(auth);
     const main = await signIn(account(world, 'main').email);

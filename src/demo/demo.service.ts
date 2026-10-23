@@ -13,7 +13,7 @@ import { randomUUID } from 'node:crypto';
 import { AdminAuditService } from '../admin/admin-audit.service.js';
 import { ChallengesService } from '../challenges/challenges.service.js';
 import { MonthlyTreesService } from '../trees/monthly-trees.service.js';
-import { PushTransport } from '../notifications/push-transport.js';
+import { PushTransport, type PushReceipt } from '../notifications/push-transport.js';
 import { Clock } from '../common/clock.js';
 import { lockUser } from '../consistency/db.js';
 import { PasswordHasher } from '../identity/password-hasher.js';
@@ -598,26 +598,42 @@ export class DemoService implements OnApplicationBootstrap {
     return { deleted: true };
   }
 
-  /** The first receipt error of the pushes sent since `since`, read after Expo has had a moment. */
+  /**
+   * Whether a push sent since `since` reached the phone, from Expo's receipts after a moment:
+   * null when one device took it; else the first error. Tokens of an old install
+   * (DeviceNotRegistered) are forgotten at once, as the receipt job would later.
+   */
   private async receiptError(since: Date): Promise<string | null> {
     const jobs = await this.prisma.job.findMany({
       where: { kind: PUSH_RECEIPTS_JOB, createdAt: { gte: since } },
       select: { payload: true },
     });
-    const ids = jobs.flatMap(
-      (job) => (job.payload as { tickets?: { id: string }[] }).tickets?.map((t) => t.id) ?? [],
+    const tickets = jobs.flatMap(
+      (job) => (job.payload as { tickets?: { id: string; token: string }[] }).tickets ?? [],
     );
-    if (ids.length === 0) return null;
+    if (tickets.length === 0) return null;
     if (RECEIPT_WAIT_MS > 0) await new Promise((resolve) => setTimeout(resolve, RECEIPT_WAIT_MS));
+    let receipts: Record<string, PushReceipt>;
     try {
-      const receipts = await this.modules.get(PushTransport, { strict: false }).receipts(ids);
-      for (const receipt of Object.values(receipts)) {
-        if (receipt.status === 'error') return receipt.error;
-      }
+      receipts = await this.modules
+        .get(PushTransport, { strict: false })
+        .receipts(tickets.map((ticket) => ticket.id));
     } catch {
-      // Receipts not reachable now: the push still went out; nothing more to say.
+      return null; // Receipts not reachable now: the push still went out.
     }
-    return null;
+    const gone = tickets.filter((ticket) => {
+      const receipt = receipts[ticket.id];
+      return receipt?.status === 'error' && receipt.error === 'DeviceNotRegistered';
+    });
+    if (gone.length > 0) {
+      await this.prisma.pushDevice.deleteMany({
+        where: { token: { in: gone.map((ticket) => ticket.token) } },
+      });
+    }
+    const errors = tickets.map((ticket) => receipts[ticket.id]);
+    if (errors.some((receipt) => !receipt || receipt.status === 'ok')) return null;
+    const first = errors.find((receipt) => receipt?.status === 'error');
+    return first?.status === 'error' ? first.error : null;
   }
 
   /** A fresh waiting room for the presenter, in place of one that ran out. */
