@@ -9,7 +9,8 @@
  *   5-minute session, the shortest that counts, passes 50 hours (3,000) and owns Maple.
  * - Comeback presenter: nothing for the last 3 days (Resting quietly; a session wakes it).
  * - Recovery presenter: 4 days in a row, then yesterday missed (a session today opens the offer).
- * - Three friends: together 290 minutes yesterday, after a week of focus (the leaderboard).
+ * - Friends: Mai and Khoa focus the week before; Linh (the second phone) has two full months
+ *   and most days this month (owner, 2026-10-23).
  */
 
 export interface PlannedSession {
@@ -97,10 +98,22 @@ export function worldPlan(today: string): WorldPlan {
     ...[6, 5, 4, 3, 2].map((n) => at(ago(n), week, hour)),
     at(ago(1), yesterday, hour),
   ];
+  // Linh is the second phone in the demo (owner, 2026-10-23): two full months in her forest and
+  // most days this month, at varied hours and lengths, so her Insights and forest look lived in.
+  const lengths = [45, 60, 90, 30, 120];
+  const hours = [7, 9, 14, 20, 16];
+  const thisMonth = Array.from({ length: dayOfMonth - 1 }, (_, i) => dayOfMonth - 1 - i)
+    .filter((n) => n % 4 !== 0)
+    .map((n) => at(ago(n), lengths[n % 5]!, hours[n % 5]));
+  const linh = [
+    ...everyOtherDay(monthStart(today, 2), 1260, 0, 150),
+    ...everyOtherDay(monthStart(today, 1), 1950, 0, 150),
+    ...thisMonth,
+  ];
   return {
     main,
     comeback,
     recovery,
-    friends: [friend(50, 120, 9), friend(80, 100, 14), friend(30, 70, 19)],
+    friends: [friend(50, 120, 9), friend(80, 100, 14), linh],
   };
 }

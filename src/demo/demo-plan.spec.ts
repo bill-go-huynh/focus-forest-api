@@ -81,9 +81,13 @@ describe('worldPlan', () => {
     expect(dates(plan.recovery)).not.toContain('2026-10-19');
   });
 
-  it('gives three friends sessions yesterday that add up to 290 minutes', () => {
-    expect(plan.friends).toHaveLength(3);
-    expect(plan.friends.map((f) => sum(f, '2026-10-19')).reduce((a, b) => a + b, 0)).toBe(290);
+  it('gives Linh, the second phone, a rich history: two full months and most days this month', () => {
+    // Owner, 2026-10-23: her Insights and forest look lived in on the emulator.
+    const linh = plan.friends[2];
+    expect(sum(linh, '2026-08')).toBeGreaterThanOrEqual(1200);
+    expect(sum(linh, '2026-09')).toBeGreaterThanOrEqual(1800);
+    expect(dates(linh).filter((d) => d.startsWith('2026-10')).length).toBeGreaterThanOrEqual(12);
+    expect(new Set(linh.map((s) => s.startHour)).size).toBeGreaterThan(3);
   });
 
   it('never plans a session today or later', () => {
