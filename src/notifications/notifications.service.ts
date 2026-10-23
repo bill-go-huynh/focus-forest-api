@@ -1,4 +1,4 @@
-import { Injectable, type OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, type OnModuleInit } from '@nestjs/common';
 
 import { Clock } from '../common/clock.js';
 import type { NotificationCategory, Prisma } from '../generated/prisma/client.js';
@@ -80,6 +80,8 @@ interface ReceiptsPayload {
 
 @Injectable()
 export class NotificationsService implements OnModuleInit {
+  private readonly logger = new Logger('Notifications');
+
   private readonly relevance = new Map<NotificationCategoryKey, RelevanceCheck>();
 
   constructor(
@@ -273,6 +275,14 @@ export class NotificationsService implements OnModuleInit {
 
   private async readReceipts(payload: ReceiptsPayload): Promise<void> {
     const receipts = await this.transport.receipts(payload.tickets.map((ticket) => ticket.id));
+    // Accepted by Expo but not delivered (wrong FCM credentials, another Firebase project, ...):
+    // said in the logs, the one place it shows (owner, 2026-10-23).
+    for (const ticket of payload.tickets) {
+      const receipt = receipts[ticket.id];
+      if (receipt?.status === 'error') {
+        this.logger.warn(`Push not delivered: ${receipt.error} (ticket ${ticket.id})`);
+      }
+    }
     const gone = payload.tickets
       .filter((ticket) => {
         const receipt = receipts[ticket.id];

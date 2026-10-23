@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 
 import { JobsService } from '../../src/jobs/jobs.service.js';
@@ -464,6 +465,18 @@ describe('notification foundation (A6.1)', () => {
       expect((await t.prisma.pushDevice.findMany()).map((d) => d.token)).toEqual([
         'ExponentPushToken[ana]',
       ]);
+    });
+
+    it('logs a receipt error, so a push Expo accepted but could not deliver shows in the logs', async () => {
+      // Owner, 2026-10-23: "Sent" on the admin, nothing on the phone (FCM credentials, sender).
+      const warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+      const ana = await person();
+      t.push.receiptErrorFor('ExponentPushToken[ana]', 'InvalidCredentials');
+      await notifications.enqueue(t.prisma, notice(ana));
+      await notifications.dispatchDue(at('2026-11-02T10:00:00Z'));
+      await jobs.runDue(at('2026-11-02T10:15:00Z'));
+      expect(warn.mock.calls.flat().join(' ')).toContain('InvalidCredentials');
+      warn.mockRestore();
     });
 
     it('marks a notification failed when no device accepts it', async () => {
