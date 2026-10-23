@@ -198,20 +198,34 @@ describe('demo tools (DM.1)', () => {
     const main = await signIn(account(world, 'main').email);
     const home = await t.http().get('/me/home').set(main).expect(200);
     expect(home.body).toMatchObject({ pendingCeremony: { year: 2026, month: 9 } });
-    const streak = await t.http().get('/me/streak').set(main).expect(200);
-    expect(streak.body).toMatchObject({ current: 6 });
   });
 
-  it('turns one 5-minute session into a Mature Tree, 50 Hours, and a 7-day streak', async () => {
+  it('leaves this month a Seed whose species can be chosen, Pine already owned', async () => {
+    // Owner, 2026-10-23: the presenter shows choosing this month's tree.
+    const world = await makeWorld(auth);
+    const main = await signIn(account(world, 'main').email);
+    await t.http().get('/me/home').set(main).expect(200);
+    const current = await t.http().get('/me/trees/current').set(main).expect(200);
+    expect(JSON.stringify(current.body)).toContain('"stage":"seed"');
+    const species = await t.http().get('/me/species').set(main).expect(200);
+    const body = species.body as {
+      current: { locked: boolean };
+      items: { id: string; selectable: boolean }[];
+    };
+    expect(body.current.locked).toBe(false);
+    expect(body.items.filter((item) => item.selectable).map((item) => item.id)).toContain('pine');
+    expect(body.items.filter((item) => item.selectable).length).toBeGreaterThan(1);
+  });
+
+  it('turns one 5-minute session into 50 Hours and Maple, growing the Seed', async () => {
     const world = await makeWorld(auth);
     const main = await signIn(account(world, 'main').email);
     await t.http().get('/me/home').set(main).expect(200);
     // The shortest counted session, so the presenter shows it live (owner, 2026-10-22).
     const result = await focusNow(main, 5);
-    expect(JSON.stringify(result.growth)).toContain('mature_tree');
-    const badges = JSON.stringify(result.progression);
-    expect(badges).toContain('focus-hours:50');
-    expect(badges).toContain('focus-streak:7');
+    expect(result.growth).toBeTruthy();
+    expect(JSON.stringify(result.progression)).toContain('focus-hours:50');
+    expect(JSON.stringify(result.progression)).toContain('maple');
     expect(result).not.toHaveProperty('events');
   });
 
@@ -455,7 +469,7 @@ describe('demo live changes (DM.1b)', () => {
       .set(auth)
       .send({ persona: 'main', minutes: 25 })
       .expect(201);
-    expect(JSON.stringify(res.body)).toContain('mature_tree');
+    expect(JSON.stringify(res.body)).toContain('focus-hours:50');
     const pushed = await main.next('session');
     expect(JSON.stringify(pushed['session'])).toContain('focus-hours:50');
   });

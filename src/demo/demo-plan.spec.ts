@@ -25,28 +25,32 @@ function longestRun(sessions: readonly PlannedSession[]): number {
 describe('worldPlan', () => {
   const plan = worldPlan(TODAY);
 
-  it('gives the main presenter an August tree, a full September one, and 715 minutes this month', () => {
+  it('gives the main presenter an August tree, a full September one, and nothing this month', () => {
     const s = plan.main;
     expect(sum(s, '2026-08')).toBe(600);
-    expect(sum(s, '2026-09')).toBe(1680);
-    expect(sum(s, '2026-10')).toBe(715);
-    // 2,995 in all: one 5-minute session passes 50 hours (3,000 minutes) and makes this month
-    // a Mature Tree (720), so the presenter shows it with a real session.
+    expect(sum(s, '2026-09')).toBe(2395);
+    // This month's tree is still a Seed, so its species can be chosen (owner, 2026-10-23).
+    expect(sum(s, '2026-10')).toBe(0);
+    // 2,995 in all: one 5-minute session passes 50 hours (3,000 minutes).
     expect(sum(s, '2026')).toBe(2995);
   });
 
-  it('ends the main presenter on a 6-day streak yesterday, never 7 days anywhere', () => {
+  it('gives September one 7-day run (the 7-Day Streak and Pine), and no longer one', () => {
     const s = plan.main;
-    expect(dates(s).slice(-6)).toEqual([
-      '2026-10-14',
-      '2026-10-15',
-      '2026-10-16',
-      '2026-10-17',
-      '2026-10-18',
-      '2026-10-19',
+    expect(
+      dates(s)
+        .filter((d) => d.startsWith('2026-09'))
+        .slice(0, 7),
+    ).toEqual([
+      '2026-09-01',
+      '2026-09-02',
+      '2026-09-03',
+      '2026-09-04',
+      '2026-09-05',
+      '2026-09-06',
+      '2026-09-07',
     ]);
-    expect(dates(s)).not.toContain('2026-10-13');
-    expect(longestRun(s)).toBe(6);
+    expect(longestRun(s)).toBe(7);
   });
 
   it('keeps every day under the daily soft cap and every session counted', () => {
@@ -96,7 +100,7 @@ describe('worldPlan', () => {
   it('works across a year boundary', () => {
     const january = worldPlan('2027-01-20');
     expect(sum(january.main, '2026-11')).toBe(600);
-    expect(sum(january.main, '2026-12')).toBe(1680);
-    expect(sum(january.main, '2027-01')).toBe(715);
+    expect(sum(january.main, '2026-12')).toBe(2395);
+    expect(sum(january.main, '2027-01')).toBe(0);
   });
 });
