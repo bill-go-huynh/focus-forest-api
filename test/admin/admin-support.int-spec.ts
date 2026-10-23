@@ -219,7 +219,20 @@ describe('admin support (CR.4, HTTP + PostgreSQL)', () => {
       sessionsToday: 2,
       discardedToday: 1,
       activeUsersLast7Days: 1,
+      totalUsers: 1,
+      openRooms: 0,
+      notificationsSentToday: 0,
     });
+    // The last 14 UTC days, oldest first, today last (owner, 2026-10-23: a chart on the dashboard).
+    const days = (
+      dashboard.body as { days: { date: string; sessions: number; focusMinutes: number }[] }
+    ).days;
+    expect(days).toHaveLength(14);
+    expect(days.at(-1)).toMatchObject({ sessions: 2 });
+    expect(days.at(-1)!.focusMinutes).toBe(
+      (dashboard.body as { focusMinutesToday: number }).focusMinutesToday,
+    );
+    expect(days.slice(0, -1).every((d) => d.sessions === 0)).toBe(true);
     const config = await t.http().get('/admin/config').set(auth).expect(200);
     const view = config.body as { version: number; values: Record<string, unknown> };
     expect(view.version).toBeGreaterThan(0);

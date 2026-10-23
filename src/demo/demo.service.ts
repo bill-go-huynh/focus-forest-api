@@ -95,6 +95,10 @@ export interface DemoAccount {
   signIn: 'google' | 'password';
   /** The shared password, for a demo address; null for Google. */
   password: string | null;
+  /** Owner, 2026-10-23: is the account ready to show? Its phones and this month's tree. */
+  devices: number;
+  /** This month's tree stage, or null before it exists. */
+  stage: string | null;
 }
 
 /**
@@ -185,9 +189,24 @@ export class DemoService implements OnApplicationBootstrap {
       select: {
         world: true,
         persona: true,
-        user: { select: { id: true, email: true, displayName: true, passwordHash: true } },
+        user: {
+          select: {
+            id: true,
+            email: true,
+            displayName: true,
+            passwordHash: true,
+            _count: { select: { pushDevices: true } },
+          },
+        },
       },
     });
+    // This month's tree of each account (demo time zone); none until the account opens it.
+    const [year, month] = localToday(this.clock.now()).split('-').map(Number) as [number, number];
+    const trees = await this.prisma.monthlyTree.findMany({
+      where: { userId: { in: rows.map((row) => row.user.id) }, year, month },
+      select: { userId: true, stage: true },
+    });
+    const stageOf = new Map(trees.map((tree) => [tree.userId, tree.stage as string]));
     const byWorld = new Map<number, DemoAccount[]>();
     for (const { world, persona, user } of rows) {
       if (!(DEMO_PERSONAS as readonly string[]).includes(persona)) continue;
@@ -198,6 +217,8 @@ export class DemoService implements OnApplicationBootstrap {
         userId: user.id,
         name: user.displayName ?? '',
         ...signInOf(user.passwordHash !== null),
+        devices: user._count.pushDevices,
+        stage: stageOf.get(user.id) ?? null,
       });
       byWorld.set(world, list);
     }
@@ -270,6 +291,8 @@ export class DemoService implements OnApplicationBootstrap {
         userId: user.id,
         name: profile.name,
         ...signInOf(!entered),
+        devices: 0,
+        stage: null,
       });
     }
     const id = (persona: DemoPersona) => accounts.find((a) => a.persona === persona)!.userId;
@@ -323,7 +346,8 @@ export class DemoService implements OnApplicationBootstrap {
       targetId: String(world),
       reason,
     });
-    return { id: world, accounts };
+    // As listed, with each account's phones and tree (seeded by now).
+    return (await this.worlds()).items.find((w) => w.id === world) ?? { id: world, accounts };
   }
 
   /** Each persona's address: the one entered (trimmed, lowercased) or the generated one. */

@@ -17,6 +17,16 @@ export interface AdminDashboard {
   activeUsersLast7Days: number;
   /** A5.3: reports waiting for a moderator (open or in review). */
   openReports: number;
+  /** Owner, 2026-10-23: the dashboard's headline numbers and its 14-day chart. */
+  totalUsers: number;
+  /** Counted focus, in minutes (discarded sessions add none). */
+  focusMinutesToday: number;
+  focusMinutesLast7Days: number;
+  /** Rooms waiting or focusing now. */
+  openRooms: number;
+  notificationsSentToday: number;
+  /** The last 14 UTC days, oldest first: sessions started and counted focus minutes. */
+  days: { date: string; sessions: number; focusMinutes: number }[];
   generatedAt: string;
 }
 
@@ -64,12 +74,53 @@ export class AdminOverviewController {
         ) AS active`,
       this.prisma.report.count({ where: { status: { in: ['open', 'in_review'] } } }),
     ]);
+    const since = new Date(today.getTime() - 13 * DAY);
+    const [totalUsers, openRooms, notificationsSentToday, perDay] = await Promise.all([
+      this.prisma.user.count(),
+      this.prisma.focusRoom.count({ where: { status: { in: ['lobby', 'in_session'] } } }),
+      this.prisma.notificationOutbox.count({ where: { status: 'sent', sentAt: { gte: today } } }),
+      this.prisma.$queryRaw<{ day: Date; sessions: bigint; focused: bigint | null }[]>`
+        SELECT date_trunc('day', started_at AT TIME ZONE 'UTC') AS day,
+               COUNT(*) AS sessions,
+               SUM(CASE WHEN status <> 'discarded' THEN focused_milliseconds ELSE 0 END) AS focused
+          FROM focus_sessions
+         WHERE started_at >= ${since}
+         GROUP BY 1`,
+    ]);
+    const byDay = new Map(
+      perDay.map((row) => [
+        new Date(row.day).toISOString().slice(0, 10),
+        {
+          sessions: Number(row.sessions),
+          focusMinutes: Math.floor(Number(row.focused ?? 0) / 60_000),
+        },
+      ]),
+    );
+    const days = Array.from({ length: 14 }, (_, i) => {
+      const date = new Date(since.getTime() + i * DAY).toISOString().slice(0, 10);
+      const found = byDay.get(date);
+      return {
+        date,
+        sessions: found?.sessions ?? 0,
+        focusMinutes: found?.focusMinutes ?? 0,
+      };
+    });
+    const focusMinutesToday = days.at(-1)?.focusMinutes ?? 0;
+    const focusMinutesLast7Days = days
+      .slice(-7)
+      .reduce((total, day) => total + day.focusMinutes, 0);
     return {
       signupsLast7Days: signups,
       sessionsToday: sessions,
       discardedToday: discarded,
       activeUsersLast7Days: Number(active[0]?.count ?? 0),
       openReports,
+      totalUsers,
+      focusMinutesToday,
+      focusMinutesLast7Days,
+      openRooms,
+      notificationsSentToday,
+      days,
       generatedAt: now.toISOString(),
     };
   }

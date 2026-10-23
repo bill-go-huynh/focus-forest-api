@@ -399,6 +399,24 @@ describe('demo tools (DM.1)', () => {
     expect(trees.filter((tree) => tree.status === 'archived')).toHaveLength(8);
   });
 
+  it("lists whether each account is ready: its phones and this month's tree", async () => {
+    const world = await makeWorld(auth);
+    const main = await signIn(account(world, 'main').email);
+    await t
+      .http()
+      .put(`/me/devices/${encodeURIComponent('ExponentPushToken[ready]')}`)
+      .set(main)
+      .send({ platform: 'android' })
+      .expect(200);
+    await t.http().get('/me/home').set(main).expect(200);
+    const listed = (await t.http().get('/admin/demo/worlds').set(auth).expect(200)).body as {
+      items: { accounts: { persona: string; devices: number; stage: string | null }[] }[];
+    };
+    const accounts = listed.items[0]!.accounts;
+    expect(accounts.find((a) => a.persona === 'main')).toMatchObject({ devices: 1, stage: 'seed' });
+    expect(accounts.find((a) => a.persona === 'friend-linh')).toMatchObject({ devices: 0 });
+  });
+
   it('has followers beyond the three friends', async () => {
     const world = await makeWorld(auth);
     const main = await signIn(account(world, 'main').email);

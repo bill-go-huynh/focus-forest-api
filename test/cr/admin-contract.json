@@ -19,6 +19,83 @@
     "discardedToday": 1,
     "activeUsersLast7Days": 1,
     "openReports": 0,
+    "totalUsers": 1,
+    "focusMinutesToday": 30,
+    "focusMinutesLast7Days": 30,
+    "openRooms": 0,
+    "notificationsSentToday": 0,
+    "days": [
+      {
+        "date": "2026-08-21",
+        "sessions": 0,
+        "focusMinutes": 0
+      },
+      {
+        "date": "2026-08-22",
+        "sessions": 0,
+        "focusMinutes": 0
+      },
+      {
+        "date": "2026-08-23",
+        "sessions": 0,
+        "focusMinutes": 0
+      },
+      {
+        "date": "2026-08-24",
+        "sessions": 0,
+        "focusMinutes": 0
+      },
+      {
+        "date": "2026-08-25",
+        "sessions": 0,
+        "focusMinutes": 0
+      },
+      {
+        "date": "2026-08-26",
+        "sessions": 0,
+        "focusMinutes": 0
+      },
+      {
+        "date": "2026-08-27",
+        "sessions": 0,
+        "focusMinutes": 0
+      },
+      {
+        "date": "2026-08-28",
+        "sessions": 0,
+        "focusMinutes": 0
+      },
+      {
+        "date": "2026-08-29",
+        "sessions": 0,
+        "focusMinutes": 0
+      },
+      {
+        "date": "2026-08-30",
+        "sessions": 0,
+        "focusMinutes": 0
+      },
+      {
+        "date": "2026-08-31",
+        "sessions": 0,
+        "focusMinutes": 0
+      },
+      {
+        "date": "2026-09-01",
+        "sessions": 0,
+        "focusMinutes": 0
+      },
+      {
+        "date": "2026-09-02",
+        "sessions": 0,
+        "focusMinutes": 0
+      },
+      {
+        "date": "2026-09-03",
+        "sessions": 2,
+        "focusMinutes": 30
+      }
+    ],
     "generatedAt": "2026-09-03T12:00:30.000Z"
   },
   "users": {
